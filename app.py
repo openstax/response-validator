@@ -8,6 +8,7 @@ import numpy as np
 from utils import create_fixed_data
 from ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
+import re
 import time
 
 app = Flask(__name__)
@@ -26,22 +27,16 @@ print("Finished!")
 question_set = df_questions.uid.values.tolist()
 
 # Define common and bad vocab
-common_vocab = set(words.words()) | set(['numeric_type_hex',
-                              		     'numeric_type_binary',
-                              			 'numeric_type_octal',
-                              			 'numeric_type_float',
-                              			 'numeric_type_int',
-                              			 'numeric_type_complex',
-                              			 'numeric_type_roman',
-                              			 'math_type',
-                              			 'common_garbage'])
-bad_vocab = set(['lo', 'ur', 'mn', 'no_text', 'nonsense_word', 'n/a', 'na', 'idk', 'lol', 'asdf', 'jk', 'zz', 'zzz', 'k', 'j', 'hi', 'n', 'id', 'blah', 'huh', 'wut', 'lmao', 'wat', 'hm', 'hmm', 'fml', 'shit', 'fuck'])
-
+# Define common and bad vocab
+with open('./ml/corpora/bad.txt') as f:
+	bad_vocab = set([re.sub('\n', '', w) for w in f])
 
 # Create the parser, initially assign default values (these can be overwritten during calls to process_string)
 parser = StaxStringProc(corpora_list=['./ml/corpora/big.txt',
 		   							  './ml/corpora/all_plaintext.txt'],
                         parse_args=(remove_stopwords_default, tag_numeric_default, spelling_correction_default, remove_nonwords_default))
+
+common_vocab = set(words.words()) | set(parser.reserved_tags)
 
 
 # Function to estimate validity given response, uid, and parser parameters
