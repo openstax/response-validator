@@ -12,16 +12,18 @@ After cloning the repository, you can install the required libraries using [pip]
 pip install -r requirements.txt
 ```
 
-You will also need to download the corpora for the NLTK package.  This, unfortunately, must be done separately can cannot be automated with the requirements.txt file.  Running the following command:
+You will also need to download the corpora for the NLTK package.  This, unfortunately, must be done separately can cannot be automated with the requirements.txt file.  Running the following commands:
+
+```bash
+python -m nltk.downloader snowball_data
+python -m nltk.downloader words
+python -m nltk.downloader stopwords
+```
+
+or as another simpler command:
 
 ```bash
 python -m nltk.downloader all
-```
-
-or possibly:
-
-```bash
-sudo python -m nltk.downloader -d /usr/local/share/nltk_data all
 ```
 
 should accomplish this.

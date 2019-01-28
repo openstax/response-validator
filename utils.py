@@ -6,7 +6,31 @@ import pandas as pd
 import numpy as np
 import sys
 import re
+import os
 from nltk.corpus import words
+
+def get_fixed_data():
+
+	# Check to see if the dataframes already exist.  If so, load from disk.
+	data_dir = './ml/data/'
+	data_files = os.listdir(data_dir)
+	files_to_find = ['df_innovation.csv', 'df_domain.csv', 'df_questions.csv']
+	num_missing_files = len(set(files_to_find) - set(data_files))
+	if (num_missing_files==0):
+		print("Loading existing data...")
+		df_innovation = pd.read_csv(data_dir + files_to_find[0])
+		df_domain = pd.read_csv(data_dir + files_to_find[1])
+		df_questions = pd.read_csv(data_dir + files_to_find[2])
+	else:
+		print("Can't find fixed data so creating from scratch . . . this may take a bit!")
+		df_innovation, df_domain, df_questions = create_fixed_data()
+		df_innovation.to_csv(data_dir + files_to_find[0], index=None)
+		df_domain.to_csv(data_dir + files_to_find[1], index=None)
+		df_questions.to_csv(data_dir + files_to_find[2], index=None)
+		print("Finished")
+
+	return df_innovation, df_domain, df_questions
+
 
 
 def create_fixed_data():
@@ -30,6 +54,7 @@ def create_fixed_data():
 
 	# Final stuff
 	df_innovation = df_grouped.rename(columns={'book_name': 'subject_name', 'CNX Chapter Number': 'chapter_id', 'CNX Section Number': 'section_id'})
+	df_innovation = df_innovation.drop('text', axis=1)
 	df_domain = pd.DataFrame({'subject_name': 'Biology', 'domain_words': set.union(*df_innovation.innovation_words.values.tolist())}).iloc[0:1]
 
 	return (df_innovation, df_domain, df_questions)

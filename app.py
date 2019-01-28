@@ -5,7 +5,7 @@
 from flask import Flask, jsonify, request
 import pandas as pd
 import numpy as np
-from utils import create_fixed_data
+from utils import create_fixed_data, get_fixed_data
 from ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
 import re
@@ -21,9 +21,8 @@ remove_nonwords_default = True
 weights = np.array([-3, 2.5, 2.2, .7])
 
 # Get the global data for the app (innovation words by module, domain words by subject, and table linking question uid to cnxmod)
-print("Loading up the data . . . this may take a bit")
-df_innovation, df_domain, df_questions = create_fixed_data()
-print("Finished!")
+df_innovation, df_domain, df_questions = get_fixed_data()
+
 question_set = df_questions.uid.values.tolist()
 
 # Define common and bad vocab
