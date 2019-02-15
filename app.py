@@ -67,6 +67,7 @@ def validate_response(response, uid, remove_stopwords, tag_numeric, spelling_cor
 	# Group the counts together, compute an inner product with the weights, and return the results
 	vector = np.array([bad_word_count, domain_word_count, innovation_word_count, common_word_count])
 	inner_product = np.sum(vector*weights)
+	valid = float(inner_product) > 0
 
 	return {'response': response,
 			'remove_stopwords': remove_stopwords,
@@ -81,7 +82,7 @@ def validate_response(response, uid, remove_stopwords, tag_numeric, spelling_cor
 			'innovation_word_count': innovation_word_count,
 			'common_word_count': common_word_count,
 			'inner_product': inner_product,
-			'valid': str(inner_product>0)
+			'valid': valid
 			}
 
 # Defines the entry point for the api call

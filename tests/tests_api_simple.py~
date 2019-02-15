@@ -14,8 +14,8 @@ from sklearn.model_selection import cross_val_score
 import requests
 
 # Users params -- where to get the response data and how much of it to sample for testing
-base_url = 'http://127.0.0.1:5000/validate' #Local Path
-# base_url = 'https://protected-earth-88152.herokuapp.com/validate' #Heroku path
+#base_url = 'http://127.0.0.1:5000/validate' #Local Path
+base_url = 'https://protected-earth-88152.herokuapp.com/validate' #Heroku path
 response_path = '~/Box Sync/Research/Data/openform_app/response_data.csv'
 n_samp = 100
 
