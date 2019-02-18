@@ -10,6 +10,7 @@ from ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
 import re
 import time
+from flask_cors import cross_origin
 
 app = Flask(__name__)
 
@@ -89,9 +90,14 @@ def validate_response(response, uid, remove_stopwords, tag_numeric, spelling_cor
 # Read in/preps the validity arguments and then calls validate_response
 # Returns JSON dictionary
 @app.route('/validate')
+@cross_origin(supports_credentials=True) # credentials are needed so the SSO cookie can be read
 def validation_api_entry():
 
-	start_time = time.time()
+	# TODO: implement this once https://github.com/openstax/accounts-rails/pull/77 gets merged
+	# cookie = request.COOKIES.get('ox', None)
+	# if not cookie:
+	#         return jsonify({ 'logged_in': False })
+	# decrypted_user = decrypt.get_cookie_data(cookie)
 
 	# Get the route arguments . . . use defaults if not supplied
 	response = request.args.get('response', None)
@@ -101,6 +107,7 @@ def validation_api_entry():
 	spelling_correction = request.args.get('spelling_correction', spelling_correction_default) == 'True'
 	remove_nonwords = request.args.get('remove_nonwords', remove_nonwords_default) == 'True'
 
+	start_time = time.time()
 	return_dictionary = validate_response(response, uid, remove_stopwords, tag_numeric, spelling_correction, remove_nonwords)
 
 	computation_time = time.time() - start_time
