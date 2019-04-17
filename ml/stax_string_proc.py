@@ -4,9 +4,6 @@ Created on Thu Jan 14 21:11:03 2016
 
 @author: drew
 """
-
-#!/usr/bin/env python
-
 import re
 import pandas as pd
 from nltk.corpus import stopwords
@@ -37,7 +34,9 @@ class StaxStringProc(object):
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
 
         # List of common garbage words
-        self.common_garbage_words = set(['lo', 'ur', 'mn', 'nonsense_word', 'n/a', 'na', 'idk', 'lol', 'asdf', 'jk', 'zz', 'zzz', 'k', 'j', 'hi', 'n', 'id', 'blah', 'huh', 'wut', 'lmao', 'wat', 'hm', 'hmm', 'fml', 'shit', 'fuck'])
+        # fmt: off
+        self.common_garbage_words = set(['lo', 'ur', 'mn', 'nonsense_word', 'n/a', 'na', 'idk', 'lol', 'asdf', 'jk', 'zz', 'zzz', 'k', 'j', 'hi', 'n', 'id', 'blah', 'huh', 'wut', 'lmao', 'wat', 'hm', 'hmm', 'fml', 'shit', 'fuck'])  # noqa
+        # fmt: on
 
         # Punctuation
         self.punctuation = set("!@#$%^.,")
@@ -58,12 +57,14 @@ class StaxStringProc(object):
         # Set up the stemmer
         self.st = SnowballStemmer("english")
 
-        # Update the set of nltk words with the additional corpora TODO make the words come from a file rather than nltk
+        # Update the set of nltk words with the additional corpora
+        # TODO make the words come from a file rather than nltk
         self.all_words = set(words.words())
         self.all_words.update(self.reserved_tags)
         self.max_word_length = 20
 
-        # Set up the stopwords, remove 'a' due to math issues TODO make stops come from file rather than nltk
+        # Set up the stopwords, remove 'a' due to math issues
+        # TODO make stops come from file rather than nltk
         self.stops = set(stopwords.words("english"))
 
         # Train the spelling corrector using all corpora
@@ -158,7 +159,7 @@ class StaxStringProc(object):
 
         # Remove stopwords if applicable
         if remove_stopwords:
-            wordlist = [w for w in wordlist if not w in self.stops]
+            wordlist = [w for w in wordlist if w not in self.stops]
 
         # Identify numeric values or math and tag appropriately
         if tag_numeric:
@@ -194,44 +195,46 @@ class StaxStringProc(object):
                 return "numeric_type_0"
             if litneg[1] in "xX":
                 try:
-                    temp = int(lit, 16)
+                    int(lit, 16)
                     return "numeric_type_hex"
                 except ValueError:
                     pass
             elif litneg[1] in "bB":
                 try:
-                    temp = int(lit, 2)
+                    int(lit, 2)
                     return "numeric_type_binary"
                 except ValueError:
                     pass
             else:
                 try:
-                    temp = int(lit, 8)
+                    int(lit, 8)
                     return "numeric_type_octal"
                 except ValueError:
                     pass
 
         # Int/Float/Complex/Roman
         try:
-            temp = int(lit)
+            int(lit)
             return "numeric_type_int"
         except ValueError:
             pass
         try:
-            temp = float(lit)
+            float(lit)
             return "numeric_type_float"
         except ValueError:
             pass
         try:
-            temp = complex(lit)
+            complex(lit)
             return "numeric_type_complex"
         except ValueError:
             pass
         try:
-            "Return either the type of string if math else return string"
-            a=b=c=d=e=f=g=h=i=j=k=l=m=n=o=p=q=r=s=t=u=v=w=x=y=z=1
-            A=B=C=D=E=F=G=H=I=J=K=L=M=N=O=P=Q=R=S=T=U=V=W=X=Y=Z=1
-            pi = 3.14;
+            # Return either the type of string if math else return string
+            # fmt: off
+            a=b=c=d=e=f=g=h=i=j=k=l=m=n=o=p=q=r=s=t=u=v=w=x=y=z=1  # noqa
+            A=B=C=D=E=F=G=H=I=J=K=L=M=N=O=P=Q=R=S=T=U=V=W=X=Y=Z=1  # noqa
+            # fmt: on
+            pi = 3.14  # noqa
             temp_lit = lit
 
             # These three replaces are just to fake out Python . . .
@@ -244,7 +247,7 @@ class StaxStringProc(object):
 
             eval(temp_lit)
             return "math_type"
-        except:
+        except:  # Any parsing error at all means it's not math  # noqa
             pass
         try:
 
@@ -261,22 +264,23 @@ class StaxStringProc(object):
                 pass
 
             # Define digit mapping
+            # fmt: off
             romanNumeralMap = (
-                ("M",  1000),
-                ("CM",  900),
-                ("D",   500),
-                ("CD",  400),
-                ("C",   100),
-                ("XC",   90),
-                ("L",    50),
-                ("XL",   40),
-                ("X",    10),
-                ("IX",    9),
-                ("V",     5),
-                ("IV",    4),
-                ("I",     1),
+                ("M",  1000),  # noqa
+                ("CM",  900),  # noqa
+                ("D",   500),  # noqa
+                ("CD",  400),  # noqa
+                ("C",   100),  # noqa
+                ("XC",   90),  # noqa
+                ("L",    50),  # noqa
+                ("XL",   40),  # noqa
+                ("X",    10),  # noqa
+                ("IX",    9),  # noqa
+                ("V",     5),  # noqa
+                ("IV",    4),  # noqa
+                ("I",     1),  # noqa
             )
-
+            # fmt: on
             # Define pattern to detect valid Roman numerals
             romanNumeralPattern = re.compile(
                 """
@@ -309,5 +313,5 @@ class StaxStringProc(object):
                     result += integer
                     index += len(numeral)
             return "numeric_type_roman"
-        except:
+        except:  # Nothing worked, return it # noqa
             return lit

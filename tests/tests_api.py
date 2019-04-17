@@ -1,10 +1,13 @@
 # tests_api.py
 # Author: drew
-# Measures the tradeoffs in timing/accuracy for different configurations of the response parser and different levels of complexity in how we count vocabulary
+# Measures the tradeoffs in timing/accuracy for different configurations of the
+# response parser and different levels of complexity in how we count vocabulary
+
 # Creates two dataframes:
-# a) api_simuilation_results.csv: A table of 2**5 rows with average timing and accuracy data (one row for each possible configuration)
+# a) api_simuilation_results.csv: A table of 2**5 rows with average timing and
+#   accuracy data (one row for each possible configuration)
 # b) api_simulation_delta.csv: A table showing the average gain in
-# accuracy/timing for each of the five possible parameters
+#   accuracy/timing for each of the five possible parameters
 
 import pandas as pd
 import numpy as np
@@ -55,8 +58,8 @@ def do_api_call(response, uid, stops, nums, spell, nonwords, use_uid):
     return ", ".join(stuff_i_want)
 
 
-# Iterate through all parser/vocab combinations and get average timing estimates per response
-# Then do a 5-fold cross validation to estimate accuracy
+# Iterate through all parser/vocab combinations and get average timing
+# estimates per response then do a 5-fold cross validation to estimate accuracy
 df_results = pd.DataFrame()
 print("Starting the test")
 
@@ -111,8 +114,9 @@ for stops, nums, spell, nonwords, use_uid in product([True, False], repeat=5):
 df_results.to_csv("api_simuilation_results.csv", index=None)
 
 # Measure average impact of timing on accuracy for each of the 5 parameters
-# This is done by looking across all combinations of the other four parameters and averaging the impact of adding the 5th
-# This could probably be simplified to a few melt/pivot commands . . .
+# This is done by looking across all combinations of the other four parameters
+# and averaging the impact of adding the 5th This could probably be simplified
+# to a few melt/pivot commands . . .
 df_analysis = df_results.copy()
 cols = [
     "stopword_removal",
@@ -179,4 +183,6 @@ df_final.to_csv("api_simulation_delta.csv", index=None)
 
 # Create a visualization of the relative impacts -- requires plotnine library
 # from plotnine import *
-# ggplot(df_final, aes('variable', 'mean')) + geom_bar(stat='identity') + facet_wrap('~measure') + theme(axis_text_x = element_text(angle = 45, hjust = 1))
+# ggplot(df_final, aes('variable', 'mean')) + geom_bar(stat='identity') +
+# facet_wrap('~measure') + theme(axis_text_x = element_text(angle = 45, hjust =
+# 1))

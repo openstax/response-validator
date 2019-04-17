@@ -1,17 +1,14 @@
 # Script to process everything
 
 import pandas as pd
-import numpy as np
 import sys
-import re
+
 
 sys.path.append("./ml/")
-from nltk.corpus import words
-from stax_string_proc import StaxStringProc
-from nltk.tokenize import word_tokenize
 
-###BOOK STUFF###
-# Load up the books, get chapter/section info from the books export, and merge text together into single module blocks
+# ##BOOK STUFF###
+# Load up the books, get chapter/section info from the books export,
+# and merge text together into single module blocks
 df_bio = pd.read_csv("../ml/corpora/all_the_books.csv")
 df_bio = df_bio.dropna(subset=["text"])
 df_bio_summary = df_bio[df_bio["tag"] != "figure"]
@@ -21,7 +18,7 @@ df_bio_summary = df_bio_summary[
 
 # Load up the book data
 df_book_export = pd.read_csv(
-    "/Users/drew/Box Sync/Research/Exports/export_20181024T164046Z/cnx_export_20181024T164046Z.csv"
+    "/Users/drew/Box Sync/Research/Exports/export_20181024T164046Z/cnx_export_20181024T164046Z.csv"  # noqa E501
 )
 df_book_export = (
     df_book_export[
@@ -59,7 +56,7 @@ df_grouped = (
 )
 df_grouped.to_csv("book_dataframe.csv", index=None)
 
-###QUESTION STUFF###
+# ##QUESTION STUFF###
 # Load up the questions and put into right format
 box_path = "~/Box Sync/Research/Data/openform_app/"
 response_data_path = box_path + "response_data.csv"

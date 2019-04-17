@@ -1,19 +1,20 @@
 # tests_api.py
 # Author: drew
-# Measures the tradeoffs in timing/accuracy for different configurations of the response parser and different levels of complexity in how we count vocabulary
+# Measures the tradeoffs in timing/accuracy for different configurations of the
+# response parser and different levels of complexity in how we count vocabulary
 # Creates two dataframes:
-# a) api_simuilation_results.csv: A table of 2**5 rows with average timing and accuracy data (one row for each possible configuration)
-# b) api_simulation_delta.csv: A table showing the average gain in accuracy/timing for each of the five possible parameters
+# a) api_simuilation_results.csv: A table of 2**5 rows with average timing and
+#    accuracy data (one row for each possible configuration)
+# b) api_simulation_delta.csv: A table showing the average gain in
+#    accuracy/timing for each of the five possible parameters
 
 import pandas as pd
-import numpy as np
 import time
-from itertools import product
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import cross_val_score
 import requests
 
-# Users params -- where to get the response data and how much of it to sample for testing
+# Users params -- where to get the response data and how much of it to sample
+# for testing
 base_url = "http://127.0.0.1:5000/validate"  # Local Path
 # base_url = 'https://protected-earth-88152.herokuapp.com/validate' #Heroku path
 response_path = "~/Box Sync/Research/Data/openform_app/response_data.csv"
@@ -25,8 +26,9 @@ df_full = df_full[df_full["subject_name"] == "Biology"]
 df = df_full.sample(n=n_samp, random_state=42)
 lr = LogisticRegression()
 
-# Simple helper function to process the result of the api call into something nice for a pandas dataframe
-# Simple helper function to process the result of the api call into something nice for a pandas dataframe
+
+# Simple helper function to process the result of the api call into something
+# nice for a pandas dataframe
 def do_api_time_call(response, uid, stops, nums, spell, nonwords, use_uid):
     if not use_uid:
         uid = None
@@ -45,8 +47,8 @@ def do_api_time_call(response, uid, stops, nums, spell, nonwords, use_uid):
     return ",".join([computation_time, str(validity_label)])
 
 
-# Iterate through all parser/vocab combinations and get average timing estimates per response
-# Then do a 5-fold cross validation to estimate accuracy
+# Iterate through all parser/vocab combinations and get average timing
+# estimates per response Then do a 5-fold cross validation to estimate accuracy
 print("Starting the test")
 
 

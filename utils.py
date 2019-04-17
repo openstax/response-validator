@@ -1,10 +1,9 @@
 # utils.py
 # Author: drew
-# Load up the relevant book and question data and transform into the simplified data frames we need for garbage detection
+# Load up the relevant book and question data and transform into the
+# simplified data frames we need for garbage detection
 
 import pandas as pd
-import numpy as np
-import sys
 import re
 import os
 from nltk.corpus import words

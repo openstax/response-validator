@@ -1,11 +1,11 @@
 # unsupervised_garbage_detection.py
 # Created by: Drew
-# This file implements the unsupervised garabage detection variants and simulates accuracy/complexity tradeoffs
+# This file implements the unsupervised garbage detection variants and simulates
+# accuracy/complexity tradeoffs
 
 from flask import Flask, jsonify, request
-import pandas as pd
 import numpy as np
-from utils import create_fixed_data, get_fixed_data
+from utils import get_fixed_data
 from ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
 import re
@@ -21,7 +21,10 @@ spelling_correction_default = True
 remove_nonwords_default = True
 weights = np.array([-3, 2.5, 2.2, 0.7])
 
-# Get the global data for the app (innovation words by module, domain words by subject, and table linking question uid to cnxmod)
+# Get the global data for the app:
+#    innovation words by module,
+#    domain words by subject,
+#    and table linking question uid to cnxmod
 df_innovation, df_domain, df_questions = get_fixed_data()
 
 question_set = df_questions.uid.values.tolist()
@@ -31,7 +34,8 @@ question_set = df_questions.uid.values.tolist()
 with open("./ml/corpora/bad.txt") as f:
     bad_vocab = set([re.sub("\n", "", w) for w in f])
 
-# Create the parser, initially assign default values (these can be overwritten during calls to process_string)
+# Create the parser, initially assign default values
+# (these can be overwritten during calls to process_string)
 parser = StaxStringProc(
     corpora_list=["./ml/corpora/big.txt", "./ml/corpora/all_plaintext.txt"],
     parse_args=(
@@ -83,7 +87,7 @@ def validate_response(
     innovation_word_count = sum([w in innovation_vocab for w in response_word_list])
     common_word_count = sum([w in common_vocab for w in response_word_list])
 
-    # Group the counts together, compute an inner product with the weights, and return the results
+    # Group the counts together and compute an inner product with the weights
     vector = np.array(
         [bad_word_count, domain_word_count, innovation_word_count, common_word_count]
     )
@@ -116,7 +120,7 @@ def validate_response(
 @cross_origin(supports_credentials=True)
 def validation_api_entry():
 
-    # TODO: implement this once https://github.com/openstax/accounts-rails/pull/77 gets merged
+    # TODO: waiting for https://github.com/openstax/accounts-rails/pull/77
     # cookie = request.COOKIES.get('ox', None)
     # if not cookie:
     #         return jsonify({ 'logged_in': False })
