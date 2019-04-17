@@ -4,7 +4,6 @@
 # accuracy/complexity tradeoffs
 
 from flask import Flask, jsonify, request
-import numpy as np
 from utils import get_fixed_data
 from ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
@@ -15,11 +14,16 @@ from flask_cors import cross_origin
 app = Flask(__name__)
 
 # Default parameters for the response parser
-remove_stopwords_default = True
-tag_numeric_default = False
-spelling_correction_default = True
-remove_nonwords_default = True
-weights = np.array([-3, 2.5, 2.2, 0.7])
+DEFAULTS = {
+    "remove_stopwords": True,
+    "tag_numeric": False,
+    "spelling_correction": True,
+    "remove_nonwords": True,
+}
+# Valid response has to have a positive final weighted count
+# weights are:
+#  bad_words, domain_words, innovation_words, common_words
+WEIGHTS = [-3, 2.5, 2.2, 0.7]
 
 # Get the global data for the app:
 #    innovation words by module,
@@ -39,20 +43,25 @@ with open("./ml/corpora/bad.txt") as f:
 parser = StaxStringProc(
     corpora_list=["./ml/corpora/big.txt", "./ml/corpora/all_plaintext.txt"],
     parse_args=(
-        remove_stopwords_default,
-        tag_numeric_default,
-        spelling_correction_default,
-        remove_nonwords_default,
+        DEFAULTS["remove_stopwords"],
+        DEFAULTS["tag_numeric"],
+        DEFAULTS["spelling_correction"],
+        DEFAULTS["remove_nonwords"],
     ),
 )
 
 common_vocab = set(words.words()) | set(parser.reserved_tags)
 
 
-# Function to estimate validity given response, uid, and parser parameters
 def validate_response(
-    response, uid, remove_stopwords, tag_numeric, spelling_correction, remove_nonwords
+    response,
+    uid,
+    remove_stopwords=True,
+    tag_numeric=False,
+    spelling_correction=True,
+    remove_nonwords=True,
 ):
+    """Function to estimate validity given response, uid, and parser parameters"""
 
     # Get innovation and domain vocabulary
     # Requires a valid UID - otherwise will just use empty sets for these
@@ -73,7 +82,7 @@ def validate_response(
         )
 
     # Parse the students response into a word list
-    response_word_list = parser.process_string(
+    response_words = parser.process_string(
         response,
         remove_stopwords=remove_stopwords,
         tag_numeric=tag_numeric,
@@ -82,16 +91,20 @@ def validate_response(
     )
 
     # Compute intersection cardinality with each of the sets of interest
-    bad_word_count = sum([w in bad_vocab for w in response_word_list])
-    domain_word_count = sum([w in domain_vocab for w in response_word_list])
-    innovation_word_count = sum([w in innovation_vocab for w in response_word_list])
-    common_word_count = sum([w in common_vocab for w in response_word_list])
+    bad_count = domain_count = innovation_count = common_count = 0
+    for word in response_words:
+        if word in bad_vocab:
+            bad_count += 1
+        if word in domain_vocab:
+            domain_count += 1
+        if word in innovation_vocab:
+            innovation_count += 1
+        if word in common_vocab:
+            common_count += 1
 
     # Group the counts together and compute an inner product with the weights
-    vector = np.array(
-        [bad_word_count, domain_word_count, innovation_word_count, common_word_count]
-    )
-    inner_product = np.sum(vector * weights)
+    vector = [bad_count, domain_count, innovation_count, common_count]
+    inner_product = sum([v * w for v, w in zip(vector, WEIGHTS)])
     valid = float(inner_product) > 0
 
     return {
@@ -100,13 +113,13 @@ def validate_response(
         "tag_numeric": tag_numeric,
         "spelling_correction": spelling_correction,
         "remove_nonwords": remove_nonwords,
-        "processed_response": " ".join(response_word_list),
+        "processed_response": " ".join(response_words),
         "uid": uid,
         "uid_found": uid in question_set,
-        "bad_word_count": bad_word_count,
-        "domain_word_count": domain_word_count,
-        "innovation_word_count": innovation_word_count,
-        "common_word_count": common_word_count,
+        "bad_word_count": bad_count,
+        "domain_word_count": domain_count,
+        "innovation_word_count": innovation_count,
+        "common_word_count": common_count,
         "inner_product": inner_product,
         "valid": valid,
     }
@@ -116,7 +129,7 @@ def validate_response(
 # Read in/preps the validity arguments and then calls validate_response
 # Returns JSON dictionary
 # credentials are needed so the SSO cookie can be read
-@app.route("/validate")
+@app.route("/validate", methods=("GET", "POST"))
 @cross_origin(supports_credentials=True)
 def validation_api_entry():
 
@@ -127,32 +140,19 @@ def validation_api_entry():
     # decrypted_user = decrypt.get_cookie_data(cookie)
 
     # Get the route arguments . . . use defaults if not supplied
-    response = request.args.get("response", None)
-    uid = request.args.get("uid", None)
-    remove_stopwords = (
-        request.args.get("remove_stopwords", remove_stopwords_default) == "True"
-    )
-    tag_numeric = request.args.get("tag_numeric", tag_numeric_default) == "True"
-    spelling_correction = (
-        request.args.get("spelling_correction", spelling_correction_default) == "True"
-    )
-    remove_nonwords = (
-        request.args.get("remove_nonwords", remove_nonwords_default) == "True"
-    )
+    if request.method == "POST":
+        args = request.form
+    else:
+        args = request.args
+
+    response = args.get("response", None)
+    uid = args.get("uid", None)
+    params = {key: args.get(key, val) for key, val in DEFAULTS.items()}
 
     start_time = time.time()
-    return_dictionary = validate_response(
-        response,
-        uid,
-        remove_stopwords,
-        tag_numeric,
-        spelling_correction,
-        remove_nonwords,
-    )
+    return_dictionary = validate_response(response, uid, **params)
 
-    computation_time = time.time() - start_time
-
-    return_dictionary["computation_time"] = computation_time
+    return_dictionary["computation_time"] = time.time() - start_time
 
     return jsonify(return_dictionary)
 
