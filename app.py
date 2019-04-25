@@ -13,7 +13,7 @@ from flask_cors import cross_origin
 
 app = Flask(__name__)
 
-# Default parameters for the response parser
+# Default parameters for the response parser, and validation call
 DEFAULTS = {
     "remove_stopwords": True,
     "tag_numeric": False,
@@ -56,10 +56,10 @@ common_vocab = set(words.words()) | set(parser.reserved_tags)
 def validate_response(
     response,
     uid,
-    remove_stopwords=True,
-    tag_numeric=False,
-    spelling_correction=True,
-    remove_nonwords=True,
+    remove_stopwords=DEFAULTS["remove_stopwords"],
+    tag_numeric=DEFAULTS["tag_numeric"],
+    spelling_correction=DEFAULTS["spelling_correction"],
+    remove_nonwords=DEFAULTS["remove_nonwords"],
 ):
     """Function to estimate validity given response, uid, and parser parameters"""
 
