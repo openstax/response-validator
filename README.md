@@ -53,23 +53,34 @@ Once the app is running, you can send requests using curl, requests, etc.  Here 
 Here an example of how to call things using the Python requests library (assuming that the app is running on the default local port):
 
 ```python
+imort json
 import requests
 params = {'response': 'this is my answer to the question alkjsdfl',
           'uid': '100@2',
           'remove_stopwords': True,
           'tag_numeric=True': False,
-          'spelling_correct': True,
+          'spelling_correction': True,
           'remove_nonwords': True}
 r = requests.get('http://127.0.0.1:5000/validate', params=params)
-print(r.json())
+print(json.dumps(r.json(), indent=2))
+{
+  "bad_word_count": 1,
+  "common_word_count": 2,
+  "computation_time": 0.06826448440551758,
+  "domain_word_count": 0,
+  "inner_product": -1.6,
+  "innovation_word_count": 0,
+  "processed_response": "answer question nonsense_word",
+  "remove_nonwords": "True",
+  "remove_stopwords": "True",
+  "response": "this is my answer to the question alkjsdfl",
+  "spelling_correction": "True",
+  "tag_numeric": false,
+  "uid": "100@2",
+  "uid_found": false,
+  "valid": false
+}
 
-{'bad_word_count': 1, 'common_word_count': 2, 
-'computation_time': 0.001631021499633789, 'domain_word_count': 0, 'inner_product': -1.6, 
-'innovation_word_count': 0, 'processed_response': 'answer question nonsense_word', 
-'remove_nonwords': True, 'remove_stopwords': True, 
-'response': 'this is my answer to the question alkjsdfl', 
-'spelling_correction': False, 'tag_numeric': False, 'uid': '100@2',
-'uid_found': False, 'valid': 'False'}
 ```
 
 ## TODO:
