@@ -25,10 +25,11 @@ class StaxStringProc(object):
     ):
 
         # Set the parsing arguments
-        self.remove_stopwords = parse_args[0]
-        self.tag_numeric = parse_args[1]
-        self.correct_spelling = parse_args[2]
-        self.kill_nonwords = parse_args[3]
+        (self.remove_stopwords,
+         self.tag_numeric,
+         self.correct_spelling,
+         self.kill_nonwords,
+         ) = parse_args
 
         # Alphabet
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
