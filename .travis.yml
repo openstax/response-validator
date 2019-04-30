@@ -4,6 +4,7 @@ python:
 before_install:
   - pip install flake8
   - flake8 validator/
+  - pip install coverage
 script:
   - coverage run -m pytest
 after_success:
