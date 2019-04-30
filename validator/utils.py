@@ -8,11 +8,13 @@ import re
 import os
 from nltk.corpus import words
 
+import pkg_resources
+
 
 def get_fixed_data():
 
     # Check to see if the dataframes already exist.  If so, load from disk.
-    data_dir = "./ml/data/"
+    data_dir = pkg_resources.resource_filename("validator", "ml/data/")
     data_files = os.listdir(data_dir)
     files_to_find = ["df_innovation.csv", "df_domain.csv", "df_questions.csv"]
     num_missing_files = len(set(files_to_find) - set(data_files))
