@@ -4,13 +4,16 @@
 # accuracy/complexity tradeoffs
 
 from flask import Flask, jsonify, request
-from utils import get_fixed_data
-from ml.stax_string_proc import StaxStringProc
+from .utils import get_fixed_data
+from .ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
 import re
 import time
 from flask_cors import cross_origin
 
+import pkg_resources
+
+DATA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 app = Flask(__name__)
 
 # Default parameters for the response parser, and validation call
@@ -34,14 +37,16 @@ df_innovation, df_domain, df_questions = get_fixed_data()
 question_set = df_questions.uid.values.tolist()
 
 # Define common and bad vocab
-# Define common and bad vocab
-with open("./ml/corpora/bad.txt") as f:
+with open("{}/bad.txt".format(DATA_PATH)) as f:
     bad_vocab = set([re.sub("\n", "", w) for w in f])
 
 # Create the parser, initially assign default values
 # (these can be overwritten during calls to process_string)
 parser = StaxStringProc(
-    corpora_list=["./ml/corpora/big.txt", "./ml/corpora/all_plaintext.txt"],
+    corpora_list=[
+        "{}/big.txt".format(DATA_PATH),
+        "{}/all_plaintext.txt".format(DATA_PATH),
+    ],
     parse_args=(
         DEFAULTS["remove_stopwords"],
         DEFAULTS["tag_numeric"],
@@ -158,4 +163,4 @@ def validation_api_entry():
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=False)  # pragma: nocover
