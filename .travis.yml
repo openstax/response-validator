@@ -5,6 +5,8 @@ before_install:
   - pip install flake8
   - flake8 validator/
   - pip install coverage
+  - pip install nltk
+  - python -m nltk.downloader all
 script:
   - coverage run -m pytest
 after_success:
