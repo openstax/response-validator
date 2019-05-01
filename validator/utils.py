@@ -38,8 +38,9 @@ def get_fixed_data():
 
 def create_fixed_data():
 
-    df_grouped = pd.read_csv("./ml/data/book_dataframe.csv")
-    df_questions = pd.read_csv("./ml/data/question_dataframe.csv")
+    data_dir = pkg_resources.resource_filename("validator", "ml/data/")
+    df_grouped = pd.read_csv(data_dir + "book_dataframe.csv")
+    df_questions = pd.read_csv(data_dir + "question_dataframe.csv")
 
     # Get domain-level and module-level vocabulary innovation
     # Computes words that are novel at that particular level (over general corpora)
