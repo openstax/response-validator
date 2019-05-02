@@ -61,35 +61,24 @@ parser = StaxStringProc(
 common_vocab = set(words.words()) | set(parser.reserved_tags)
 
 
-def get_question_data_by_uid(uid):
-    module_id = df_questions[df_questions['uid'] == uid].iloc[0].module_id
-    has_numeric = df_questions[df_questions['uid'] == uid].iloc[0].contains_number
+def get_question_data_by_key(key, val):
+    module_id = df_questions[df_questions[key] == val].iloc[0].module_id
+    has_numeric = df_questions[df_questions[key] == val].iloc[0].contains_number
     innovation_vocab = df_innovation[df_innovation['module_id'] == module_id].iloc[0].innovation_words
     subject_name = df_innovation[df_innovation['module_id'] == module_id].iloc[0].subject_name
-    domain_vocab = df_domain[df_domain['subject_name'] == subject_name].iloc[0].domain_words
-    return domain_vocab, innovation_vocab, has_numeric, True
-
-
-def get_question_data_by_uuid(uuid):
-    module_id = df_questions[df_questions['uuid'] == uuid].iloc[0].module_id
-    has_numeric = df_questions[df_questions['uuid'] == uuid].iloc[0].contains_number
-    innovation_vocab = df_innovation[df_innovation['module_id'] == module_id].iloc[0].innovation_words
-    subject_name = df_innovation[df_innovation['module_id'] == module_id].iloc[0].subject_name
-    domain_vocab = df_domain[df_domain['subject_name'] == subject_name].iloc[0].domain_words
+    domain_vocab = df_domain[df_domain['CNX Book Name'] == subject_name].iloc[0].domain_words
     return domain_vocab, innovation_vocab, has_numeric, True
 
 
 def get_question_data(uid):
-    uuid = uid.split('@')[0]
-    innovation_vocab = set()
-    domain_vocab = set()
 
+    uuid = uid.split('@')[0]
     if uid in uid_set:
-        return get_question_data_by_uid(uid)
+        return get_question_data_by_key('uid', uid)
     elif uuid in uuid_set:
-        return get_question_data_by_uuid(uuid)
+        return get_question_data_by_key('uuid', uuid)
     else:
-        return domain_vocab, innovation_vocab, None, False
+        return set(), set(), None, False
 
 
 def validate_response(
@@ -125,11 +114,11 @@ def validate_response(
     for word in response_words:
         if word in bad_vocab:
             bad_count += 1
-        if word in domain_vocab:
+        elif word in domain_vocab:
             domain_count += 1
-        if word in innovation_vocab:
+        elif word in innovation_vocab:
             innovation_count += 1
-        if word in common_vocab:
+        elif word in common_vocab:
             common_count += 1
 
     # Group the counts together and compute an inner product with the weights
