@@ -4,8 +4,8 @@
 # accuracy/complexity tradeoffs
 
 from flask import Flask, jsonify, request
-from .utils import get_fixed_data
-from .ml.stax_string_proc import StaxStringProc
+from validator.utils import get_fixed_data
+from validator.ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
 import re
 import time
@@ -130,6 +130,15 @@ def validate_response(
     }
 
 
+def make_bool(var):
+    if type(var) == bool:
+        return var
+    elif var in ("False", "false", "f", "0", "None", ""):
+        return False
+    else:
+        return True
+
+
 # Defines the entry point for the api call
 # Read in/preps the validity arguments and then calls validate_response
 # Returns JSON dictionary
@@ -152,7 +161,7 @@ def validation_api_entry():
 
     response = args.get("response", None)
     uid = args.get("uid", None)
-    params = {key: args.get(key, val) for key, val in DEFAULTS.items()}
+    params = {key: make_bool(args.get(key, val)) for key, val in DEFAULTS.items()}
 
     start_time = time.time()
     return_dictionary = validate_response(response, uid, **params)
