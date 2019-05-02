@@ -1,5 +1,7 @@
 import io
 
+import versioneer
+
 from setuptools import find_packages, setup
 
 with io.open('README.md', 'rt', encoding='utf8') as f:
@@ -9,7 +11,8 @@ description = "Openstax response validator server"
 
 setup(
     name='response-validator',
-    version='1.0.0',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     url='https://github.com/openstax/response-validator',
     license='AGPL, See also LICENSE.txt',
     Author='Openstax Team',
