@@ -33,6 +33,8 @@ def get_fixed_data():
         df_questions.to_csv(data_dir + files_to_find[2], index=None)
         print("Finished")
 
+    df_questions['uuid'] = df_questions['uid'].apply(lambda x: x.split('@')[0])
+
     return df_innovation, df_domain, df_questions
 
 
