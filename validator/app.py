@@ -64,21 +64,28 @@ common_vocab = set(words.words()) | set(parser.reserved_tags)
 def get_question_data_by_key(key, val):
     module_id = df_questions[df_questions[key] == val].iloc[0].module_id
     has_numeric = df_questions[df_questions[key] == val].iloc[0].contains_number
-    innovation_vocab = df_innovation[df_innovation['module_id'] == module_id].iloc[0].innovation_words
-    subject_name = df_innovation[df_innovation['module_id'] == module_id].iloc[0].subject_name
-    domain_vocab = df_domain[df_domain['CNX Book Name'] == subject_name].iloc[0].domain_words
+    innovation_vocab = (
+        df_innovation[df_innovation["module_id"] == module_id].iloc[0].innovation_words
+    )
+    subject_name = (
+        df_innovation[df_innovation["module_id"] == module_id].iloc[0].subject_name
+    )
+    domain_vocab = (
+        df_domain[df_domain["CNX Book Name"] == subject_name].iloc[0].domain_words
+    )
     return domain_vocab, innovation_vocab, has_numeric, True
 
 
 def get_question_data(uid):
 
-    uuid = uid.split('@')[0]
-    if uid in uid_set:
-        return get_question_data_by_key('uid', uid)
-    elif uuid in uuid_set:
-        return get_question_data_by_key('uuid', uuid)
-    else:
-        return set(), set(), None, False
+    if uid is not None:
+        uuid = uid.split("@")[0]
+        if uid in uid_set:
+            return get_question_data_by_key("uid", uid)
+        elif uuid in uuid_set:
+            return get_question_data_by_key("uuid", uuid)
+    # no uid, or not in data sets
+    return set(), set(), None, False
 
 
 def validate_response(
@@ -96,7 +103,7 @@ def validate_response(
 
     # Record the input of tag_numeric and then convert in the case of 'auto'
     tag_numeric_input = tag_numeric
-    tag_numeric = tag_numeric or ((tag_numeric == 'auto') and has_numeric)
+    tag_numeric = tag_numeric or ((tag_numeric == "auto") and has_numeric)
 
     # Parse the students response into a word list
     response_words = parser.process_string(
@@ -124,22 +131,23 @@ def validate_response(
     inner_product = sum([v * w for v, w in zip(vector, WEIGHTS)])
     valid = float(inner_product) > 0
 
-    return {'response': response,
-            'remove_stopwords': remove_stopwords,
-            'tag_numeric_input': tag_numeric_input,
-            'tag_numeric': tag_numeric,
-            'spelling_correction': spelling_correction,
-            'remove_nonwords': remove_nonwords,
-            'processed_response': " ".join(response_words),
-            'uid_used': uid,
-            'uid_found': uid_found,
-            'bad_word_count': bad_count,
-            'domain_word_count': domain_count,
-            'innovation_word_count': innovation_count,
-            'common_word_count': common_count,
-            'inner_product': inner_product,
-            'valid': valid
-            }
+    return {
+        "response": response,
+        "remove_stopwords": remove_stopwords,
+        "tag_numeric_input": tag_numeric_input,
+        "tag_numeric": tag_numeric,
+        "spelling_correction": spelling_correction,
+        "remove_nonwords": remove_nonwords,
+        "processed_response": " ".join(response_words),
+        "uid_used": uid,
+        "uid_found": uid_found,
+        "bad_word_count": bad_count,
+        "domain_word_count": domain_count,
+        "innovation_word_count": innovation_count,
+        "common_word_count": common_count,
+        "inner_product": inner_product,
+        "valid": valid,
+    }
 
 
 def make_bool(var):
