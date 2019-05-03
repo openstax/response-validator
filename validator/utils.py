@@ -33,7 +33,7 @@ def get_fixed_data():
         df_questions.to_csv(data_dir + files_to_find[2], index=None)
         print("Finished")
 
-    df_questions['uuid'] = df_questions['uid'].apply(lambda x: x.split('@')[0])
+    df_questions["qid"] = df_questions["uid"].apply(lambda x: x.split("@")[0])
 
     return df_innovation, df_domain, df_questions
 
@@ -50,36 +50,41 @@ def create_fixed_data():
     # Computes words that are novel at that particular level (over general corpora)
     df_grouped["innovation_words"] = ""
 
-    books = df_grouped['CNX Book Name'].unique()
+    books = df_grouped["CNX Book Name"].unique()
     df_grouped_innovation = pd.DataFrame()
     df_domain = pd.DataFrame()
 
     for book in books:
-        df_temp = df_grouped[df_grouped['CNX Book Name'] == book]
+        df_temp = df_grouped[df_grouped["CNX Book Name"] == book]
         frame_length = df_temp.shape[0]
         cumulative_word_set = set(common_vocabulary)
         for ll in range(0, frame_length):
             text = df_temp.iloc[ll].text.lower()
-            text = re.sub('[!?().,;"“”:0-9]', ' ', text)
+            text = re.sub('[!?().,;"“”:0-9]', " ", text)
             current_words = set(text.split())
             innovation_words = current_words - cumulative_word_set
-            df_temp['innovation_words'].iloc[ll] = innovation_words
+            df_temp["innovation_words"].iloc[ll] = innovation_words
             cumulative_word_set = cumulative_word_set | current_words
         df_grouped_innovation = df_grouped_innovation.append(df_temp)
         df_domain = df_domain.append(
-            pd.DataFrame({'CNX Book Name': book,
-                          'domain_words': set.union(*df_temp.innovation_words.values.tolist()),
-                          }
-                         ).iloc[0:1]
+            pd.DataFrame(
+                {
+                    "CNX Book Name": book,
+                    "domain_words": set.union(
+                        *df_temp.innovation_words.values.tolist()
+                    ),
+                }
+            ).iloc[0:1]
         )
 
     # Final stuff
     df_innovation = df_grouped_innovation.rename(
-        columns={'CNX Book Name': 'subject_name',
-                 'CNX Chapter Number': 'chapter_id',
-                 'CNX Section Number': 'section_id'
-                 }
+        columns={
+            "CNX Book Name": "subject_name",
+            "CNX Chapter Number": "chapter_id",
+            "CNX Section Number": "section_id",
+        }
     )
-    df_innovation = df_innovation.drop('text', axis=1)
+    df_innovation = df_innovation.drop("text", axis=1)
 
     return df_innovation, df_domain, df_questions

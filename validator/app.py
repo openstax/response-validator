@@ -36,7 +36,7 @@ df_innovation, df_domain, df_questions = get_fixed_data()
 
 # question_set = df_questions.uid.values.tolist()
 uid_set = df_questions.uid.values.tolist()
-uuid_set = df_questions.uuid.values.tolist()
+qid_set = df_questions.qid.values.tolist()
 
 
 # Define common and bad vocab
@@ -79,11 +79,11 @@ def get_question_data_by_key(key, val):
 def get_question_data(uid):
 
     if uid is not None:
-        uuid = uid.split("@")[0]
+        qid = uid.split("@")[0]
         if uid in uid_set:
             return get_question_data_by_key("uid", uid)
-        elif uuid in uuid_set:
-            return get_question_data_by_key("uuid", uuid)
+        elif qid in qid_set:
+            return get_question_data_by_key("qid", qid)
     # no uid, or not in data sets
     return set(), set(), None, False
 

@@ -26,11 +26,12 @@ class StaxStringProc(object):
     ):
 
         # Set the parsing arguments
-        (self.remove_stopwords,
-         self.tag_numeric,
-         self.correct_spelling,
-         self.kill_nonwords,
-         ) = parse_args
+        (
+            self.remove_stopwords,
+            self.tag_numeric,
+            self.correct_spelling,
+            self.kill_nonwords,
+        ) = parse_args
 
         # Alphabet
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
@@ -54,7 +55,7 @@ class StaxStringProc(object):
             "numeric_type_roman",
             "math_type",
             "common_garbage",
-            "measurement_unit"
+            "measurement_unit",
         ]
 
         # Set up the stemmer
@@ -152,9 +153,11 @@ class StaxStringProc(object):
         # Tokenize the string and filter any terms that are pure punctuation
         # Tuncate length if needed, remove single char items
         wordlist = word_tokenize(answer_text.lower())
-        wordlist = [str(w) for w in wordlist if re.match('^[.,!@#$%^&*|{}()[]]*', w) is None]
-        wordlist = [w[0:min(self.max_word_length, len(w))] for w in wordlist]
-        wordlist = [w for w in wordlist if re.match('^[a-zA-Z]$', w) is None]
+        wordlist = [
+            str(w) for w in wordlist if re.match("^[.,!@#$%^&*|{}()[]]*", w) is None
+        ]
+        wordlist = [w[0 : min(self.max_word_length, len(w))] for w in wordlist]
+        wordlist = [w for w in wordlist if re.match("^[a-zA-Z]$", w) is None]
 
         if len(wordlist) == 0:
             return list(["no_text"])
@@ -184,82 +187,84 @@ class StaxStringProc(object):
 
     @staticmethod
     def is_numeric(lit):
-        'Return either the type of string if numeric else return string'
+        """Return either the type of string if numeric else return string"""
 
-        if (len(lit) == 0):
+        if len(lit) == 0:
             return lit
 
-        scientific_unit_regex = '^(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal)((\*|\^)(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal|\d+))*(\/(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal)((\*|\^)(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal|\d+))*)?'
+        scientific_unit_regex = "^(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal)((\*|\^)(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal|\d+))*(\/(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal)((\*|\^)(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal|\d+))*)?"  # noqa
         unit_match = re.match(scientific_unit_regex, lit)
-        if (unit_match):
-            if (unit_match.span()[1] == len(lit)):
-                return 'measurement_unit'
+        if unit_match:
+            if unit_match.span()[1] == len(lit):
+                return "measurement_unit"
 
         # Handle '0'
-        if lit == '0':
+        if lit == "0":
             return "numeric_type_0"
         # Hex/Binary
-        litneg = lit[1:] if (lit[0] == '-' and len(lit) > 1) else lit
-        if litneg[0] == '0':
-            if (len(litneg) == 1):
-                return 'numeric_type_0'
-            if litneg[1] in 'xX':
+        litneg = lit[1:] if (lit[0] == "-" and len(lit) > 1) else lit
+        if litneg[0] == "0":
+            if len(litneg) == 1:
+                return "numeric_type_0"
+            if litneg[1] in "xX":
                 try:
-                    temp = int(lit, 16)
-                    return 'numeric_type_hex'
+                    int(lit, 16)
+                    return "numeric_type_hex"
                 except ValueError:
                     pass
-            elif litneg[1] in 'bB':
+            elif litneg[1] in "bB":
                 try:
-                    temp = int(lit, 2)
-                    return 'numeric_type_binary'
+                    int(lit, 2)
+                    return "numeric_type_binary"
                 except ValueError:
                     pass
             else:
                 try:
-                    temp = int(lit, 8)
-                    return 'numeric_type_octal'
+                    int(lit, 8)
+                    return "numeric_type_octal"
                 except ValueError:
                     pass
 
         # Int/Float/Complex/Roman
         try:
-            temp = int(lit)
-            return 'numeric_type_int'
+            int(lit)
+            return "numeric_type_int"
         except ValueError:
             pass
         try:
-            temp = float(lit)
-            return 'numeric_type_float'
+            float(lit)
+            return "numeric_type_float"
         except ValueError:
             pass
         try:
-            temp = complex(lit)
-            return 'numeric_type_complex'
+            complex(lit)
+            return "numeric_type_complex"
         except ValueError:
             pass
         try:
-            'Return either the type of string if math else return string'
-            a=b=c=d=e=f=g=h=i=j=k=l=m=n=o=p=q=r=s=t=u=v=w=x=y=z=1
-            A=B=C=D=E=F=G=H=I=J=K=L=M=N=O=P=Q=R=S=T=U=V=W=X=Y=Z=1
-            pi = 3.14;
+            # Return either the type of string if math else return string
+            # fmt: off
+            a=b=c=d=e=f=g=h=i=j=k=l=m=n=o=p=q=r=s=t=u=v=w=x=y=z=1  # noqa
+            A=B=C=D=E=F=G=H=I=J=K=L=M=N=O=P=Q=R=S=T=U=V=W=X=Y=Z=1  # noqa
+            # fmt: on
+            pi = 3.14  # noqa
             temp_lit = lit
 
-            #These three replaces are just to fake out Python . . .
-            temp_lit = temp_lit.replace('^', '**')
-            temp_lit = temp_lit.replace('=', '==')
-            temp_lit = temp_lit.replace('_', '')
-            temp_lit = temp_lit.replace('sqrt', 'np.sqrt')
-            temp_lit = temp_lit.replace('cos', 'np.cos')
-            temp_lit = temp_lit.replace('sin', 'np.sin')
-            temp_lit = temp_lit.replace('tan', 'np.tan')
+            # These three replaces are just to fake out Python . . .
+            temp_lit = temp_lit.replace("^", "**")
+            temp_lit = temp_lit.replace("=", "==")
+            temp_lit = temp_lit.replace("_", "")
+            temp_lit = temp_lit.replace("sqrt", "np.sqrt")
+            temp_lit = temp_lit.replace("cos", "np.cos")
+            temp_lit = temp_lit.replace("sin", "np.sin")
+            temp_lit = temp_lit.replace("tan", "np.tan")
 
-            #Find all number-letter-number combos and replace with a single var
-            temp_lit = re.sub('\d*[a-zA-z]\d*', 'x', temp_lit)
+            # Find all number-letter-number combos and replace with a single var
+            temp_lit = re.sub("\d*[a-zA-z]\d*", "x", temp_lit)
 
             eval(temp_lit)
-            return('math_type')
-        except:
+            return "math_type"
+        except:  # Any parsing error at all means it's not math  # noqa
             pass
         try:
 
@@ -275,23 +280,27 @@ class StaxStringProc(object):
             class InvalidRomanNumeralError(RomanError):
                 pass
 
-            #Define digit mapping
-            romanNumeralMap = (('M',  1000),
-                               ('CM', 900),
-                               ('D',  500),
-                               ('CD', 400),
-                               ('C',  100),
-                               ('XC', 90),
-                               ('L',  50),
-                               ('XL', 40),
-                               ('X',  10),
-                               ('IX', 9),
-                               ('V',  5),
-                               ('IV', 4),
-                               ('I',  1))
-
-            #Define pattern to detect valid Roman numerals
-            romanNumeralPattern = re.compile("""
+            # Define digit mapping
+            # fmt: off
+            romanNumeralMap = (
+                ("M",  1000),  # noqa
+                ("CM",  900),  # noqa
+                ("D",   500),  # noqa
+                ("CD",  400),  # noqa
+                ("C",   100),  # noqa
+                ("XC",   90),  # noqa
+                ("L",    50),  # noqa
+                ("XL",   40),  # noqa
+                ("X",    10),  # noqa
+                ("IX",    9),  # noqa
+                ("V",     5),  # noqa
+                ("IV",    4),  # noqa
+                ("I",     1),  # noqa
+            )
+            # fmt: on
+            # Define pattern to detect valid Roman numerals
+            romanNumeralPattern = re.compile(
+                """
             ^                   # beginning of string
             M{0,4}              # thousands - 0 to 4 M's
             (CM|CD|D?C{0,3})    # hundreds - 900 (CM), 400 (CD), 0-300 (0 to 3 C's),
@@ -301,20 +310,25 @@ class StaxStringProc(object):
             (IX|IV|V?I{0,3})    # ones - 9 (IX), 4 (IV), 0-3 (0 to 3 I's),
                                 #        or 5-8 (V, followed by 0 to 3 I's)
             $                   # end of string
-            """ , re.VERBOSE)
+            """,
+                re.VERBOSE,
+            )
 
             lit_upper = lit.upper()
             if not lit_upper:
-                raise(InvalidRomanNumeralError, 'Input can not be blank')
+                raise (InvalidRomanNumeralError, "Input can not be blank")
             if not romanNumeralPattern.search(lit_upper):
-                raise(InvalidRomanNumeralError, 'Invalid Roman numeral: %s' % lit_upper)
+                raise (
+                    InvalidRomanNumeralError,
+                    "Invalid Roman numeral: %s" % lit_upper,
+                )
 
             result = 0
             index = 0
             for numeral, integer in romanNumeralMap:
-                while lit_upper[index:index+len(numeral)] == numeral:
+                while lit_upper[index : index + len(numeral)] == numeral:
                     result += integer
                     index += len(numeral)
-            return 'numeric_type_roman'
-        except:
-            return(lit)
+            return "numeric_type_roman"
+        except:  # Nothing worked, return it # noqa
+            return lit
