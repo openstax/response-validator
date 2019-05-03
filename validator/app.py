@@ -94,11 +94,9 @@ def validate_response(
     # Try to get questions-specific vocab given the uid (if not found, vocab will be empty)
     domain_vocab, innovation_vocab, has_numeric, uid_found = get_question_data(uid)
 
-    # If tag_numeric=='auto', we can substitute has_numeric, otherwise just pass on the default value
-    if tag_numeric == 'auto':
-        tag_numeric = bool(has_numeric)
-    else:
-        tag_numeric = (tag_numeric == 'True')
+    # Record the input of tag_numeric and then convert in the case of 'auto'
+    tag_numeric_input = tag_numeric
+    tag_numeric = tag_numeric or ((tag_numeric == 'auto') and has_numeric)
 
     # Parse the students response into a word list
     response_words = parser.process_string(
@@ -128,7 +126,7 @@ def validate_response(
 
     return {'response': response,
             'remove_stopwords': remove_stopwords,
-            'tag_numeric_input': tag_numeric,
+            'tag_numeric_input': tag_numeric_input,
             'tag_numeric': tag_numeric,
             'spelling_correction': spelling_correction,
             'remove_nonwords': remove_nonwords,
@@ -149,8 +147,10 @@ def make_bool(var):
         return var
     elif var in ("False", "false", "f", "0", "None", ""):
         return False
-    else:
+    elif var in ("True", "true", "t", "1"):
         return True
+    else:
+        return var
 
 
 # Defines the entry point for the api call

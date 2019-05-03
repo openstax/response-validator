@@ -1,88 +1,72 @@
 # tests_api.py
 # Author: drew
-# Measures the tradeoffs in timing/accuracy for different configurations of the
-# response parser and different levels of complexity in how we count vocabulary
-# Creates two dataframes:
-# a) api_simuilation_results.csv: A table of 2**5 rows with average timing and
-#    accuracy data (one row for each possible configuration)
-# b) api_simulation_delta.csv: A table showing the average gain in
-#    accuracy/timing for each of the five possible parameters
+# Measures the tradeoffs in timing/accuracy for different configurations of the response parser and different levels of complexity in how we count vocabulary
 
 import pandas as pd
+import numpy as np
 import time
+# from plotnine import *
+from itertools import product
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
 import requests
 
-# Users params -- where to get the response data and how much of it to sample
-# for testing
-base_url = "http://127.0.0.1:5000/validate"  # Local Path
-# base_url = 'https://protected-earth-88152.herokuapp.com/validate' #Heroku path
-response_path = "~/Box Sync/Research/Data/openform_app/response_data.csv"
-n_samp = 100
+# Users params -- where to get the response data and how much of it to sample for testing
+BASE_URL = 'http://127.0.0.1:5000/validate' #Local Path 'https://protected-earth-88152.herokuapp.com/validate' #Heroku path
+STOPS = [True]
+NUMS = ['auto', False, True]
+SPELL = [True]
+NONWORDS = [True]
+USE_UID = [True]
+DATAPATHS = ['./data/expert_grader_valid_100.csv', './data/alicia_valid.csv']
 
-# Read the data, set up the default LogisticRegression model
-df_full = pd.read_csv(response_path)
-df_full = df_full[df_full["subject_name"] == "Biology"]
-df = df_full.sample(n=n_samp, random_state=42)
-lr = LogisticRegression()
-
-
-# Simple helper function to process the result of the api call into something
-# nice for a pandas dataframe
+# Simple helper function to process the result of the api call into something nice for a pandas dataframe
 def do_api_time_call(response, uid, stops, nums, spell, nonwords, use_uid):
-    if not use_uid:
-        uid = None
-    params = {
-        "response": response,
-        "uid": uid,
-        "remove_stopwords": stops,
-        "tag_numeric": nums,
-        "spelling_correction": spell,
-        "remove_nonwords": nonwords,
-    }
-    r = requests.get(base_url, params=params)
-    D = r.json()
-    computation_time = str(D["computation_time"])
-    validity_label = D["valid"]
-    return ",".join([computation_time, str(validity_label)])
+	if (not use_uid):
+		uid = None
+	params = {'response': response, 'uid': uid, 'remove_stopwords': stops, 'tag_numeric': nums, 'spelling_correction': spell, 'remove_nonwords': nonwords}
+	r = requests.get(BASE_URL, params=params)
+	D = r.json()
+	strings = [str(D[k]) for k in D.keys()]
+	return "xxx".join(strings)
 
 
-# Iterate through all parser/vocab combinations and get average timing
-# estimates per response Then do a 5-fold cross validation to estimate accuracy
+# Iterate through all parser/vocab combinations and get average timing estimates per response
+# Then do a 5-fold cross validation to estimate accuracy
 print("Starting the test")
 
+df_results = pd.DataFrame()
 
-stops = True
-nums = False
-spell = True
-nonwords = True
-use_uid = True
+for datapath, stops, nums, spell, nonwords, use_uid in product(DATAPATHS, STOPS, NUMS, SPELL, NONWORDS, USE_UID):
 
-# Make a local copy of the dataframe
-dft = df.copy()
+	# Load the data
+	dft = pd.read_csv(datapath)
+	dft['data'] = datapath
+	n_samp = dft.shape[0]
 
-# Compute the actual features and do the timing computation (normalized per response)
-now = time.time()
-dft["time_valid"] = dft.apply(
-    lambda x: do_api_time_call(
-        x.free_response, x.uid, stops, nums, spell, nonwords, use_uid
-    ),
-    axis=1,
-)
-elapsed_time_total = time.time() - now
-elapsed_time = elapsed_time_total / n_samp
+	# Compute the actual features and do the timing computation (normalized per response)
+	now = time.time()
+	dft['result'] = dft.apply(lambda x: do_api_time_call(x.free_response, x.uid, stops, nums, spell, nonwords, use_uid), axis=1)
+	elapsed_time_total = (time.time()-now)
+	elapsed_time = elapsed_time_total / n_samp
 
-dft["computation_time"] = (
-    dft["time_valid"].apply(lambda x: x.split(",")[0]).astype(float)
-)
-dft["valid_prediction"] = dft["time_valid"].apply(lambda x: x.split(",")[1])
-dft["valid_prediction"] = dft["valid_prediction"].map(
-    {"True": "Valid", "False": "Invalid"}
-)
+	dft_results = dft.result.str.split('xxx', expand=True)
+	dft_results.columns = ['bad_word_count', 'common_word_count', 'computation_time', 'domain_word_count', 'inner_product',
+					'innovation_word_count', 'processed_response', 'remove_nonwords', 'remove_stopwords', 'response',
+					'spelling_correction', 'tag_numeric', 'tag_numeric_input', 'uid_used', 'uid_found', 'valid_result']
+	dft_results = pd.concat([dft, dft_results], axis=1)
+	dft_results['computation_time'] = dft_results['computation_time'].astype(float)
+	dft_results['pred_correct'] = dft_results['valid_result'].map({'True': True, 'False': False}) == dft_results['valid']
+	df_results = df_results.append(dft_results)
 
-computation_time = dft["computation_time"].mean()
-dft["pred_correct"] = dft["valid_prediction"] == dft["junk"]
-print("Avg. Computation Time: " + str(computation_time))
-print("Avg. End-To-End Time: " + str(elapsed_time))
-print("Computation Time Percentage of Total: " + str(computation_time / elapsed_time))
-print("Prediction Accuracy: " + str(dft["pred_correct"].mean()))
+# Compile and display some results
+# 1) Plot accuracy by numerical parsing scheme
+res = df_results.groupby(['data', 'tag_numeric_input'])['pred_correct'].mean().reset_index()
+# acc_plot = ggplot(res, aes('tag_numeric_input', 'pred_correct')) + geom_bar(stat='identity') + facet_wrap('~data') + xlab('Numerical Parsing Scheme') + ylab('Accuracy')
+print(res)
+
+# 2 For Alicia's data, pivot so that we can see where different cases are failing by uid
+# Ultimately want auto to agree with True for the most part 
+pivot_results = df_results[df_results['data']=='./data/alicia_valid.csv'].pivot(index='uid', columns='tag_numeric_input', values='pred_correct').reset_index()
+print(pivot_results)
+
