@@ -62,7 +62,9 @@ common_vocab = set(words.words()) | set(parser.reserved_tags)
 
 
 def get_question_data_by_key(key, val):
-    module_id = df_questions[df_questions[key] == val].iloc[0].module_id
+    first_q = df_questions[df_questions[key] == val].iloc[0]
+    module_id = first_q.module_id
+    uid = first_q.uid
     has_numeric = df_questions[df_questions[key] == val].iloc[0].contains_number
     innovation_vocab = (
         df_innovation[df_innovation["module_id"] == module_id].iloc[0].innovation_words
@@ -73,7 +75,7 @@ def get_question_data_by_key(key, val):
     domain_vocab = (
         df_domain[df_domain["CNX Book Name"] == subject_name].iloc[0].domain_words
     )
-    return domain_vocab, innovation_vocab, has_numeric, True
+    return domain_vocab, innovation_vocab, has_numeric, uid
 
 
 def get_question_data(uid):
@@ -85,7 +87,7 @@ def get_question_data(uid):
         elif qid in qid_set:
             return get_question_data_by_key("qid", qid)
     # no uid, or not in data sets
-    return set(), set(), None, False
+    return set(), set(), None, None
 
 
 def validate_response(
@@ -99,7 +101,7 @@ def validate_response(
     """Function to estimate validity given response, uid, and parser parameters"""
 
     # Try to get questions-specific vocab given the uid (if not found, vocab will be empty)
-    domain_vocab, innovation_vocab, has_numeric, uid_found = get_question_data(uid)
+    domain_vocab, innovation_vocab, has_numeric, uid_used = get_question_data(uid)
 
     # Record the input of tag_numeric and then convert in the case of 'auto'
     tag_numeric_input = tag_numeric
@@ -139,8 +141,8 @@ def validate_response(
         "spelling_correction": spelling_correction,
         "remove_nonwords": remove_nonwords,
         "processed_response": " ".join(response_words),
-        "uid_used": uid,
-        "uid_found": uid_found,
+        "uid_used": uid_used,
+        "uid_found": (uid_used is not None),
         "bad_word_count": bad_count,
         "domain_word_count": domain_count,
         "innovation_word_count": innovation_count,
