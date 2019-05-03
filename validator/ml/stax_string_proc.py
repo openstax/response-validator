@@ -54,6 +54,7 @@ class StaxStringProc(object):
             "numeric_type_roman",
             "math_type",
             "common_garbage",
+            "measurement_unit"
         ]
 
         # Set up the stemmer
