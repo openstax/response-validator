@@ -119,10 +119,10 @@ def validate_response(
     for word in response_words:
         if word in bad_vocab:
             bad_count += 1
-        elif word in domain_vocab:
-            domain_count += 1
         elif word in innovation_vocab:
             innovation_count += 1
+        elif word in domain_vocab:
+            domain_count += 1
         elif word in common_vocab:
             common_count += 1
 
