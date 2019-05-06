@@ -15,10 +15,17 @@ import requests
 BASE_URL = 'http://127.0.0.1:5000/validate' #Local Path 'https://protected-earth-88152.herokuapp.com/validate' #Heroku path
 STOPS = [True]
 NUMS = ['auto', False, True]
-SPELL = [True]
+SPELL = [True, False, 'auto']
 NONWORDS = [True]
 USE_UID = [True]
 DATAPATHS = ['./data/expert_grader_valid_100.csv', './data/alicia_valid.csv']
+columns = ['bad_word_count', 'common_word_count', 'computation_time',
+		   'domain_word_count', 'inner_product', 'innovation_word_count',
+		   'processed_response', 'remove_nonwords', 'remove_stopwords',
+		   'response', 'spelling_correction', 'spelling_correction_used',
+		   'tag_numeric', 'tag_numeric_input', 'uid_found',
+		   'uid_used', 'valid_result']
+
 
 # Simple helper function to process the result of the api call into something nice for a pandas dataframe
 def do_api_time_call(response, uid, stops, nums, spell, nonwords, use_uid):
@@ -51,22 +58,16 @@ for datapath, stops, nums, spell, nonwords, use_uid in product(DATAPATHS, STOPS,
 	elapsed_time = elapsed_time_total / n_samp
 
 	dft_results = dft.result.str.split('xxx', expand=True)
-	dft_results.columns = ['bad_word_count', 'common_word_count', 'computation_time', 'domain_word_count', 'inner_product',
-					'innovation_word_count', 'processed_response', 'remove_nonwords', 'remove_stopwords', 'response',
-					'spelling_correction', 'tag_numeric', 'tag_numeric_input', 'uid_used', 'uid_found', 'valid_result']
+	dft_results.columns = columns
 	dft_results = pd.concat([dft, dft_results], axis=1)
 	dft_results['computation_time'] = dft_results['computation_time'].astype(float)
 	dft_results['pred_correct'] = dft_results['valid_result'].map({'True': True, 'False': False}) == dft_results['valid']
 	df_results = df_results.append(dft_results)
 
-# Compile and display some results
-# 1) Plot accuracy by numerical parsing scheme
-res = df_results.groupby(['data', 'tag_numeric_input'])['pred_correct'].mean().reset_index()
-# acc_plot = ggplot(res, aes('tag_numeric_input', 'pred_correct')) + geom_bar(stat='identity') + facet_wrap('~data') + xlab('Numerical Parsing Scheme') + ylab('Accuracy')
-print(res)
+df_results = df_results.reset_index()
 
-# 2 For Alicia's data, pivot so that we can see where different cases are failing by uid
-# Ultimately want auto to agree with True for the most part 
-pivot_results = df_results[df_results['data']=='./data/alicia_valid.csv'].pivot(index='uid', columns='tag_numeric_input', values='pred_correct').reset_index()
-print(pivot_results)
+# Compile and display some results
+res = df_results.groupby(['data', 'tag_numeric_input', 'spelling_correction']).agg({'pred_correct': 'mean',
+																					'computation_time': ['mean', 'max']}).reset_index()
+print(res)
 

@@ -89,23 +89,14 @@ def get_question_data(uid):
     # no uid, or not in data sets
     return set(), set(), None, None
 
-
-def validate_response(
-    response,
-    uid,
-    remove_stopwords=DEFAULTS["remove_stopwords"],
-    tag_numeric=DEFAULTS["tag_numeric"],
-    spelling_correction=DEFAULTS["spelling_correction"],
-    remove_nonwords=DEFAULTS["remove_nonwords"],
+def parse_and_classify(response,
+                       innovation_vocab,
+                       domain_vocab,
+                       remove_stopwords,
+                       tag_numeric,
+                       spelling_correction,
+                       remove_nonwords
 ):
-    """Function to estimate validity given response, uid, and parser parameters"""
-
-    # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
-    domain_vocab, innovation_vocab, has_numeric, uid_used = get_question_data(uid)
-
-    # Record the input of tag_numeric and then convert in the case of 'auto'
-    tag_numeric_input = tag_numeric
-    tag_numeric = tag_numeric or ((tag_numeric == "auto") and has_numeric)
 
     # Parse the students response into a word list
     response_words = parser.process_string(
@@ -136,13 +127,10 @@ def validate_response(
     return {
         "response": response,
         "remove_stopwords": remove_stopwords,
-        "tag_numeric_input": tag_numeric_input,
         "tag_numeric": tag_numeric,
-        "spelling_correction": spelling_correction,
+        "spelling_correction_used": spelling_correction,
         "remove_nonwords": remove_nonwords,
         "processed_response": " ".join(response_words),
-        "uid_used": uid_used,
-        "uid_found": (uid_used is not None),
         "bad_word_count": bad_count,
         "domain_word_count": domain_count,
         "innovation_word_count": innovation_count,
@@ -150,6 +138,66 @@ def validate_response(
         "inner_product": inner_product,
         "valid": valid,
     }
+
+
+def validate_response(
+    response,
+    uid,
+    remove_stopwords=DEFAULTS["remove_stopwords"],
+    tag_numeric=DEFAULTS["tag_numeric"],
+    spelling_correction=DEFAULTS["spelling_correction"],
+    remove_nonwords=DEFAULTS["remove_nonwords"],
+):
+    """Function to estimate validity given response, uid, and parser parameters"""
+
+    # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
+    domain_vocab, innovation_vocab, has_numeric, uid_used = get_question_data(uid)
+
+    # Record the input of tag_numeric and then convert in the case of 'auto'
+    tag_numeric_input = tag_numeric
+    tag_numeric = tag_numeric or ((tag_numeric == "auto") and has_numeric)
+
+    if (spelling_correction != 'auto'):
+        return_dictionary = parse_and_classify(response,
+                                               innovation_vocab,
+                                               domain_vocab,
+                                               remove_stopwords,
+                                               tag_numeric,
+                                               spelling_correction,
+                                               remove_nonwords,
+                                               )
+    else:
+
+        print("AUTO!!!")
+        # Check for validity without spelling correction
+        return_dictionary = parse_and_classify(response,
+                                               innovation_vocab,
+                                               domain_vocab,
+                                               remove_stopwords,
+                                               tag_numeric,
+                                               False,
+                                               remove_nonwords,
+                                               )
+
+        # If that didn't pass, re-evaluate with spelling correction turned on
+        if not return_dictionary['valid']:
+            return_dictionary = parse_and_classify(response,
+                                                   innovation_vocab,
+                                                   domain_vocab,
+                                                   remove_stopwords,
+                                                   tag_numeric,
+                                                   True,
+                                                   remove_nonwords,
+                                                   )
+
+
+    return_dictionary["tag_numeric_input"] = tag_numeric_input
+    return_dictionary["spelling_correction"] = spelling_correction
+    return_dictionary["uid_used"] = uid_used
+    return_dictionary["uid_found"] = uid_used in uid_set
+    print(return_dictionary.keys())
+
+    return return_dictionary
 
 
 def make_bool(var):
