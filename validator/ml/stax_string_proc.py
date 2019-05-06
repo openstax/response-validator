@@ -260,7 +260,7 @@ class StaxStringProc(object):
             temp_lit = temp_lit.replace("tan", "np.tan")
 
             # Find all number-letter-number combos and replace with a single var
-            temp_lit = re.sub("\d*[a-zA-z]\d*", "x", temp_lit)
+            temp_lit = re.sub(r"\d*[a-zA-z]\d*", "x", temp_lit)
 
             eval(temp_lit)
             return "math_type"

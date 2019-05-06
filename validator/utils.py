@@ -6,6 +6,7 @@
 import pandas as pd
 import re
 import os
+
 # from nltk.corpus import words
 
 import pkg_resources
@@ -41,10 +42,10 @@ def get_fixed_data():
 def create_fixed_data():
 
     data_dir = pkg_resources.resource_filename("validator", "ml/data/")
-    corpora_dir = pkg_resources.resource_filename("validator", "ml/corpora/")
+    corp_dir = pkg_resources.resource_filename("validator", "ml/corpora/")
     df_grouped = pd.read_csv(data_dir + "book_dataframe.csv")
     df_questions = pd.read_csv(data_dir + "df_questions.csv")
-    common_vocabulary = pd.read_csv(corpora_dir + "common.txt", header=None)[0].values.tolist()
+    common_vocab = pd.read_csv(corp_dir + "common.txt", header=None)[0].values.tolist()
 
     # Get domain-level and module-level vocabulary innovation
     # Computes words that are novel at that particular level (over general corpora)
@@ -57,7 +58,7 @@ def create_fixed_data():
     for book in books:
         df_temp = df_grouped[df_grouped["CNX Book Name"] == book]
         frame_length = df_temp.shape[0]
-        cumulative_word_set = set(common_vocabulary)
+        cumulative_word_set = set(common_vocab)
         for ll in range(0, frame_length):
             text = df_temp.iloc[ll].text.lower()
             text = re.sub('[!?().,;"“”:0-9]', " ", text)

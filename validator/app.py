@@ -100,7 +100,7 @@ def validate_response(
 ):
     """Function to estimate validity given response, uid, and parser parameters"""
 
-    # Try to get questions-specific vocab given the uid (if not found, vocab will be empty)
+    # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
     domain_vocab, innovation_vocab, has_numeric, uid_used = get_question_data(uid)
 
     # Record the input of tag_numeric and then convert in the case of 'auto'
