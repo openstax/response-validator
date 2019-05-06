@@ -38,7 +38,6 @@ df_innovation, df_domain, df_questions = get_fixed_data()
 uid_set = df_questions.uid.values.tolist()
 qid_set = df_questions.qid.values.tolist()
 
-
 # Define common and bad vocab
 with open("{}/bad.txt".format(DATA_PATH)) as f:
     bad_vocab = set([re.sub("\n", "", w) for w in f])
@@ -79,7 +78,6 @@ def get_question_data_by_key(key, val):
 
 
 def get_question_data(uid):
-
     if uid is not None:
         qid = uid.split("@")[0]
         if uid in uid_set:
@@ -90,23 +88,15 @@ def get_question_data(uid):
     return set(), set(), None, None
 
 
-def validate_response(
+def parse_and_classify(
     response,
-    uid,
-    remove_stopwords=DEFAULTS["remove_stopwords"],
-    tag_numeric=DEFAULTS["tag_numeric"],
-    spelling_correction=DEFAULTS["spelling_correction"],
-    remove_nonwords=DEFAULTS["remove_nonwords"],
+    innovation_vocab,
+    domain_vocab,
+    remove_stopwords,
+    tag_numeric,
+    spelling_correction,
+    remove_nonwords,
 ):
-    """Function to estimate validity given response, uid, and parser parameters"""
-
-    # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
-    domain_vocab, innovation_vocab, has_numeric, uid_used = get_question_data(uid)
-
-    # Record the input of tag_numeric and then convert in the case of 'auto'
-    tag_numeric_input = tag_numeric
-    tag_numeric = tag_numeric or ((tag_numeric == "auto") and has_numeric)
-
     # Parse the students response into a word list
     response_words = parser.process_string(
         response,
@@ -136,13 +126,10 @@ def validate_response(
     return {
         "response": response,
         "remove_stopwords": remove_stopwords,
-        "tag_numeric_input": tag_numeric_input,
         "tag_numeric": tag_numeric,
-        "spelling_correction": spelling_correction,
+        "spelling_correction_used": spelling_correction,
         "remove_nonwords": remove_nonwords,
         "processed_response": " ".join(response_words),
-        "uid_used": uid_used,
-        "uid_found": (uid_used is not None),
         "bad_word_count": bad_count,
         "domain_word_count": domain_count,
         "innovation_word_count": innovation_count,
@@ -152,15 +139,74 @@ def validate_response(
     }
 
 
-def make_bool(var):
-    if type(var) == bool:
+def validate_response(
+    response,
+    uid,
+    remove_stopwords=DEFAULTS["remove_stopwords"],
+    tag_numeric=DEFAULTS["tag_numeric"],
+    spelling_correction=DEFAULTS["spelling_correction"],
+    remove_nonwords=DEFAULTS["remove_nonwords"],
+):
+    """Function to estimate validity given response, uid, and parser parameters"""
+
+    # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
+    domain_vocab, innovation_vocab, has_numeric, uid_used = get_question_data(uid)
+
+    # Record the input of tag_numeric and then convert in the case of 'auto'
+    tag_numeric_input = tag_numeric
+    tag_numeric = tag_numeric or ((tag_numeric == "auto") and has_numeric)
+
+    if spelling_correction != "auto":
+        return_dictionary = parse_and_classify(
+            response,
+            innovation_vocab,
+            domain_vocab,
+            remove_stopwords,
+            tag_numeric,
+            spelling_correction,
+            remove_nonwords,
+        )
+    else:
+        # Check for validity without spelling correction
+        return_dictionary = parse_and_classify(
+            response,
+            innovation_vocab,
+            domain_vocab,
+            remove_stopwords,
+            tag_numeric,
+            False,
+            remove_nonwords,
+        )
+
+        # If that didn't pass, re-evaluate with spelling correction turned on
+        if not return_dictionary["valid"]:
+            return_dictionary = parse_and_classify(
+                response,
+                innovation_vocab,
+                domain_vocab,
+                remove_stopwords,
+                tag_numeric,
+                True,
+                remove_nonwords,
+            )
+
+    return_dictionary["tag_numeric_input"] = tag_numeric_input
+    return_dictionary["spelling_correction"] = spelling_correction
+    return_dictionary["uid_used"] = uid_used
+    return_dictionary["uid_found"] = uid_used in uid_set
+
+    return return_dictionary
+
+
+def make_tristate(var, default=True):
+    if var == "auto" or type(var) == bool:
         return var
     elif var in ("False", "false", "f", "0", "None", ""):
         return False
     elif var in ("True", "true", "t", "1"):
         return True
     else:
-        return var
+        return default
 
 
 # Defines the entry point for the api call
@@ -170,7 +216,6 @@ def make_bool(var):
 @app.route("/validate", methods=("GET", "POST"))
 @cross_origin(supports_credentials=True)
 def validation_api_entry():
-
     # TODO: waiting for https://github.com/openstax/accounts-rails/pull/77
     # cookie = request.COOKIES.get('ox', None)
     # if not cookie:
@@ -185,7 +230,9 @@ def validation_api_entry():
 
     response = args.get("response", None)
     uid = args.get("uid", None)
-    params = {key: make_bool(args.get(key, val)) for key, val in DEFAULTS.items()}
+    params = {
+        key: make_tristate(args.get(key, val), val) for key, val in DEFAULTS.items()
+    }
 
     start_time = time.time()
     return_dictionary = validate_response(response, uid, **params)
