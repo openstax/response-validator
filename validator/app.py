@@ -38,7 +38,6 @@ df_innovation, df_domain, df_questions = get_fixed_data()
 uid_set = df_questions.uid.values.tolist()
 qid_set = df_questions.qid.values.tolist()
 
-
 # Define common and bad vocab
 with open("{}/bad.txt".format(DATA_PATH)) as f:
     bad_vocab = set([re.sub("\n", "", w) for w in f])
@@ -79,7 +78,6 @@ def get_question_data_by_key(key, val):
 
 
 def get_question_data(uid):
-
     if uid is not None:
         qid = uid.split("@")[0]
         if uid in uid_set:
@@ -89,6 +87,7 @@ def get_question_data(uid):
     # no uid, or not in data sets
     return set(), set(), None, None
 
+
 def parse_and_classify(response,
                        innovation_vocab,
                        domain_vocab,
@@ -96,8 +95,7 @@ def parse_and_classify(response,
                        tag_numeric,
                        spelling_correction,
                        remove_nonwords
-):
-
+                       ):
     # Parse the students response into a word list
     response_words = parser.process_string(
         response,
@@ -141,12 +139,12 @@ def parse_and_classify(response,
 
 
 def validate_response(
-    response,
-    uid,
-    remove_stopwords=DEFAULTS["remove_stopwords"],
-    tag_numeric=DEFAULTS["tag_numeric"],
-    spelling_correction=DEFAULTS["spelling_correction"],
-    remove_nonwords=DEFAULTS["remove_nonwords"],
+        response,
+        uid,
+        remove_stopwords=DEFAULTS["remove_stopwords"],
+        tag_numeric=DEFAULTS["tag_numeric"],
+        spelling_correction=DEFAULTS["spelling_correction"],
+        remove_nonwords=DEFAULTS["remove_nonwords"],
 ):
     """Function to estimate validity given response, uid, and parser parameters"""
 
@@ -157,7 +155,7 @@ def validate_response(
     tag_numeric_input = tag_numeric
     tag_numeric = tag_numeric or ((tag_numeric == "auto") and has_numeric)
 
-    if (spelling_correction != 'auto'):
+    if spelling_correction != 'auto':
         return_dictionary = parse_and_classify(response,
                                                innovation_vocab,
                                                domain_vocab,
@@ -167,8 +165,6 @@ def validate_response(
                                                remove_nonwords,
                                                )
     else:
-
-        print("AUTO!!!")
         # Check for validity without spelling correction
         return_dictionary = parse_and_classify(response,
                                                innovation_vocab,
@@ -190,12 +186,10 @@ def validate_response(
                                                    remove_nonwords,
                                                    )
 
-
     return_dictionary["tag_numeric_input"] = tag_numeric_input
     return_dictionary["spelling_correction"] = spelling_correction
     return_dictionary["uid_used"] = uid_used
     return_dictionary["uid_found"] = uid_used in uid_set
-    print(return_dictionary.keys())
 
     return return_dictionary
 
@@ -218,7 +212,6 @@ def make_bool(var):
 @app.route("/validate", methods=("GET", "POST"))
 @cross_origin(supports_credentials=True)
 def validation_api_entry():
-
     # TODO: waiting for https://github.com/openstax/accounts-rails/pull/77
     # cookie = request.COOKIES.get('ox', None)
     # if not cookie:
