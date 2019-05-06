@@ -8,6 +8,7 @@ import re
 import pandas as pd
 from nltk.corpus import stopwords
 from nltk.corpus import words
+from nltk import word_tokenize
 from nltk.stem.snowball import SnowballStemmer
 import collections
 
@@ -25,11 +26,12 @@ class StaxStringProc(object):
     ):
 
         # Set the parsing arguments
-        (self.remove_stopwords,
-         self.tag_numeric,
-         self.correct_spelling,
-         self.kill_nonwords,
-         ) = parse_args
+        (
+            self.remove_stopwords,
+            self.tag_numeric,
+            self.correct_spelling,
+            self.kill_nonwords,
+        ) = parse_args
 
         # Alphabet
         self.alphabet = "abcdefghijklmnopqrstuvwxyz"
@@ -53,6 +55,7 @@ class StaxStringProc(object):
             "numeric_type_roman",
             "math_type",
             "common_garbage",
+            "measurement_unit",
         ]
 
         # Set up the stemmer
@@ -146,11 +149,15 @@ class StaxStringProc(object):
         answer_text = answer
         if pd.isnull(answer_text):
             answer_text = ""
-        answer_text = self.strip_punctuation(answer_text)
-        wordlist = answer_text.lower().split()
-        # wordlist = [unicode(w, errors='ignore') for w in wordlist] # Python 2 version
-        wordlist = [str(w) for w in wordlist]  # Python 3 version
+
+        # Tokenize the string and filter any terms that are pure punctuation
+        # Tuncate length if needed, remove single char items
+        wordlist = word_tokenize(answer_text.lower())
+        wordlist = [
+            str(w) for w in wordlist if re.match("^[.,!@#$%^&*|{}()[]]*", w) is None
+        ]
         wordlist = [w[0 : min(self.max_word_length, len(w))] for w in wordlist]
+        wordlist = [w for w in wordlist if re.match("^[a-zA-Z]$", w) is None]
 
         if len(wordlist) == 0:
             return list(["no_text"])
@@ -170,7 +177,6 @@ class StaxStringProc(object):
             wordlist = [
                 w
                 if w in self.all_words
-                or self.is_numeric(w) in self.reserved_tags
                 or self.st.stem(w) in self.all_words
                 or w in self.reserved_tags
                 else "nonsense_word"
@@ -181,10 +187,16 @@ class StaxStringProc(object):
 
     @staticmethod
     def is_numeric(lit):
-        "Return either the type of string if numeric else return string"
+        """Return either the type of string if numeric else return string"""
 
         if len(lit) == 0:
             return lit
+
+        scientific_unit_regex = "^(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal)((\*|\^)(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal|\d+))*(\/(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal)((\*|\^)(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal|\d+))*)?"  # noqa
+        unit_match = re.match(scientific_unit_regex, lit)
+        if unit_match:
+            if unit_match.span()[1] == len(lit):
+                return "measurement_unit"
 
         # Handle '0'
         if lit == "0":
@@ -239,9 +251,13 @@ class StaxStringProc(object):
             temp_lit = lit
 
             # These three replaces are just to fake out Python . . .
-            temp_lit.replace("^", "**")
-            temp_lit.replace("=", "==")
-            temp_lit.replace("_", "")
+            temp_lit = temp_lit.replace("^", "**")
+            temp_lit = temp_lit.replace("=", "==")
+            temp_lit = temp_lit.replace("_", "")
+            temp_lit = temp_lit.replace("sqrt", "np.sqrt")
+            temp_lit = temp_lit.replace("cos", "np.cos")
+            temp_lit = temp_lit.replace("sin", "np.sin")
+            temp_lit = temp_lit.replace("tan", "np.tan")
 
             # Find all number-letter-number combos and replace with a single var
             temp_lit = re.sub(r"\d*[a-zA-z]\d*", "x", temp_lit)

@@ -34,7 +34,10 @@ WEIGHTS = [-3, 2.5, 2.2, 0.7]
 #    and table linking question uid to cnxmod
 df_innovation, df_domain, df_questions = get_fixed_data()
 
-question_set = df_questions.uid.values.tolist()
+# question_set = df_questions.uid.values.tolist()
+uid_set = df_questions.uid.values.tolist()
+qid_set = df_questions.qid.values.tolist()
+
 
 # Define common and bad vocab
 with open("{}/bad.txt".format(DATA_PATH)) as f:
@@ -58,6 +61,35 @@ parser = StaxStringProc(
 common_vocab = set(words.words()) | set(parser.reserved_tags)
 
 
+def get_question_data_by_key(key, val):
+    first_q = df_questions[df_questions[key] == val].iloc[0]
+    module_id = first_q.module_id
+    uid = first_q.uid
+    has_numeric = df_questions[df_questions[key] == val].iloc[0].contains_number
+    innovation_vocab = (
+        df_innovation[df_innovation["module_id"] == module_id].iloc[0].innovation_words
+    )
+    subject_name = (
+        df_innovation[df_innovation["module_id"] == module_id].iloc[0].subject_name
+    )
+    domain_vocab = (
+        df_domain[df_domain["CNX Book Name"] == subject_name].iloc[0].domain_words
+    )
+    return domain_vocab, innovation_vocab, has_numeric, uid
+
+
+def get_question_data(uid):
+
+    if uid is not None:
+        qid = uid.split("@")[0]
+        if uid in uid_set:
+            return get_question_data_by_key("uid", uid)
+        elif qid in qid_set:
+            return get_question_data_by_key("qid", qid)
+    # no uid, or not in data sets
+    return set(), set(), None, None
+
+
 def validate_response(
     response,
     uid,
@@ -68,23 +100,12 @@ def validate_response(
 ):
     """Function to estimate validity given response, uid, and parser parameters"""
 
-    # Get innovation and domain vocabulary
-    # Requires a valid UID - otherwise will just use empty sets for these
-    innovation_vocab = set()
-    domain_vocab = set()
-    if uid in question_set:
-        module_id = df_questions[df_questions["uid"] == uid].iloc[0].module_id
-        innovation_vocab = (
-            df_innovation[df_innovation["module_id"] == module_id]
-            .iloc[0]
-            .innovation_words
-        )
-        subject_name = (
-            df_innovation[df_innovation["module_id"] == module_id].iloc[0].subject_name
-        )
-        domain_vocab = (
-            df_domain[df_domain["subject_name"] == subject_name].iloc[0].domain_words
-        )
+    # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
+    domain_vocab, innovation_vocab, has_numeric, uid_used = get_question_data(uid)
+
+    # Record the input of tag_numeric and then convert in the case of 'auto'
+    tag_numeric_input = tag_numeric
+    tag_numeric = tag_numeric or ((tag_numeric == "auto") and has_numeric)
 
     # Parse the students response into a word list
     response_words = parser.process_string(
@@ -100,11 +121,11 @@ def validate_response(
     for word in response_words:
         if word in bad_vocab:
             bad_count += 1
-        if word in domain_vocab:
-            domain_count += 1
-        if word in innovation_vocab:
+        elif word in innovation_vocab:
             innovation_count += 1
-        if word in common_vocab:
+        elif word in domain_vocab:
+            domain_count += 1
+        elif word in common_vocab:
             common_count += 1
 
     # Group the counts together and compute an inner product with the weights
@@ -115,12 +136,13 @@ def validate_response(
     return {
         "response": response,
         "remove_stopwords": remove_stopwords,
+        "tag_numeric_input": tag_numeric_input,
         "tag_numeric": tag_numeric,
         "spelling_correction": spelling_correction,
         "remove_nonwords": remove_nonwords,
         "processed_response": " ".join(response_words),
-        "uid": uid,
-        "uid_found": uid in question_set,
+        "uid_used": uid_used,
+        "uid_found": (uid_used is not None),
         "bad_word_count": bad_count,
         "domain_word_count": domain_count,
         "innovation_word_count": innovation_count,
@@ -135,8 +157,10 @@ def make_bool(var):
         return var
     elif var in ("False", "false", "f", "0", "None", ""):
         return False
-    else:
+    elif var in ("True", "true", "t", "1"):
         return True
+    else:
+        return var
 
 
 # Defines the entry point for the api call

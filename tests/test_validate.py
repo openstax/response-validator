@@ -36,8 +36,9 @@ def test_empty_get(client):
         "response": None,
         "spelling_correction": True,
         "tag_numeric": False,
-        "uid": None,
+        "tag_numeric_input": False,
         "uid_found": False,
+        "uid_used": None,
         "valid": False,
     }
     result = resp.json
@@ -63,8 +64,9 @@ def test_empty_post(client):
         "response": None,
         "spelling_correction": True,
         "tag_numeric": False,
-        "uid": None,
+        "tag_numeric_input": False,
         "uid_found": False,
+        "uid_used": None,
         "valid": False,
     }
     result = resp.json
@@ -85,14 +87,15 @@ def test_non_words(client):
         "domain_word_count": 0,
         "inner_product": -12.0,
         "innovation_word_count": 0,
-        "processed_response": "nonsense_word nonsense_word nonsense_word n/a",
+        "processed_response": "nonsense_word nonsense_word nonsense_word nonsense_word",
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "idk asdf lol n/a",
         "spelling_correction": True,
         "tag_numeric": False,
-        "uid": None,
+        "tag_numeric_input": False,
         "uid_found": False,
+        "uid_used": None,
         "valid": False,
     }
 
@@ -120,8 +123,9 @@ def test_simple_words(client):
         "response": "Here is my response",
         "spelling_correction": True,
         "tag_numeric": False,
-        "uid": None,
+        "tag_numeric_input": False,
         "uid_found": False,
+        "uid_used": None,
         "valid": True,
     }
 
@@ -134,22 +138,23 @@ def test_simple_words(client):
 def test_domain_words(client):
     """Word in the domain of the exercise (the book)"""
 
-    params = {"response": "meerkats chemiosmosis", "uid": "1340@1"}
+    params = {"response": "echinacea chemiosmosis", "uid": "1340@1"}
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
         "common_word_count": 0,
         "computation_time": 0.07029032707214355,
-        "domain_word_count": 2,
-        "inner_product": 5.0,
-        "innovation_word_count": 0,
-        "processed_response": "meerkats chemiosmosis",
+        "domain_word_count": 1,
+        "inner_product": 4.7,
+        "innovation_word_count": 1,
+        "processed_response": "echinacea chemiosmosis",
         "remove_nonwords": True,
         "remove_stopwords": True,
-        "response": "meerkats chemiosmosis",
+        "response": "echinacea chemiosmosis",
         "spelling_correction": True,
         "tag_numeric": False,
-        "uid": "1340@1",
+        "tag_numeric_input": False,
+        "uid_used": "1340@4",
         "uid_found": True,
         "valid": True,
     }
@@ -163,27 +168,24 @@ def test_domain_words(client):
 def test_innovation_words(client):
     """A word in the innovation list of the exercise"""
 
-    params = {
-        "response": "1.0 meerkats photographs",
-        "uid": "290@1",
-        "tag_numerics": True,
-    }
+    params = {"response": "1.0 echinacea cytosol", "uid": "290@1", "tag_numerics": True}
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
-        "bad_word_count": 0,
+        "bad_word_count": 1,
         "common_word_count": 0,
-        "computation_time": 0.1347815990447998,
-        "domain_word_count": 2,
-        "inner_product": 7.2,
+        "computation_time": 0.006234169006347656,
+        "domain_word_count": 1,
+        "inner_product": 1.7000000000000002,
         "innovation_word_count": 1,
-        "processed_response": "10 meerkats photographs",
+        "processed_response": "nonsense_word echinacea cytosol",
         "remove_nonwords": True,
         "remove_stopwords": True,
-        "response": "1.0 meerkats photographs",
+        "response": "1.0 echinacea cytosol",
         "spelling_correction": True,
         "tag_numeric": False,
-        "uid": "290@1",
+        "tag_numeric_input": False,
         "uid_found": True,
+        "uid_used": "290@5",
         "valid": True,
     }
 
@@ -206,14 +208,15 @@ def test_numeric_words(client):
         "inner_product": -0.20000000000000018,
         "innovation_word_count": 0,
         "processed_response": "nonsense_word numeric_type_int numeric_type_int "
-        "numeric_type_int numeric_type_roman",
+        "numeric_type_float numeric_type_roman",
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "0 23 -3 1.2 IV",
         "spelling_correction": True,
         "tag_numeric": True,
-        "uid": None,
+        "tag_numeric_input": True,
         "uid_found": False,
+        "uid_used": None,
         "valid": False,
     }
 
@@ -241,8 +244,9 @@ def test_no_spelling_correction(client):
         "response": "This is my respones",
         "spelling_correction": False,
         "tag_numeric": False,
-        "uid": None,
+        "tag_numeric_input": False,
         "uid_found": False,
+        "uid_used": None,
         "valid": False,
     }
 
