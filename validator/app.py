@@ -88,14 +88,15 @@ def get_question_data(uid):
     return set(), set(), None, None
 
 
-def parse_and_classify(response,
-                       innovation_vocab,
-                       domain_vocab,
-                       remove_stopwords,
-                       tag_numeric,
-                       spelling_correction,
-                       remove_nonwords
-                       ):
+def parse_and_classify(
+    response,
+    innovation_vocab,
+    domain_vocab,
+    remove_stopwords,
+    tag_numeric,
+    spelling_correction,
+    remove_nonwords,
+):
     # Parse the students response into a word list
     response_words = parser.process_string(
         response,
@@ -139,12 +140,12 @@ def parse_and_classify(response,
 
 
 def validate_response(
-        response,
-        uid,
-        remove_stopwords=DEFAULTS["remove_stopwords"],
-        tag_numeric=DEFAULTS["tag_numeric"],
-        spelling_correction=DEFAULTS["spelling_correction"],
-        remove_nonwords=DEFAULTS["remove_nonwords"],
+    response,
+    uid,
+    remove_stopwords=DEFAULTS["remove_stopwords"],
+    tag_numeric=DEFAULTS["tag_numeric"],
+    spelling_correction=DEFAULTS["spelling_correction"],
+    remove_nonwords=DEFAULTS["remove_nonwords"],
 ):
     """Function to estimate validity given response, uid, and parser parameters"""
 
@@ -155,36 +156,39 @@ def validate_response(
     tag_numeric_input = tag_numeric
     tag_numeric = tag_numeric or ((tag_numeric == "auto") and has_numeric)
 
-    if spelling_correction != 'auto':
-        return_dictionary = parse_and_classify(response,
-                                               innovation_vocab,
-                                               domain_vocab,
-                                               remove_stopwords,
-                                               tag_numeric,
-                                               spelling_correction,
-                                               remove_nonwords,
-                                               )
+    if spelling_correction != "auto":
+        return_dictionary = parse_and_classify(
+            response,
+            innovation_vocab,
+            domain_vocab,
+            remove_stopwords,
+            tag_numeric,
+            spelling_correction,
+            remove_nonwords,
+        )
     else:
         # Check for validity without spelling correction
-        return_dictionary = parse_and_classify(response,
-                                               innovation_vocab,
-                                               domain_vocab,
-                                               remove_stopwords,
-                                               tag_numeric,
-                                               False,
-                                               remove_nonwords,
-                                               )
+        return_dictionary = parse_and_classify(
+            response,
+            innovation_vocab,
+            domain_vocab,
+            remove_stopwords,
+            tag_numeric,
+            False,
+            remove_nonwords,
+        )
 
         # If that didn't pass, re-evaluate with spelling correction turned on
-        if not return_dictionary['valid']:
-            return_dictionary = parse_and_classify(response,
-                                                   innovation_vocab,
-                                                   domain_vocab,
-                                                   remove_stopwords,
-                                                   tag_numeric,
-                                                   True,
-                                                   remove_nonwords,
-                                                   )
+        if not return_dictionary["valid"]:
+            return_dictionary = parse_and_classify(
+                response,
+                innovation_vocab,
+                domain_vocab,
+                remove_stopwords,
+                tag_numeric,
+                True,
+                remove_nonwords,
+            )
 
     return_dictionary["tag_numeric_input"] = tag_numeric_input
     return_dictionary["spelling_correction"] = spelling_correction
@@ -194,15 +198,15 @@ def validate_response(
     return return_dictionary
 
 
-def make_bool(var):
-    if type(var) == bool:
+def make_tristate(var, default=True):
+    if var == "auto" or type(var) == bool:
         return var
     elif var in ("False", "false", "f", "0", "None", ""):
         return False
     elif var in ("True", "true", "t", "1"):
         return True
     else:
-        return var
+        return default
 
 
 # Defines the entry point for the api call
@@ -226,7 +230,9 @@ def validation_api_entry():
 
     response = args.get("response", None)
     uid = args.get("uid", None)
-    params = {key: make_bool(args.get(key, val)) for key, val in DEFAULTS.items()}
+    params = {
+        key: make_tristate(args.get(key, val), val) for key, val in DEFAULTS.items()
+    }
 
     start_time = time.time()
     return_dictionary = validate_response(response, uid, **params)

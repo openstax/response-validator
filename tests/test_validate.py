@@ -236,7 +236,7 @@ def test_numeric_words(client):
 def test_no_spelling_correction(client):
     """Various numerics"""
 
-    params = {"response": "This is my respones", "spelling_correction": ""}
+    params = {"response": "This is my respones", "spelling_correction": False}
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 1,
@@ -256,6 +256,99 @@ def test_no_spelling_correction(client):
         "uid_found": False,
         "uid_used": None,
         "valid": False,
+    }
+
+    result = resp.json
+    assert result["computation_time"] != 0
+    expected["computation_time"] = result["computation_time"]
+    assert result == expected
+
+
+def test_auto_spelling_correction_invalid(client):
+    """Various numerics"""
+
+    params = {"response": "This is my respones", "spelling_correction": "auto"}
+    resp = client.get("/validate", query_string=urlencode(params))
+    expected = {
+        "bad_word_count": 0,
+        "common_word_count": 1,
+        "computation_time": 0.0010485649108886719,
+        "domain_word_count": 0,
+        "inner_product": 0.7,
+        "innovation_word_count": 0,
+        "processed_response": "response",
+        "remove_nonwords": True,
+        "remove_stopwords": True,
+        "response": "This is my respones",
+        "spelling_correction": "auto",
+        "spelling_correction_used": True,
+        "tag_numeric": False,
+        "tag_numeric_input": False,
+        "uid_found": False,
+        "uid_used": None,
+        "valid": True,
+    }
+
+    result = resp.json
+    assert result["computation_time"] != 0
+    expected["computation_time"] = result["computation_time"]
+    assert result == expected
+
+
+def test_auto_spelling_correction_valid(client):
+    """Various numerics"""
+
+    params = {"response": "This is my response", "spelling_correction": "auto"}
+    resp = client.get("/validate", query_string=urlencode(params))
+    expected = {
+        "bad_word_count": 0,
+        "common_word_count": 1,
+        "computation_time": 0.0010485649108886719,
+        "domain_word_count": 0,
+        "inner_product": 0.7,
+        "innovation_word_count": 0,
+        "processed_response": "response",
+        "remove_nonwords": True,
+        "remove_stopwords": True,
+        "response": "This is my response",
+        "spelling_correction": "auto",
+        "spelling_correction_used": False,
+        "tag_numeric": False,
+        "tag_numeric_input": False,
+        "uid_found": False,
+        "uid_used": None,
+        "valid": True,
+    }
+
+    result = resp.json
+    assert result["computation_time"] != 0
+    expected["computation_time"] = result["computation_time"]
+    assert result == expected
+
+
+def test_spelling_correction_default(client):
+    """Various numerics"""
+
+    params = {"response": "This is my respones", "spelling_correction": "odd"}
+    resp = client.get("/validate", query_string=urlencode(params))
+    expected = {
+        "bad_word_count": 0,
+        "common_word_count": 1,
+        "computation_time": 0.0010485649108886719,
+        "domain_word_count": 0,
+        "inner_product": 0.7,
+        "innovation_word_count": 0,
+        "processed_response": "response",
+        "remove_nonwords": True,
+        "remove_stopwords": True,
+        "response": "This is my respones",
+        "spelling_correction": True,
+        "spelling_correction_used": True,
+        "tag_numeric": False,
+        "tag_numeric_input": False,
+        "uid_found": False,
+        "uid_used": None,
+        "valid": True,
     }
 
     result = resp.json
