@@ -138,23 +138,23 @@ def test_simple_words(client):
 def test_domain_words(client):
     """Word in the domain of the exercise (the book)"""
 
-    params = {"response": "helicobacter chemiosmosis", "uid": "1340@1"}
+    params = {"response": "echinacea chemiosmosis", "uid": "1340@1"}
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
         "common_word_count": 0,
         "computation_time": 0.07029032707214355,
         "domain_word_count": 1,
-        "inner_product": 2.5,
-        "innovation_word_count": 0,
-        "processed_response": "helicobacter chemiosmosis",
+        "inner_product": 4.7,
+        "innovation_word_count": 1,
+        "processed_response": "echinacea chemiosmosis",
         "remove_nonwords": True,
         "remove_stopwords": True,
-        "response": "helicobacter chemiosmosis",
+        "response": "echinacea chemiosmosis",
         "spelling_correction": True,
         "tag_numeric": False,
         "tag_numeric_input": False,
-        "uid_used": "1340@1",
+        "uid_used": "1340@4",
         "uid_found": True,
         "valid": True,
     }
@@ -168,28 +168,24 @@ def test_domain_words(client):
 def test_innovation_words(client):
     """A word in the innovation list of the exercise"""
 
-    params = {
-        "response": "1.0 helicobacter photographs",
-        "uid": "290@1",
-        "tag_numerics": True,
-    }
+    params = {"response": "1.0 echinacea cytosol", "uid": "290@1", "tag_numerics": True}
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
-        "bad_word_count": 0,
+        "bad_word_count": 1,
         "common_word_count": 0,
-        "computation_time": 0.1347815990447998,
-        "domain_word_count": 2,
-        "inner_product": -3.0,
+        "computation_time": 0.006234169006347656,
+        "domain_word_count": 1,
+        "inner_product": 1.7000000000000002,
         "innovation_word_count": 1,
-        "processed_response": "nonsense_word helicobacter photographs",
+        "processed_response": "nonsense_word echinacea cytosol",
         "remove_nonwords": True,
         "remove_stopwords": True,
-        "response": "1.0 helicobacter photographs",
+        "response": "1.0 echinacea cytosol",
         "spelling_correction": True,
         "tag_numeric": False,
         "tag_numeric_input": False,
-        "uid_used": "290@1",
         "uid_found": True,
+        "uid_used": "290@5",
         "valid": True,
     }
 
