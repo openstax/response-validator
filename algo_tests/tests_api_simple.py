@@ -5,38 +5,55 @@
 import pandas as pd
 import time
 from itertools import product
+import matplotlib as mpl
+
+mpl.use("TkAgg")
+from plotnine import *
 import requests
 
 # Users params -- where to get the response data and how much of it to sample for testing
-BASE_URL = 'http://127.0.0.1:5000/validate'
+BASE_URL = "http://127.0.0.1:5000/validate"
 # Local Path 'https://protected-earth-88152.herokuapp.com/validate' #Heroku path
 STOPS = [True]
-NUMS = ['auto', False, True]
-SPELL = [True, False, 'auto']
+NUMS = ["auto", False, True]
+SPELL = [True, False, "auto"]
 NONWORDS = [True]
 USE_UID = [True]
-DATAPATHS = ['./data/expert_grader_valid_100.csv', './data/alicia_valid.csv']
-COLUMNS = ['bad_word_count', 'common_word_count', 'computation_time',
-           'domain_word_count', 'inner_product', 'innovation_word_count',
-		   'num_spelling_correction','processed_response', 'remove_nonwords',
-		   'remove_stopwords', 'response', 'spelling_correction',
-		   'spelling_correction_used', 'tag_numeric', 'tag_numeric_input',
-		   'uid_found', 'uid_used', 'valid_result']
+DATAPATHS = ["./data/expert_grader_valid_100.csv", "./data/alicia_valid.csv"]
+COLUMNS = [
+    "bad_word_count",
+    "common_word_count",
+    "computation_time",
+    "domain_word_count",
+    "inner_product",
+    "innovation_word_count",
+    "num_spelling_correction",
+    "processed_response",
+    "remove_nonwords",
+    "remove_stopwords",
+    "response",
+    "spelling_correction",
+    "spelling_correction_used",
+    "tag_numeric",
+    "tag_numeric_input",
+    "uid_found",
+    "uid_used",
+    "valid_result",
+]
 
 
 # Simple helper function to process the result of the api call into something nice for a pandas dataframe
-def do_api_time_call(response,
-                     uid,
-                     stops,
-                     nums,
-                     spell,
-                     nonwords,
-                     use_uid
-                     ):
+def do_api_time_call(response, uid, stops, nums, spell, nonwords, use_uid):
     if not use_uid:
         uid = None
-    params = {'response': response, 'uid': uid, 'remove_stopwords': stops, 'tag_numeric': nums,
-              'spelling_correction': spell, 'remove_nonwords': nonwords}
+    params = {
+        "response": response,
+        "uid": uid,
+        "remove_stopwords": stops,
+        "tag_numeric": nums,
+        "spelling_correction": spell,
+        "remove_nonwords": nonwords,
+    }
     r = requests.get(BASE_URL, params=params)
     return_dictionary = r.json()
     strings = [str(return_dictionary[k]) for k in return_dictionary.keys()]
@@ -49,38 +66,74 @@ print("Starting the test")
 
 df_results = pd.DataFrame()
 
-for datapath, stops, nums, spell, nonwords, use_uid in product(DATAPATHS, STOPS, NUMS, SPELL, NONWORDS, USE_UID):
+for datapath, stops, nums, spell, nonwords, use_uid in product(
+    DATAPATHS, STOPS, NUMS, SPELL, NONWORDS, USE_UID
+):
     # Load the data
     dft = pd.read_csv(datapath)
-    dft['data'] = datapath
+    dft["data"] = datapath
     n_samp = dft.shape[0]
 
     # Compute the actual features and do the timing computation (normalized per response)
     now = time.time()
-    dft['result'] = dft.apply(lambda x: do_api_time_call(x.free_response,
-                                                         x.uid,
-                                                         stops,
-                                                         nums,
-                                                         spell,
-                                                         nonwords,
-                                                         use_uid),
-                              axis=1)
-    elapsed_time_total = (time.time() - now)
+    dft["result"] = dft.apply(
+        lambda x: do_api_time_call(
+            x.free_response, x.uid, stops, nums, spell, nonwords, use_uid
+        ),
+        axis=1,
+    )
+    elapsed_time_total = time.time() - now
     elapsed_time = elapsed_time_total / n_samp
 
-    dft_results = dft.result.str.split('xxx', expand=True)
+    dft_results = dft.result.str.split("xxx", expand=True)
     dft_results.columns = COLUMNS
     dft_results = pd.concat([dft, dft_results], axis=1)
-    dft_results['computation_time'] = dft_results['computation_time'].astype(float)
-    dft_results['pred_correct'] = dft_results['valid_result'].map({'True': True, 'False': False}) == dft_results[
-        'valid']
+    dft_results["computation_time"] = dft_results["computation_time"].astype(float)
+    dft_results["pred_correct"] = (
+        dft_results["valid_result"].map({"True": True, "False": False})
+        == dft_results["valid"]
+    )
     df_results = df_results.append(dft_results)
 
 df_results = df_results.reset_index()
 
 # Compile and display some results
-res = df_results.groupby(['data',
-                          'tag_numeric_input',
-                          'spelling_correction']).agg({'pred_correct': 'mean',
-                                                       'computation_time': ['min', 'mean', 'max']}).reset_index()
+res = (
+    df_results.groupby(["data", "tag_numeric_input", "spelling_correction"])
+    .agg({"pred_correct": "mean", "computation_time": ["min", "mean", "max"]})
+    .reset_index()
+)
 print(res)
+
+# Plot accuracy by dataset, facet on spelling correction and numerical tagging
+res["short_name"] = res["data"].apply(
+    lambda x: x.split("/")[-1].split("_")[0] + "_data"
+)
+res["spelling_str"] = res["spelling_correction"].apply(lambda x: "Spell=" + x)
+res["number_str"] = res["tag_numeric_input"].apply(lambda x: "Num=" + x)
+plot_acc = (
+    ggplot(res, aes("spelling_correction", "pred_correct"))
+    + geom_bar(stat="identity")
+    + facet_grid("short_name~number_str")
+    + xlab("Spelling Correction")
+    + ylab("Prediction Accuracy")
+)
+
+# Plot computation time (mean, min, max) for the various cases
+df_results["short_name"] = df_results["data"].apply(
+    lambda x: x.split("/")[-1].split("_")[0] + "_data"
+)
+df_results["spelling_str"] = df_results["spelling_correction"].apply(
+    lambda x: "Spell=" + x
+)
+df_results["number_str"] = df_results["tag_numeric_input"].apply(lambda x: "Num=" + x)
+plot_time = (
+    ggplot(df_results, aes("spelling_correction", "1000*computation_time"))
+    + geom_violin()
+    + facet_grid("short_name~number_str")
+    + xlab("Spelling Correction")
+    + ylab("Computation Time (msec)")
+)
+
+print(plot_acc)
+print(plot_time)

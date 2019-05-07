@@ -196,7 +196,7 @@ def validate_response(
                 tag_numeric,
                 True,
                 remove_nonwords,
-                spell_correction_max
+                spell_correction_max,
             )
 
     return_dictionary["tag_numeric_input"] = tag_numeric_input
