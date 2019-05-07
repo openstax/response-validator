@@ -22,7 +22,7 @@ class StaxStringProc(object):
         ],
         # corpora_list=['/Users/drew/Research/text_validation/corpora/all_plaintext.txt',
         #               '/Users/drew/Research/text_validation/corpora/big.txt'],
-        parse_args=(True, False, True, True),
+        parse_args=(True, False, True, True, 5),
     ):
 
         # Set the parsing arguments
@@ -31,6 +31,7 @@ class StaxStringProc(object):
             self.tag_numeric,
             self.correct_spelling,
             self.kill_nonwords,
+            self.spell_correction_max,
         ) = parse_args
 
         # Alphabet
@@ -126,13 +127,14 @@ class StaxStringProc(object):
         s = "".join(ch for ch in s if ch not in self.punctuation)
         return s
 
-    def process_string(
+    def process_string_spelling_limit(
         self,
         answer,
         remove_stopwords=None,
         tag_numeric=None,
         correct_spelling=None,
         kill_nonwords=None,
+        spell_correction_max=None,
     ):
 
         # Allows a local override of the parser settings
@@ -144,8 +146,11 @@ class StaxStringProc(object):
             tag_numeric = self.tag_numeric
         if kill_nonwords is None:
             kill_nonwords = self.kill_nonwords
+        if spell_correction_max is None:
+            spell_correction_max = self.spell_correction_max
 
         # Get the response text and parse into words
+        num_spelling_corrections = 0
         answer_text = answer
         if pd.isnull(answer_text):
             answer_text = ""
@@ -160,10 +165,20 @@ class StaxStringProc(object):
         wordlist = [w for w in wordlist if re.match("^[a-zA-Z]$", w) is None]
 
         if len(wordlist) == 0:
-            return list(["no_text"])
+            return list(["no_text"]), num_spelling_corrections
 
+        # Enforce a correction limit on spelling correction
+        # Loop through wordlist and only attempt correction if below the limit
+        # Everytime we actually do correct a word, increment the correction counter
         if correct_spelling:
-            wordlist = [self.spell_correct(w) for w in wordlist]
+            for ii in range(0, len(wordlist)):
+                if (num_spelling_corrections < spell_correction_max):
+                    temp_word = self.spell_correct(wordlist[ii])
+                    if temp_word == wordlist[ii]:
+                        num_spelling_corrections = num_spelling_corrections + 1
+                    wordlist[ii] = temp_word
+                else:
+                    pass
 
         # Remove stopwords if applicable
         if remove_stopwords:
@@ -183,7 +198,32 @@ class StaxStringProc(object):
                 for w in wordlist
             ]
 
-        return wordlist
+        return wordlist, num_spelling_corrections
+
+    def process_string(
+        self,
+        answer,
+        remove_stopwords=None,
+        tag_numeric=None,
+        correct_spelling=None,
+        kill_nonwords=None,
+        spell_correction_max=None,
+        track_spelling_corrections=False,
+    ):
+
+        wordlist, num_spelling_corrections = self.process_string_spelling_limit(answer,
+                                                                                remove_stopwords,
+                                                                                tag_numeric,
+                                                                                correct_spelling,
+                                                                                kill_nonwords,
+                                                                                spell_correction_max,
+                                                                                track_spelling_corrections)
+
+        if track_spelling_corrections:
+            return wordlist, num_spelling_corrections
+        else:
+            return wordlist
+
 
     @staticmethod
     def is_numeric(lit):

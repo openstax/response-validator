@@ -18,10 +18,10 @@ USE_UID = [True]
 DATAPATHS = ['./data/expert_grader_valid_100.csv', './data/alicia_valid.csv']
 COLUMNS = ['bad_word_count', 'common_word_count', 'computation_time',
            'domain_word_count', 'inner_product', 'innovation_word_count',
-           'processed_response', 'remove_nonwords', 'remove_stopwords',
-           'response', 'spelling_correction', 'spelling_correction_used',
-           'tag_numeric', 'tag_numeric_input', 'uid_found',
-           'uid_used', 'valid_result']
+		   'num_spelling_correction','processed_response', 'remove_nonwords',
+		   'remove_stopwords', 'response', 'spelling_correction',
+		   'spelling_correction_used', 'tag_numeric', 'tag_numeric_input',
+		   'uid_found', 'uid_used', 'valid_result']
 
 
 # Simple helper function to process the result of the api call into something nice for a pandas dataframe
@@ -82,5 +82,5 @@ df_results = df_results.reset_index()
 res = df_results.groupby(['data',
                           'tag_numeric_input',
                           'spelling_correction']).agg({'pred_correct': 'mean',
-                                                       'computation_time': ['mean', 'max']}).reset_index()
+                                                       'computation_time': ['min', 'mean', 'max']}).reset_index()
 print(res)
