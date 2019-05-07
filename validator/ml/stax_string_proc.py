@@ -172,7 +172,7 @@ class StaxStringProc(object):
         # Everytime we actually do correct a word, increment the correction counter
         if correct_spelling:
             for ii in range(0, len(wordlist)):
-                if (num_spelling_corrections < spell_correction_max):
+                if num_spelling_corrections < spell_correction_max:
                     temp_word = self.spell_correct(wordlist[ii])
                     if temp_word != wordlist[ii]:
                         num_spelling_corrections = num_spelling_corrections + 1
@@ -211,19 +211,20 @@ class StaxStringProc(object):
         track_spelling_corrections=False,
     ):
 
-        wordlist, num_spelling_corrections = self.process_string_spelling_limit(answer,
-                                                                                remove_stopwords,
-                                                                                tag_numeric,
-                                                                                correct_spelling,
-                                                                                kill_nonwords,
-                                                                                spell_correction_max,
-                                                                                track_spelling_corrections)
+        wordlist, num_spelling_corrections = self.process_string_spelling_limit(
+            answer,
+            remove_stopwords,
+            tag_numeric,
+            correct_spelling,
+            kill_nonwords,
+            spell_correction_max,
+            track_spelling_corrections,
+        )
 
         if track_spelling_corrections:
             return wordlist, num_spelling_corrections
         else:
             return wordlist
-
 
     @staticmethod
     def is_numeric(lit):

@@ -210,8 +210,8 @@ def validate_response(
 def make_tristate(var, default=True):
     if type(default) == int:
         try:
-            return(int(var))
-        except:
+            return int(var)
+        except ValueError:
             pass
     if var == "auto" or type(var) == bool:
         return var
