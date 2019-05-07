@@ -174,7 +174,7 @@ class StaxStringProc(object):
             for ii in range(0, len(wordlist)):
                 if (num_spelling_corrections < spell_correction_max):
                     temp_word = self.spell_correct(wordlist[ii])
-                    if temp_word == wordlist[ii]:
+                    if temp_word != wordlist[ii]:
                         num_spelling_corrections = num_spelling_corrections + 1
                     wordlist[ii] = temp_word
                 else:
