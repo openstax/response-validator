@@ -335,6 +335,69 @@ def test_auto_spelling_correction_valid(client):
     assert result == expected
 
 
+def test_auto_spelling_correction_limit_3(client):
+    """Various numerics"""
+
+    params = {"response": " ".join(['respones']*10), "spelling_correction": "auto", "spell_correction_max": 3}
+    resp = client.get("/validate", query_string=urlencode(params))
+    expected = {
+        "bad_word_count": 7,
+        "common_word_count": 3,
+        "computation_time": 0.0010485649108886719,
+        "domain_word_count": 0,
+        "inner_product": -21+2.1,
+        "innovation_word_count": 0,
+        "processed_response":  " ".join(["response"]*3) + " " + " ".join(["nonsense_word"]*7),
+        "remove_nonwords": True,
+        "remove_stopwords": True,
+        "response": " ".join(['respones']*10),
+        "spelling_correction": "auto",
+        "spelling_correction_used": True,
+        "num_spelling_correction": 3,
+        "tag_numeric": False,
+        "tag_numeric_input": False,
+        "uid_found": False,
+        "uid_used": None,
+        "valid": False,
+    }
+
+    result = resp.json
+    assert result["computation_time"] != 0
+    expected["computation_time"] = result["computation_time"]
+    assert result == expected
+
+def test_auto_spelling_correction_limit_10(client):
+    """Various numerics"""
+
+    params = {"response": " ".join(['respones']*10), "spelling_correction": "auto", "spell_correction_max": 10}
+    resp = client.get("/validate", query_string=urlencode(params))
+    expected = {
+        "bad_word_count": 0,
+        "common_word_count": 10,
+        "computation_time": 0.0010485649108886719,
+        "domain_word_count": 0,
+        "inner_product": 7,
+        "innovation_word_count": 0,
+        "processed_response":  " ".join(["response"]*10),
+        "remove_nonwords": True,
+        "remove_stopwords": True,
+        "response": " ".join(['respones']*10),
+        "spelling_correction": "auto",
+        "spelling_correction_used": True,
+        "num_spelling_correction": 10,
+        "tag_numeric": False,
+        "tag_numeric_input": False,
+        "uid_found": False,
+        "uid_used": None,
+        "valid": True,
+    }
+
+    result = resp.json
+    assert result["computation_time"] != 0
+    expected["computation_time"] = result["computation_time"]
+    assert result == expected
+
+
 def test_spelling_correction_default(client):
     """Various numerics"""
 
