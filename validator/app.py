@@ -22,6 +22,7 @@ DEFAULTS = {
     "tag_numeric": False,
     "spelling_correction": True,
     "remove_nonwords": True,
+    "spell_correction_max": 2,
 }
 # Valid response has to have a positive final weighted count
 # weights are:
@@ -54,6 +55,7 @@ parser = StaxStringProc(
         DEFAULTS["tag_numeric"],
         DEFAULTS["spelling_correction"],
         DEFAULTS["remove_nonwords"],
+        DEFAULTS["spell_correction_max"],
     ),
 )
 
@@ -96,14 +98,16 @@ def parse_and_classify(
     tag_numeric,
     spelling_correction,
     remove_nonwords,
+    spell_correction_limit,
 ):
     # Parse the students response into a word list
-    response_words = parser.process_string(
+    response_words, num_spelling_corrections = parser.process_string_spelling_limit(
         response,
         remove_stopwords=remove_stopwords,
         tag_numeric=tag_numeric,
         correct_spelling=spelling_correction,
         kill_nonwords=remove_nonwords,
+        spell_correction_max=spell_correction_limit,
     )
 
     # Compute intersection cardinality with each of the sets of interest
@@ -128,6 +132,7 @@ def parse_and_classify(
         "remove_stopwords": remove_stopwords,
         "tag_numeric": tag_numeric,
         "spelling_correction_used": spelling_correction,
+        "num_spelling_correction": num_spelling_corrections,
         "remove_nonwords": remove_nonwords,
         "processed_response": " ".join(response_words),
         "bad_word_count": bad_count,
@@ -146,6 +151,7 @@ def validate_response(
     tag_numeric=DEFAULTS["tag_numeric"],
     spelling_correction=DEFAULTS["spelling_correction"],
     remove_nonwords=DEFAULTS["remove_nonwords"],
+    spell_correction_max=DEFAULTS["spell_correction_max"],
 ):
     """Function to estimate validity given response, uid, and parser parameters"""
 
@@ -165,6 +171,7 @@ def validate_response(
             tag_numeric,
             spelling_correction,
             remove_nonwords,
+            spell_correction_max,
         )
     else:
         # Check for validity without spelling correction
@@ -176,6 +183,7 @@ def validate_response(
             tag_numeric,
             False,
             remove_nonwords,
+            spell_correction_max,
         )
 
         # If that didn't pass, re-evaluate with spelling correction turned on
@@ -188,6 +196,7 @@ def validate_response(
                 tag_numeric,
                 True,
                 remove_nonwords,
+                spell_correction_max,
             )
 
     return_dictionary["tag_numeric_input"] = tag_numeric_input
@@ -199,6 +208,11 @@ def validate_response(
 
 
 def make_tristate(var, default=True):
+    if type(default) == int:
+        try:
+            return int(var)
+        except ValueError:
+            pass
     if var == "auto" or type(var) == bool:
         return var
     elif var in ("False", "false", "f", "0", "None", ""):
