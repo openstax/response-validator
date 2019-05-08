@@ -93,7 +93,11 @@ class StaxStringProc(object):
         return model
 
     def spell_correct_flag(self, word):
-        if (self.is_numeric(word) in self.reserved_tags) or (word in self.all_words) or (len(word) <= 5):
+        if (
+            (self.is_numeric(word) in self.reserved_tags)
+            or (word in self.all_words)
+            or (len(word) <= 5)
+        ):
             return word, False
         else:
             candidates = (
@@ -177,8 +181,8 @@ class StaxStringProc(object):
         if correct_spelling:
             for ii in range(0, len(wordlist)):
                 if num_spelling_corrections < spell_correction_max:
-                    temp_word, correction_flag = self.spell_correct_flag(wordlist[ii])
-                    num_spelling_corrections = num_spelling_corrections + correction_flag
+                    temp_word, correction_flg = self.spell_correct_flag(wordlist[ii])
+                    num_spelling_corrections = num_spelling_corrections + correction_flg
                     wordlist[ii] = temp_word
                 else:
                     pass
@@ -236,7 +240,7 @@ class StaxStringProc(object):
         if len(lit) == 0:
             return lit
 
-        scientific_unit_regex = "^(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal)((\*|\^)(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal|\d+))*(\/(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal)((\*|\^)(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal|\d+))*)?"  # noqa
+        scientific_unit_regex = r"^(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal)((\*|\^)(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal|\d+))*(\/(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal)((\*|\^)(kg|g|n|hz|mi|hr|yd|in|m|s|A|K|cd|mol|cal|kcal|\d+))*)?"  # noqa
         unit_match = re.match(scientific_unit_regex, lit)
         if unit_match:
             if unit_match.span()[1] == len(lit):
