@@ -92,9 +92,9 @@ class StaxStringProc(object):
             model[f] += 1
         return model
 
-    def spell_correct(self, word):
-        if (self.is_numeric(word) in self.reserved_tags) or (len(word) <= 5):
-            return word
+    def spell_correct_flag(self, word):
+        if (self.is_numeric(word) in self.reserved_tags) or (word in self.all_words) or (len(word) <= 5):
+            return word, False
         else:
             candidates = (
                 self.known([word])
@@ -102,7 +102,11 @@ class StaxStringProc(object):
                 or self.known_edits2(word)
                 or [word]
             )
-            return max(candidates, key=self.NWORDS.get)
+            return max(candidates, key=self.NWORDS.get), True
+
+    def spell_correct(self, word):
+        word_out, correct_flag = self.spell_correct_flag(word)
+        return word_out
 
     def known(self, words):
         return set(w for w in words if w in self.NWORDS)
@@ -173,9 +177,8 @@ class StaxStringProc(object):
         if correct_spelling:
             for ii in range(0, len(wordlist)):
                 if num_spelling_corrections < spell_correction_max:
-                    temp_word = self.spell_correct(wordlist[ii])
-                    if temp_word != wordlist[ii]:
-                        num_spelling_corrections = num_spelling_corrections + 1
+                    temp_word, correction_flag = self.spell_correct_flag(wordlist[ii])
+                    num_spelling_corrections = num_spelling_corrections + correction_flag
                     wordlist[ii] = temp_word
                 else:
                     pass

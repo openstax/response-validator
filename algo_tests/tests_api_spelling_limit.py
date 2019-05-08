@@ -19,7 +19,7 @@ NUMS = ["auto"]
 SPELL = [True, "auto"]
 NONWORDS = [True]
 USE_UID = [True]
-SPELLING_LIMIT = range(5, 10)
+SPELLING_LIMIT = range(0, 10)
 DATAPATHS = ["./data/expert_grader_valid_100.csv", "./data/alicia_valid.csv"]
 COLUMNS = [
     "bad_word_count",

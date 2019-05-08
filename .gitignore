@@ -5,3 +5,21 @@ venv
 .env
 .idea
 /tests/**/*.csv
+
+*.egg-info
+*.egg
+.tox
+*.*~
+/*.log
+/.eggs
+
+# Build file #
+##############
+build/
+dist/
+
+# Coverage #
+############
+.coverage
+htmlcov
+
