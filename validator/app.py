@@ -19,10 +19,10 @@ app = Flask(__name__)
 # Default parameters for the response parser, and validation call
 DEFAULTS = {
     "remove_stopwords": True,
-    "tag_numeric": False,
-    "spelling_correction": True,
+    "tag_numeric": "auto",
+    "spelling_correction": "auto",
     "remove_nonwords": True,
-    "spell_correction_max": 2,
+    "spell_correction_max": 10,
 }
 # Valid response has to have a positive final weighted count
 # weights are:
