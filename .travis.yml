@@ -6,7 +6,7 @@ before_install:
   - flake8 validator/
   - pip install coverage
   - pip install nltk
-  - python -m nltk.downloader all
+  - python -m nltk.downloader snowball_data words stopwords
 script:
   - coverage run -m pytest
 after_success:

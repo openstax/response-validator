@@ -111,9 +111,9 @@ class StaxStringProc(object):
             return word, False
 
         else:
-            suggestions = self.sym_spell.lookup(word,
-                                                self.suggestion_verbosity,
-                                                self.max_edit_distance_dictionary)
+            suggestions = self.sym_spell.lookup(
+                word, self.suggestion_verbosity, self.max_edit_distance_dictionary
+            )
             if len(suggestions) > 0:
                 return suggestions[0].term, True
             else:
@@ -208,7 +208,9 @@ class StaxStringProc(object):
         if correct_spelling:
             for ii in range(0, len(wordlist)):
                 if num_spelling_corrections < spell_correction_max:
-                    temp_word, correction_flg = self.spell_correct_symspell_flag(wordlist[ii])
+                    temp_word, correction_flg = self.spell_correct_symspell_flag(
+                        wordlist[ii]
+                    )
                     num_spelling_corrections = num_spelling_corrections + correction_flg
                     wordlist[ii] = temp_word
                 else:
