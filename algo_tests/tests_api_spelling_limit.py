@@ -108,8 +108,9 @@ df_results["spelling_str"] = df_results["spelling_correction"].apply(
     lambda x: "Spell=" + x
 )
 df_results["number_str"] = df_results["tag_numeric_input"].apply(lambda x: "Num=" + x)
+df_results['spelling_limit_str'] = df_results['spelling_limit'].apply(lambda x: str(x))
 plot_time = (
-    ggplot(df_results, aes("spelling_limit", "1000*computation_time"))
+    ggplot(df_results, aes("spelling_limit_str", "1000*computation_time"))
     + geom_violin()
     + facet_grid("short_name~number_str")
     + xlab("Spelling Correction")

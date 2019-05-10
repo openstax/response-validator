@@ -47,8 +47,7 @@ with open("{}/bad.txt".format(DATA_PATH)) as f:
 # (these can be overwritten during calls to process_string)
 parser = StaxStringProc(
     corpora_list=[
-        "{}/big.txt".format(DATA_PATH),
-        "{}/all_plaintext.txt".format(DATA_PATH),
+        "{}/all_join.txt".format(DATA_PATH),
     ],
     parse_args=(
         DEFAULTS["remove_stopwords"],
