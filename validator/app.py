@@ -40,16 +40,13 @@ uid_set = df_questions.uid.values.tolist()
 qid_set = df_questions.qid.values.tolist()
 
 # Define common and bad vocab
-with open("{}/bad.txt".format(DATA_PATH)) as f:
+with open(f"{DATA_PATH}/bad.txt") as f:
     bad_vocab = set([re.sub("\n", "", w) for w in f])
 
 # Create the parser, initially assign default values
 # (these can be overwritten during calls to process_string)
 parser = StaxStringProc(
-    corpora_list=[
-        "{}/big.txt".format(DATA_PATH),
-        "{}/all_plaintext.txt".format(DATA_PATH),
-    ],
+    corpora_list=[f"{DATA_PATH}/all_join.txt"],
     parse_args=(
         DEFAULTS["remove_stopwords"],
         DEFAULTS["tag_numeric"],

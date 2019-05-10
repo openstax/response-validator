@@ -44,7 +44,9 @@ COLUMNS = [
 
 
 # Simple helper function to process the result of the api call into something nice for a pandas dataframe
-def do_api_time_call(response, uid, stops, nums, spell, nonwords, use_uid, spelling_limit):
+def do_api_time_call(
+    response, uid, stops, nums, spell, nonwords, use_uid, spelling_limit
+):
     if not use_uid:
         uid = None
     params = {
@@ -69,7 +71,7 @@ print("Starting the test")
 df_results = pd.DataFrame()
 
 for datapath, stops, nums, spell, nonwords, use_uid, spelling_limit in product(
-    DATAPATHS, STOPS, NUMS, SPELL, NONWORDS, USE_UID, SPELLING_LIMIT,
+    DATAPATHS, STOPS, NUMS, SPELL, NONWORDS, USE_UID, SPELLING_LIMIT
 ):
     # Load the data
     dft = pd.read_csv(datapath)
@@ -80,7 +82,14 @@ for datapath, stops, nums, spell, nonwords, use_uid, spelling_limit in product(
     now = time.time()
     dft["result"] = dft.apply(
         lambda x: do_api_time_call(
-            x.free_response, x.uid, stops, nums, spell, nonwords, use_uid, spelling_limit
+            x.free_response,
+            x.uid,
+            stops,
+            nums,
+            spell,
+            nonwords,
+            use_uid,
+            spelling_limit,
         ),
         axis=1,
     )
@@ -108,8 +117,9 @@ df_results["spelling_str"] = df_results["spelling_correction"].apply(
     lambda x: "Spell=" + x
 )
 df_results["number_str"] = df_results["tag_numeric_input"].apply(lambda x: "Num=" + x)
+df_results["spelling_limit_str"] = df_results["spelling_limit"].apply(lambda x: str(x))
 plot_time = (
-    ggplot(df_results, aes("spelling_limit", "1000*computation_time"))
+    ggplot(df_results, aes("spelling_limit_str", "1000*computation_time"))
     + geom_violin()
     + facet_grid("short_name~number_str")
     + xlab("Spelling Correction")

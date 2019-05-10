@@ -11,6 +11,7 @@ from nltk.corpus import words
 from nltk import word_tokenize
 from nltk.stem.snowball import SnowballStemmer
 import collections
+from symspellpy.symspellpy import SymSpell, Verbosity
 
 
 class StaxStringProc(object):
@@ -72,7 +73,7 @@ class StaxStringProc(object):
         # TODO make stops come from file rather than nltk
         self.stops = set(stopwords.words("english"))
 
-        # Train the spelling corrector using all corpora
+        # Train the stax spelling corrector using all corpora
         train_text = ""
         for cfile in corpora_list:
             # words_in_file = file(cfile).read() #Not compatible with Python 2.7
@@ -83,6 +84,15 @@ class StaxStringProc(object):
 
         self.NWORDS = self.train(self.get_all_words(train_text))
 
+        # Additionally, train the symspell (ultra fast) spelling corrector
+        cfile = corpora_list[0]
+        print(cfile)
+        self.suggestion_verbosity = Verbosity.CLOSEST  # TOP, CLOSEST, ALL
+        self.max_edit_distance_dictionary = 2
+        self.prefix_length = 7
+        self.sym_spell = SymSpell(self.max_edit_distance_dictionary, self.prefix_length)
+        self.sym_spell.create_dictionary(cfile)
+
     def get_all_words(self, text):
         return re.findall("[a-z]+", text.lower())
 
@@ -91,6 +101,23 @@ class StaxStringProc(object):
         for f in features:
             model[f] += 1
         return model
+
+    def spell_correct_symspell_flag(self, word):
+        if (
+            (self.is_numeric(word) in self.reserved_tags)
+            or (word in self.all_words)
+            or (len(word) <= 5)
+        ):
+            return word, False
+
+        else:
+            suggestions = self.sym_spell.lookup(
+                word, self.suggestion_verbosity, self.max_edit_distance_dictionary
+            )
+            if len(suggestions) > 0:
+                return suggestions[0].term, True
+            else:
+                return word, True
 
     def spell_correct_flag(self, word):
         if (
@@ -181,7 +208,9 @@ class StaxStringProc(object):
         if correct_spelling:
             for ii in range(0, len(wordlist)):
                 if num_spelling_corrections < spell_correction_max:
-                    temp_word, correction_flg = self.spell_correct_flag(wordlist[ii])
+                    temp_word, correction_flg = self.spell_correct_symspell_flag(
+                        wordlist[ii]
+                    )
                     num_spelling_corrections = num_spelling_corrections + correction_flg
                     wordlist[ii] = temp_word
                 else:
