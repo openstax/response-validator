@@ -12,29 +12,13 @@ It may be installed as a package from the pypi repository, using [pip](https://p
 pip install response-validator
 ```
 
-You will also need to download the corpora for the NLTK package.  This needs to
-be done as the user that will run the server, inside the python environment that
-will be used:
-
-```bash
-python -m nltk.downloader snowball_data words stopwords punkt
-```
-
-or as another simpler command: (at the cost of additional disk space)
-
-```bash
-python -m nltk.downloader all
-```
-
-should accomplish this.
-
-
 ## Development
 After cloning the repository, you can install the repo in editable mode, as so:
 
 ```bash
 pip install -e .
 ```
+Note that this step will download several NLTK corpora, silently, and add them to the deployed tree.
 
 Additional functionality for running algorith tests, etc. can be enabled by installing additional libraries:
 

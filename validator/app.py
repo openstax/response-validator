@@ -7,14 +7,19 @@ from flask import Flask, jsonify, request
 from validator.utils import get_fixed_data
 from validator.ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
+
+import nltk
 import re
 import time
 from flask_cors import cross_origin
 
 import pkg_resources
 
+
 DATA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 app = Flask(__name__)
+
+nltk.data.path = [pkg_resources.resource_filename("validator", "ml/corpora/nltk_data")]
 
 # Default parameters for the response parser, and validation call
 DEFAULTS = {

@@ -1,11 +1,16 @@
 import io
 
+import nltk
+
 import versioneer
 
 from setuptools import find_packages, setup
 
 with io.open('README.md', 'rt', encoding='utf8') as f:
     readme = f.read()
+
+for data_file in ('stopwords', 'words', 'punkt'):
+    nltk.download(data_file, download_dir='validator/ml/corpora/nltk_data')
 
 description = "Openstax response validator server"
 
@@ -21,7 +26,12 @@ setup(
     long_description_content_type='text/markdown',
     long_description=readme,
     packages=find_packages(),
-    package_data={"validator": ["ml/data/*csv", "ml/corpora/*.txt"]},
+    package_data={"validator": ["ml/data/*csv",
+                                "ml/corpora/*.txt",
+                                "ml/corpora/nltk_data/*/*",
+                                "ml/corpora/nltk_data/*/*/*",
+                                "ml/corpora/nltk_data/*/*/*/*",
+                                ]},
     include_package_data=True,
     zip_safe=False,
     install_requires=[
