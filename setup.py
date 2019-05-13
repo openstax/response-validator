@@ -18,6 +18,7 @@ setup(
     Author='Openstax Team',
     maintainer_email='info@cnx.org',
     description=description,
+    long_description_content_type='text/markdown',
     long_description=readme,
     packages=find_packages(),
     package_data={"validator": ["ml/data/*csv", "ml/corpora/*.txt"]},
