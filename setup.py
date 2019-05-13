@@ -26,6 +26,10 @@ setup(
     zip_safe=False,
     install_requires=[
         'flask',
+        'flask-cors',
+        'pandas',
+        'nltk',
+        'symspellpy',
     ],
     extras_require={
         'test': [
