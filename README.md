@@ -4,54 +4,63 @@ Implements a simple unsupervised method for classifying student short to medium 
 
 ## Installation
 
-This was developed in Python 3.6. It may work fine with Python 2.x but I have not tested it.
+This was developed in Python 3.6. 
 
-After cloning the repository, you can install the required libraries using [pip](https://pip.pypa.io/en/stable/):
+It may be installed as a package from the pypi repository, using [pip](https://pip.pypa.io/en/stable/):
+
+```bash
+pip install response-validator
+```
+
+## Development
+After cloning the repository, you can install the repo in editable mode, as so:
+
+```bash
+pip install -e .
+```
+Note that this step will download several NLTK corpora, silently, and add them to the deployed tree.
+
+Additional functionality for running algorith tests, etc. can be enabled by installing additional libraries:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-You will also need to download the corpora for the NLTK package.  This, unfortunately, must be done separately can cannot be automated with the requirements.txt file.  Running the following commands:
-
-```bash
-python -m nltk.downloader snowball_data words stopwords punkt
-```
-
-or as another simpler command:
-
-```bash
-python -m nltk.downloader all
-```
-
-should accomplish this.
-
-
 ## Usage
 
-To run the app on a local machine, simple type:
-```python
-python app.py
+Once installed, `python -m validator.app` will run the Flask dev webserver.
+
+The recommended production method for deployment is to use a WSGI compliant
+server, such as gunicorn:
+
+```bash
+pip install gunicorn
+gunicorn validator.app:app
 ```
 
-This will start the app at the default address and port (http://127.0.0.1:5000/).
+## API
 
-The current Procfile is configured for easy deployment to Heroku.
+The main route for the app is /validate, which accepts a plaintext response (`response`) that will be checked.  It can also accept a number of optional arguments:
 
-The main route for the app is /validate, which accepts a plaintext response (response) that will be checked.  It can also accept a number of optional arguments:
+- `uid` (e.g., '1000@1', default None): This is the uid for the question pertaining to the response. The uid is used to compute domain-specific and module-specific vocabulary to aid in the classification process.
+Iff the version of the question specified is not available, any version of the same qid (question id without the version, e.g. 1000) will be used. 
 
-- uid (e.g., '1000@1'): This is the uid for the question pertaining to the response. The uid is used to compute domain-specific and module-specific vocabulary to aid in the classification process.
-- remove_stopwords (True or False): Whether or not stopwords (e.g., 'the', 'and', etc) will be removed from the response.  This is generally advised since these words carry little predictive value.
-- tag_numeric (True or False): Whether numerical values will be tagged (e.g., 123.7 is tagged with a special 'numeric_type_float' identifier). While there are certainly responses for which this would be helpful, a large amount of student garbage consists of random number pressing which limits the utility of this option.
-- spelling_correction (True or False): Whether the app will attempt to correct misspellings. This is done by identifying unknown words in the response and seeing if a closely related known word can be substituted.  Currently, the app only attempts spelling correction on words of at least 5 characters in length and only considers candidate words that are within an edit distance of 2 from the misspelled word.
-- remove_nonwords (True or False): Words that are not recognized (after possibly attempting spelling correction) are flagged with a special 'nonsense_word' tag.  This is done primarily to combat keyboard mashes (e.g., 'asdfljasdfk') that make a large percentage of invalid student responses.
+- `remove_stopwords` (True or False, default True): Whether or not stopwords (e.g., 'the', 'and', etc) will be removed from the response.  This is generally advised since these words carry little predictive value.
+
+- `tag_numeric` (True, False or auto, default auto): Whether numerical values will be tagged (e.g., 123.7 is tagged with a special 'numeric_type_float' identifier). While there are certainly responses for which this would be helpful, a large amount of student garbage consists of random number pressing which limits the utility of this option. Auto enables a mode that only does numeric tag processing if the question this response pertains to (as fond via the uid above) requires a numeric answer.
+
+- `spelling_correction` (True, False or auto, default auto): Whether the app will attempt to correct misspellings. This is done by identifying unknown words in the response and seeing if a closely related known word can be substituted.  Currently, the app only attempts spelling correction on words of at least 5 characters in length and only considers candidate words that are within an edit distance of 2 from the misspelled word. When running in `auto` mode, the app will attempt to determine validity without spelling correction. Only if that is not valid, will it attempt to reasses validty with spelling correction.
+
+- `spell_correction_max` (integer, default 10): Limit spelling corrections applied to this number.
+
+- `remove_nonwords` (True or False, default True): Words that are not recognized (after possibly attempting spelling correction) are flagged with a special 'nonsense_word' tag.  This is done primarily to combat keyboard mashes (e.g., 'asdfljasdfk') that make a large percentage of invalid student responses.
 
 Once the app is running, you can send requests using curl, requests, etc.  Here is an example using Python's requests library:
 
-Here an example of how to call things using the Python requests library (assuming that the app is running on the default local port):
+Here an example of how to call things using the Python requests library (assuming that the app is running on the default local development port):
 
 ```python
-imort json
+import json
 import requests
 params = {'response': 'this is my answer to the question alkjsdfl',
           'uid': '100@2',
@@ -64,20 +73,24 @@ print(json.dumps(r.json(), indent=2))
 {
   "bad_word_count": 1,
   "common_word_count": 2,
-  "computation_time": 0.06826448440551758,
+  "computation_time": 0.001367330551147461,
   "domain_word_count": 0,
   "inner_product": -1.6,
   "innovation_word_count": 0,
+  "num_spelling_correction": 1,
   "processed_response": "answer question nonsense_word",
-  "remove_nonwords": "True",
-  "remove_stopwords": "True",
+  "remove_nonwords": true,
+  "remove_stopwords": true,
   "response": "this is my answer to the question alkjsdfl",
-  "spelling_correction": "True",
-  "tag_numeric": false,
-  "uid": "100@2",
+  "spelling_correction": true,
+  "spelling_correction_used": true,
+  "tag_numeric": "auto",
+  "tag_numeric_input": "auto",
   "uid_found": false,
+  "uid_used": null,
   "valid": false
 }
+
 
 ```
 

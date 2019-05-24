@@ -13,6 +13,9 @@ venv
 /*.log
 /.eggs
 
+# Downloaded by setup.py install and build
+validator/ml/corpora/nltk_data/
+
 # Build file #
 ##############
 build/

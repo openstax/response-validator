@@ -5,13 +5,18 @@ Created on Thu Jan 14 21:11:03 2016
 @author: drew
 """
 import re
+import nltk
 import pandas as pd
+import collections
+import pkg_resources
+
 from nltk.corpus import stopwords
 from nltk.corpus import words
 from nltk import word_tokenize
 from nltk.stem.snowball import SnowballStemmer
-import collections
 from symspellpy.symspellpy import SymSpell, Verbosity
+
+nltk.data.path = [pkg_resources.resource_filename("validator", "ml/corpora/nltk_data")]
 
 
 class StaxStringProc(object):
