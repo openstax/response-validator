@@ -5,13 +5,13 @@
 
 from flask import Flask, jsonify, request
 from validator.utils import get_fixed_data
-from validator.ml.stax_string_proc import StaxStringProc
+from validator.pip install plotninepip install plotnineml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
 
 import nltk
 import re
 import time
-from flask_cors import cross_origin
+python tests_api_simple.pyfrom flask_cors import cross_origin
 
 import pkg_resources
 
@@ -32,7 +32,7 @@ DEFAULTS = {
 # Valid response has to have a positive final weighted count
 # weights are:
 #  bad_words, domain_words, innovation_words, common_words
-WEIGHTS = [-3, 2.5, 2.2, 0.7]
+WEIGHTS = [-3, 2.5, 2.2, 0.7,1]
 
 # Get the global data for the app:
 #    innovation words by module,
@@ -78,7 +78,8 @@ def get_question_data_by_key(key, val):
     domain_vocab = (
         df_domain[df_domain["CNX Book Name"] == subject_name].iloc[0].domain_words
     )
-    return domain_vocab, innovation_vocab, has_numeric, uid
+    question_vocab = df_questions['stem_text'].apply(lambda x: set(x.split()))
+    return domain_vocab, innovation_vocab, has_numeric, uid, question_vocab
 
 
 def get_question_data(uid):
@@ -89,11 +90,12 @@ def get_question_data(uid):
         elif qid in qid_set:
             return get_question_data_by_key("qid", qid)
     # no uid, or not in data sets
-    return set(), set(), None, None
+    return set(), set(), None, None, set()
 
 
 def parse_and_classify(
     response,
+    question_vocab,
     innovation_vocab,
     domain_vocab,
     remove_stopwords,
@@ -113,7 +115,7 @@ def parse_and_classify(
     )
 
     # Compute intersection cardinality with each of the sets of interest
-    bad_count = domain_count = innovation_count = common_count = 0
+    bad_count = domain_count = innovation_count = common_count = words_in_question_stem_count = percentage_in_question_stem = 0
     for word in response_words:
         if word in bad_vocab:
             bad_count += 1
@@ -123,9 +125,13 @@ def parse_and_classify(
             domain_count += 1
         elif word in common_vocab:
             common_count += 1
+        elif word in question_vocab:
+            words_in_question_stem_count +=1
+
+    percentage_in_question_stem = (words_in_question_stem_count)/len(response_words)
 
     # Group the counts together and compute an inner product with the weights
-    vector = [bad_count, domain_count, innovation_count, common_count]
+    vector = [bad_count, domain_count, innovation_count, common_count, percentage_in_question_stem]
     inner_product = sum([v * w for v, w in zip(vector, WEIGHTS)])
     valid = float(inner_product) > 0
 
@@ -158,7 +164,7 @@ def validate_response(
     """Function to estimate validity given response, uid, and parser parameters"""
 
     # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
-    domain_vocab, innovation_vocab, has_numeric, uid_used = get_question_data(uid)
+    domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab = get_question_data(uid)
 
     # Record the input of tag_numeric and then convert in the case of 'auto'
     tag_numeric_input = tag_numeric
@@ -167,6 +173,7 @@ def validate_response(
     if spelling_correction != "auto":
         return_dictionary = parse_and_classify(
             response,
+            question_vocab,
             innovation_vocab,
             domain_vocab,
             remove_stopwords,
@@ -179,6 +186,7 @@ def validate_response(
         # Check for validity without spelling correction
         return_dictionary = parse_and_classify(
             response,
+            question_vocab,
             innovation_vocab,
             domain_vocab,
             remove_stopwords,
@@ -192,6 +200,7 @@ def validate_response(
         if not return_dictionary["valid"]:
             return_dictionary = parse_and_classify(
                 response,
+                question_vocab,
                 innovation_vocab,
                 domain_vocab,
                 remove_stopwords,
