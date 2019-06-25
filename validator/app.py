@@ -65,8 +65,11 @@ common_vocab = set(words.words()) | set(parser.reserved_tags)
 
 
 def get_question_data_by_key(key, val):
+    tmp = df_innovation
+    print(tmp.shape)
     first_q = df_questions[df_questions[key] == val].iloc[0]
     module_id = first_q.module_id
+    print(tmp[tmp['module_id']==module_id].shape)
     uid = first_q.uid
     has_numeric = df_questions[df_questions[key] == val].iloc[0].contains_number
     innovation_vocab = (
