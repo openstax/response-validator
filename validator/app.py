@@ -5,13 +5,13 @@
 
 from flask import Flask, jsonify, request
 from validator.utils import get_fixed_data
-from validator.pip install plotninepip install plotnineml.stax_string_proc import StaxStringProc
+from validator.ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
 
 import nltk
 import re
 import time
-python tests_api_simple.pyfrom flask_cors import cross_origin
+from flask_cors import cross_origin
 
 import pkg_resources
 
