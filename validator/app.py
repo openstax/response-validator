@@ -78,9 +78,13 @@ def get_question_data_by_key(key, val):
     domain_vocab = (
         df_domain[df_domain["CNX Book Name"] == subject_name].iloc[0].domain_words
     )
-    question_vocab = df_questions['stem_text'].apply(lambda x: set(x.split()))
-    mc_vocab = df_questions['option_text'].apply(lambda x: set(x.split()))
+    # Old way of doing this . . . this is both really slow and also wrong. Why???
+    # question_vocab = df_questions['stem_text'].apply(lambda x: set(x.split()))
+    # mc_vocab = df_questions['option_text'].apply(lambda x: set(x.split()))
 
+    # A better way . . . pre-process and then just to a lookup
+    question_vocab = first_q['stem_words']
+    mc_vocab = first_q['mc_words']
     return domain_vocab, innovation_vocab, has_numeric, uid, question_vocab, mc_vocab
 
 
@@ -118,9 +122,14 @@ def parse_and_classify(
     )
 
     # Compute intersection cardinality with each of the sets of interest
+    # HAD TO REORDER THESE: WHY???
     bad_count = domain_count = innovation_count = common_count = words_in_question_stem_count = words_in_mc_count = percentage_in_question_stem = 0
     for word in response_words:
-        if word in bad_vocab:
+        if word in question_vocab:
+            words_in_question_stem_count +=1
+        elif word in mc_vocab:
+            words_in_mc_count += 1
+        elif word in bad_vocab:
             bad_count += 1
         elif word in innovation_vocab:
             innovation_count += 1
@@ -128,12 +137,8 @@ def parse_and_classify(
             domain_count += 1
         elif word in common_vocab:
             common_count += 1
-        elif word in question_vocab:
-            words_in_question_stem_count +=1
-        elif word in mc_vocab:
-            words_in_mc_count +=1
     if len(response_words)>0:
-        percentage_in_question_stem = (words_in_question_stem_count)/len(response_words)
+        percentage_in_question_stem = (words_in_question_stem_count) / len(response_words)
 
     # Group the counts together and compute an inner product with the weights
     vector = [bad_count, domain_count, innovation_count, common_count, percentage_in_question_stem, words_in_mc_count]
@@ -153,6 +158,7 @@ def parse_and_classify(
         "innovation_word_count": innovation_count,
         "common_word_count": common_count,
         "question_word_count": words_in_question_stem_count,
+        "percentage_in_question_stem": percentage_in_question_stem,
         "mc_count": words_in_mc_count,
         "inner_product": inner_product,
         "valid": valid,
