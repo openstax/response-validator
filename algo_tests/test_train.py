@@ -17,10 +17,11 @@ PARSER_FEATURE_LIST = ["bad_word_count",
                        "option_word_count"]
 
 # Set classifier features to False or True to exclude/include them
+# Set parser params to False or True to exclude/include them
 app_params = {
     "bad_word_count": True,
     "domain_word_count": False,
-    "innovation_word_count": True,
+    "innovation_word_count": False,
     "common_word_count": True,
     "stem_word_count": True,
     "option_word_count": True,

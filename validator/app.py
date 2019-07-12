@@ -35,12 +35,14 @@ DEFAULTS = {
 # Valid response has to have a positive final weighted count
 # weights are:
 #  bad_words, domain_words, innovation_words, common_words
-PARSER_FEATURE_LIST = ["bad_word_count",
-                       "domain_word_count",
-                       "innovation_word_count",
-                       "common_word_count",
-                       "stem_word_count",
-                       "option_word_count"]
+PARSER_FEATURE_DICT = {
+    "bad_word_count": True,
+    "domain_word_count": True,
+    "innovation_word_count": True,
+    "common_word_count": True,
+    "stem_word_count": True,
+    "option_word_count": True}
+
 WEIGHTS = [-3, 2.5, 2.2, 0.7,1,1]
 
 # Get the global data for the app:
@@ -289,18 +291,19 @@ def validation_api_entry():
 @cross_origin(supports_credentials=True)
 def validation_train():
     # TODO:
-    # Add args to process which columns will be considered (currently hardcoded)
-    # Add args to process args instead of just relying on default
-    # Do we need to be doing some kind of cross-validation here??  Probably not . . .
+    # Add a parameter for n_fold: ie, the number of folds to do for cross validation (default = 1, no x-val)
+    # Break the train into n_fold folds, compute coef/intercept for each fold along with accuracy
+    # Return all of this, along with means for everything in the return
 
     # Read out the parser and classifier settings from the path arguments
     if request.method == "POST":
         args = request.form
     else:
         args = request.args
-    features_to_consider = [
-        v for v in PARSER_FEATURE_LIST if args.get(v)=="True"
-    ]
+    train_feature_dict = {
+        key: make_tristate(args.get(key, val), val) for key, val in PARSER_FEATURE_DICT.items()
+    }
+    features_to_consider = [k for k in train_feature_dict.keys() if train_feature_dict[k] == True]
     parser_params = {
         key: make_tristate(args.get(key, val), val) for key, val in DEFAULTS.items()
     }
@@ -322,7 +325,6 @@ def validation_train():
     # Train a logistic regression classifier (with intercept) on the counts/validity labels
     lr = LogisticRegression(solver='saga', max_iter=1000)
     X = output_df[features_to_consider].values
-    print(X.shape)
     y = output_df["valid_label"].values
     lr.fit(X, y)
     coef = lr.coef_
