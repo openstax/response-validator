@@ -9,6 +9,7 @@ from validator.ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
 from sklearn.linear_model import LogisticRegression
 import pandas as pd
+import json
 
 import nltk
 import re
@@ -34,6 +35,12 @@ DEFAULTS = {
 # Valid response has to have a positive final weighted count
 # weights are:
 #  bad_words, domain_words, innovation_words, common_words
+PARSER_FEATURE_LIST = ["bad_word_count",
+                       "domain_word_count",
+                       "innovation_word_count",
+                       "common_word_count",
+                       "stem_word_count",
+                       "option_word_count"]
 WEIGHTS = [-3, 2.5, 2.2, 0.7,1,1]
 
 # Get the global data for the app:
@@ -78,9 +85,6 @@ def get_question_data_by_key(key, val):
     domain_vocab = (
         df_domain[df_domain["CNX Book Name"] == subject_name].iloc[0].domain_words
     )
-    # Old way of doing this . . . this is both really slow and also wrong. Why???
-    # question_vocab = df_questions['stem_text'].apply(lambda x: set(x.split()))
-    # mc_vocab = df_questions['option_text'].apply(lambda x: set(x.split()))
 
     # A better way . . . pre-process and then just to a lookup
     question_vocab = first_q['stem_words']
@@ -122,7 +126,6 @@ def parse_and_classify(
     )
 
     # Compute intersection cardinality with each of the sets of interest
-    # HAD TO REORDER THESE: WHY???
     bad_count = domain_count = innovation_count = common_count = words_in_question_stem_count = words_in_mc_count = percentage_in_question_stem = 0
     for word in response_words:
         if word in question_vocab:
@@ -157,9 +160,9 @@ def parse_and_classify(
         "domain_word_count": domain_count,
         "innovation_word_count": innovation_count,
         "common_word_count": common_count,
-        "question_word_count": words_in_question_stem_count,
+        "stem_word_count": words_in_question_stem_count,
         "percentage_in_question_stem": percentage_in_question_stem,
-        "mc_count": words_in_mc_count,
+        "option_word_count": words_in_mc_count,
         "inner_product": inner_product,
         "valid": valid,
     }
@@ -284,24 +287,52 @@ def validation_api_entry():
 
 @app.route("/train", methods=("GET", "POST"))
 @cross_origin(supports_credentials=True)
-
 def validation_train():
+    # TODO:
+    # Add args to process which columns will be considered (currently hardcoded)
+    # Add args to process args instead of just relying on default
+    # Do we need to be doing some kind of cross-validation here??  Probably not . . .
+
+    # Read out the parser and classifier settings from the path arguments
+    if request.method == "POST":
+        args = request.form
+    else:
+        args = request.args
+    features_to_consider = [
+        v for v in PARSER_FEATURE_LIST if args.get(v)=="True"
+    ]
+    parser_params = {
+        key: make_tristate(args.get(key, val), val) for key, val in DEFAULTS.items()
+    }
+
+    # Read in the dataframe of responses from json input
     response_df = request.json.get("response_df", None)
-    response_df = pd.read_json(response_df)
-    print(response_df.shape)
-    output_df = response_df.apply(lambda x: validate_response(x.free_response, x.uid), axis=1)
+    response_df = pd.read_json(response_df).sort_index()
+
+    # Parse the responses in response_df to get counts on the various word categories
+    # Map the valid label of the input to the output
+    output_df = response_df.apply(lambda x: validate_response(x.free_response,
+                                                              x.uid,
+                                                              **parser_params
+                                                              ),
+                                  axis=1)
     output_df = pd.DataFrame(list(output_df))
-    print(output_df.columns)
     output_df["valid_label"] = response_df["valid_label"]
-    lr = LogisticRegression()
-    columns = ["bad_word_count", "domain_word_count", "innovation_word_count", "common_word_count", "question_word_count", "mc_count"]
-    X = output_df[columns].values
+
+    # Train a logistic regression classifier (with intercept) on the counts/validity labels
+    lr = LogisticRegression(solver='saga', max_iter=1000)
+    X = output_df[features_to_consider].values
+    print(X.shape)
     y = output_df["valid_label"].values
     lr.fit(X, y)
     coef = lr.coef_
-    intercept = lr.intercept_
-    return_dictionary = dict(zip(columns, coef.tolist()))
+    intercept = lr.intercept_[0]
+
+    # Create the return dictionary with the coefficients/intercepts as well as the parsed datafrane
+    # We really don't need to the return the dataframe but it's nice for debugging!
+    return_dictionary = dict(zip(features_to_consider, coef[0].tolist()))
     return_dictionary["intercept"] = intercept
+    return_dictionary["output_df"] = output_df.to_json()
     return jsonify(return_dictionary)
 
 if __name__ == "__main__":
