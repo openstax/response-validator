@@ -39,8 +39,6 @@ WEIGHTS = [-3, 2.5, 2.2, 0.7,1,1]
 #    domain words by subject,
 #    and table linking question uid to cnxmod
 df_innovation, df_domain, df_questions = get_fixed_data()
-print (df_questions.columns)
-# question_set = df_questions.uid.values.tolist()
 uid_set = df_questions.uid.values.tolist()
 qid_set = df_questions.qid.values.tolist()
 
