@@ -117,6 +117,7 @@ def parse_and_classify(
     remove_nonwords,
     spell_correction_limit,
 ):
+    # TODO: Incorporate user-specified feaatures and only compute in the ladder supported
     # Parse the students response into a word list
     response_words, num_spelling_corrections = parser.process_string_spelling_limit(
         response,
@@ -263,6 +264,7 @@ def make_tristate(var, default=True):
 @cross_origin(supports_credentials=True)
 def validation_api_entry():
     # TODO: waiting for https://github.com/openstax/accounts-rails/pull/77
+    # TODO: Add the ability to parse the features provided (using defaults as backup)
     # cookie = request.COOKIES.get('ox', None)
     # if not cookie:
     #         return jsonify({ 'logged_in': False })
