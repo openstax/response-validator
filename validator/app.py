@@ -7,6 +7,8 @@ from flask import Flask, jsonify, request
 from validator.utils import get_fixed_data
 from validator.ml.stax_string_proc import StaxStringProc
 from nltk.corpus import words
+from sklearn.linear_model import LogisticRegression
+import pandas as pd
 
 import nltk
 import re
@@ -280,6 +282,27 @@ def validation_api_entry():
 
     return jsonify(return_dictionary)
 
+@app.route("/train", methods=("GET", "POST"))
+@cross_origin(supports_credentials=True)
+
+def validation_train():
+    response_df = request.json.get("response_df", None)
+    response_df = pd.read_json(response_df)
+    print(response_df.shape)
+    output_df = response_df.apply(lambda x: validate_response(x.free_response, x.uid), axis=1)
+    output_df = pd.DataFrame(list(output_df))
+    print(output_df.columns)
+    output_df["valid_label"] = response_df["valid_label"]
+    lr = LogisticRegression()
+    columns = ["bad_word_count", "domain_word_count", "innovation_word_count", "common_word_count", "question_word_count", "mc_count"]
+    X = output_df[columns].values
+    y = output_df["valid_label"].values
+    lr.fit(X, y)
+    coef = lr.coef_
+    intercept = lr.intercept_
+    return_dictionary = dict(zip(columns, coef.tolist()))
+    return_dictionary["intercept"] = intercept
+    return jsonify(return_dictionary)
 
 if __name__ == "__main__":
     app.run(debug=False)  # pragma: nocover
