@@ -6,17 +6,19 @@
 from flask import Flask, jsonify, request
 from validator.utils import get_fixed_data
 from validator.ml.stax_string_proc import StaxStringProc
-from nltk.corpus import words
-from sklearn.linear_model import LogisticRegression
-import pandas as pd
-import json
+from flask_cors import cross_origin
+import pkg_resources
 
 import nltk
+from nltk.corpus import words
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score
+
+from collections import OrderedDict
 import re
 import time
-from flask_cors import cross_origin
-
-import pkg_resources
 
 
 DATA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
@@ -32,18 +34,22 @@ DEFAULTS = {
     "remove_nonwords": True,
     "spell_correction_max": 10,
 }
-# Valid response has to have a positive final weighted count
-# weights are:
-#  bad_words, domain_words, innovation_words, common_words
-PARSER_FEATURE_DICT = {
-    "bad_word_count": True,
-    "domain_word_count": True,
-    "innovation_word_count": True,
-    "common_word_count": True,
-    "stem_word_count": True,
-    "option_word_count": True}
 
-WEIGHTS = [-3, 2.5, 2.2, 0.7,1,1]
+# If number, feature is used and has the corresponding weight.
+# A value of 0 indicates that the feature won't be computed
+PARSER_FEATURE_DICT = OrderedDict(
+    {
+        "stem_word_count": 0,
+        "option_word_count": 0,
+        "innovation_word_count": 2.2,
+        "domain_word_count": 2.5,
+        "bad_word_count": -3,
+        "common_word_count": .7
+    }
+)
+# bad_words, domain_words, innovation_words, common_words
+# [-3, 2.5, 2.2, 0.7]
+PARSER_FEATURE_INTERCEPT = 0
 
 # Get the global data for the app:
 #    innovation words by module,
@@ -91,7 +97,18 @@ def get_question_data_by_key(key, val):
     # A better way . . . pre-process and then just to a lookup
     question_vocab = first_q['stem_words']
     mc_vocab = first_q['mc_words']
-    return domain_vocab, innovation_vocab, has_numeric, uid, question_vocab, mc_vocab
+    vocab_dict = OrderedDict(
+        {
+        "stem_word_count": question_vocab,
+        "option_word_count": mc_vocab,
+        "innovation_word_count": innovation_vocab,
+        "domain_word_count": domain_vocab,
+        "bad_word_count": bad_vocab,
+        "common_word_count": common_vocab
+        }
+    )
+
+    return vocab_dict, uid, has_numeric
 
 
 def get_question_data(uid):
@@ -102,22 +119,31 @@ def get_question_data(uid):
         elif qid in qid_set:
             return get_question_data_by_key("qid", qid)
     # no uid, or not in data sets
-    return set(), set(), None, None, set(), set()
+    default_vocab_dict = OrderedDict(
+        {
+        "stem_word_count": set(),
+        "option_word_count": set(),
+        "innovation_word_count": set(),
+        "domain_word_count": set(),
+        "bad_word_count": bad_vocab,
+        "common_word_count": common_vocab
+        }
+    )
+
+    return default_vocab_dict, None, None
 
 
 def parse_and_classify(
     response,
-    question_vocab,
-    mc_vocab,
-    innovation_vocab,
-    domain_vocab,
+    feature_weight_dict,
+    feature_vocab_dict,
     remove_stopwords,
     tag_numeric,
     spelling_correction,
     remove_nonwords,
     spell_correction_limit,
 ):
-    # TODO: Incorporate user-specified feaatures and only compute in the ladder supported
+
     # Parse the students response into a word list
     response_words, num_spelling_corrections = parser.process_string_spelling_limit(
         response,
@@ -128,30 +154,28 @@ def parse_and_classify(
         spell_correction_max=spell_correction_limit,
     )
 
-    # Compute intersection cardinality with each of the sets of interest
-    bad_count = domain_count = innovation_count = common_count = words_in_question_stem_count = words_in_mc_count = percentage_in_question_stem = 0
+    # Initialize all feature counts to 0
+    # Then move through the feature list in order and count iff applicable
+    feature_count_dict = OrderedDict(
+        {
+            key: 0 for key in feature_weight_dict.keys()
+        }
+    )
     for word in response_words:
-        if word in question_vocab:
-            words_in_question_stem_count +=1
-        elif word in mc_vocab:
-            words_in_mc_count += 1
-        elif word in bad_vocab:
-            bad_count += 1
-        elif word in innovation_vocab:
-            innovation_count += 1
-        elif word in domain_vocab:
-            domain_count += 1
-        elif word in common_vocab:
-            common_count += 1
-    if len(response_words)>0:
-        percentage_in_question_stem = (words_in_question_stem_count) / len(response_words)
+        for key in feature_weight_dict.keys():
+            if feature_weight_dict[key]:
+                if word in feature_vocab_dict[key]:
+                    feature_count_dict[key] += 1
+                    break  # This will kill the inner loop when a feature is matched
+
 
     # Group the counts together and compute an inner product with the weights
-    vector = [bad_count, domain_count, innovation_count, common_count, percentage_in_question_stem, words_in_mc_count]
-    inner_product = sum([v * w for v, w in zip(vector, WEIGHTS)])
+    vector = feature_count_dict.values()
+    WEIGHTS = feature_weight_dict.values()
+    inner_product = sum([v * w for v, w in zip(vector, WEIGHTS)]) + PARSER_FEATURE_INTERCEPT
     valid = float(inner_product) > 0
 
-    return {
+    return_dict = {
         "response": response,
         "remove_stopwords": remove_stopwords,
         "tag_numeric": tag_numeric,
@@ -159,21 +183,17 @@ def parse_and_classify(
         "num_spelling_correction": num_spelling_corrections,
         "remove_nonwords": remove_nonwords,
         "processed_response": " ".join(response_words),
-        "bad_word_count": bad_count,
-        "domain_word_count": domain_count,
-        "innovation_word_count": innovation_count,
-        "common_word_count": common_count,
-        "stem_word_count": words_in_question_stem_count,
-        "percentage_in_question_stem": percentage_in_question_stem,
-        "option_word_count": words_in_mc_count,
-        "inner_product": inner_product,
-        "valid": valid,
     }
+    return_dict.update(feature_count_dict)
+    return_dict['inner_product'] = inner_product
+    return_dict['valid'] = valid
+    return return_dict
 
 
 def validate_response(
     response,
     uid,
+    feature_weight_dict,
     remove_stopwords=DEFAULTS["remove_stopwords"],
     tag_numeric=DEFAULTS["tag_numeric"],
     spelling_correction=DEFAULTS["spelling_correction"],
@@ -183,7 +203,8 @@ def validate_response(
     """Function to estimate validity given response, uid, and parser parameters"""
 
     # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
-    domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab, mc_vocab = get_question_data(uid)
+    #domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab, mc_vocab = get_question_data(uid)
+    vocab_dict, uid_used, has_numeric = get_question_data(uid)
 
     # Record the input of tag_numeric and then convert in the case of 'auto'
     tag_numeric_input = tag_numeric
@@ -192,10 +213,8 @@ def validate_response(
     if spelling_correction != "auto":
         return_dictionary = parse_and_classify(
             response,
-            question_vocab,
-            mc_vocab,
-            innovation_vocab,
-            domain_vocab,
+            feature_weight_dict,
+            vocab_dict,
             remove_stopwords,
             tag_numeric,
             spelling_correction,
@@ -206,10 +225,8 @@ def validate_response(
         # Check for validity without spelling correction
         return_dictionary = parse_and_classify(
             response,
-            question_vocab,
-            mc_vocab,
-            innovation_vocab,
-            domain_vocab,
+            feature_weight_dict,
+            vocab_dict,
             remove_stopwords,
             tag_numeric,
             False,
@@ -221,10 +238,8 @@ def validate_response(
         if not return_dictionary["valid"]:
             return_dictionary = parse_and_classify(
                 response,
-                question_vocab,
-                mc_vocab,
-                innovation_vocab,
-                domain_vocab,
+                feature_weight_dict,
+                vocab_dict,
                 remove_stopwords,
                 tag_numeric,
                 True,
@@ -278,12 +293,17 @@ def validation_api_entry():
 
     response = args.get("response", None)
     uid = args.get("uid", None)
-    params = {
+    parser_params = {
         key: make_tristate(args.get(key, val), val) for key, val in DEFAULTS.items()
     }
+    feature_weight_dict = OrderedDict(
+        {
+            key: make_tristate(args.get(key, val), val) for key, val in PARSER_FEATURE_DICT.items()
+        }
+    )
 
     start_time = time.time()
-    return_dictionary = validate_response(response, uid, **params)
+    return_dictionary = validate_response(response, uid, feature_weight_dict, **parser_params)
 
     return_dictionary["computation_time"] = time.time() - start_time
 
@@ -305,10 +325,11 @@ def validation_train():
     train_feature_dict = {
         key: make_tristate(args.get(key, val), val) for key, val in PARSER_FEATURE_DICT.items()
     }
-    features_to_consider = [k for k in train_feature_dict.keys() if train_feature_dict[k] == True]
+    features_to_consider = [k for k in train_feature_dict.keys() if train_feature_dict[k]]
     parser_params = {
         key: make_tristate(args.get(key, val), val) for key, val in DEFAULTS.items()
     }
+    cv_input = args.get('cv', 5)
 
     # Read in the dataframe of responses from json input
     response_df = request.json.get("response_df", None)
@@ -318,25 +339,32 @@ def validation_train():
     # Map the valid label of the input to the output
     output_df = response_df.apply(lambda x: validate_response(x.free_response,
                                                               x.uid,
+                                                              train_feature_dict,
                                                               **parser_params
                                                               ),
                                   axis=1)
     output_df = pd.DataFrame(list(output_df))
     output_df["valid_label"] = response_df["valid_label"]
 
-    # Train a logistic regression classifier (with intercept) on the counts/validity labels
+    # Do an N-fold cross validation if cv > 1.
+    # Then get coefficients/intercept for the entire dataset
     lr = LogisticRegression(solver='saga', max_iter=1000)
     X = output_df[features_to_consider].values
     y = output_df["valid_label"].values
+    validation_array = -1
+    if (cv_input > 1):
+        validation_array = cross_val_score(lr, X, y, cv=cv_input)
     lr.fit(X, y)
     coef = lr.coef_
     intercept = lr.intercept_[0]
+    validation_score = float(np.mean(validation_array))
 
     # Create the return dictionary with the coefficients/intercepts as well as the parsed datafrane
     # We really don't need to the return the dataframe but it's nice for debugging!
     return_dictionary = dict(zip(features_to_consider, coef[0].tolist()))
     return_dictionary["intercept"] = intercept
     return_dictionary["output_df"] = output_df.to_json()
+    return_dictionary["cross_val_score"] = validation_score
     return jsonify(return_dictionary)
 
 if __name__ == "__main__":
