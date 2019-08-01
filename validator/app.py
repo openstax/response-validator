@@ -47,8 +47,7 @@ PARSER_FEATURE_DICT = OrderedDict(
         "common_word_count": .7
     }
 )
-# bad_words, domain_words, innovation_words, common_words
-# [-3, 2.5, 2.2, 0.7]
+
 PARSER_FEATURE_INTERCEPT = 0
 
 # Get the global data for the app:
@@ -66,7 +65,7 @@ with open(f"{DATA_PATH}/bad.txt") as f:
 # Create the parser, initially assign default values
 # (these can be overwritten during calls to process_string)
 parser = StaxStringProc(
-    corpora_list=[f"{DATA_PATH}/all_join.txt"],
+    corpora_list=[f"{DATA_PATH}/all_join.txt", f"{DATA_PATH}/question_text.txt"],
     parse_args=(
         DEFAULTS["remove_stopwords"],
         DEFAULTS["tag_numeric"],
@@ -74,9 +73,10 @@ parser = StaxStringProc(
         DEFAULTS["remove_nonwords"],
         DEFAULTS["spell_correction_max"],
     ),
+    symspell_dictionary_file=f"{DATA_PATH}/response_validator_spelling_dictionary.txt"
 )
 
-common_vocab = set(words.words()) | set(parser.reserved_tags)
+common_vocab = set(parser.all_words) | set(parser.reserved_tags)
 
 
 def get_question_data_by_key(key, val):
@@ -261,6 +261,10 @@ def make_tristate(var, default=True):
             return int(var)
         except ValueError:
             pass
+        try:
+            return float(var)
+        except:
+            pass
     if var == "auto" or type(var) == bool:
         return var
     elif var in ("False", "false", "f", "0", "None", ""):
@@ -309,13 +313,63 @@ def validation_api_entry():
 
     return jsonify(return_dictionary)
 
+def update_parameter_dictionary(args, defaults):
+    params = {
+        key: make_tristate(args.get(key, val), val) for key, val in defaults.items()
+    }
+    return params
+
+
+# Defines the entry point for the api call
+# Read in/preps the validity arguments and then calls validate_response
+# Returns JSON dictionary
+# credentials are needed so the SSO cookie can be read
+@app.route("/validate_new", methods=("GET", "POST"))
+@cross_origin(supports_credentials=True)
+def validation_new_api_entry():
+    # TODO: waiting for https://github.com/openstax/accounts-rails/pull/77
+    # TODO: Add the ability to parse the features provided (using defaults as backup)
+    # cookie = request.COOKIES.get('ox', None)
+    # if not cookie:
+    #         return jsonify({ 'logged_in': False })
+    # decrypted_user = decrypt.get_cookie_data(cookie)
+
+    # Get the route arguments . . . use defaults if not supplied
+    if request.method == "POST":
+        args = request.form
+    else:
+        args = request.args
+
+    response = args.get("response", None)
+    uid = args.get("uid", None)
+    parser_params = {
+        key: make_tristate(args.get(key, val), val) for key, val in DEFAULTS.items()
+    }
+    feature_weight_dict = OrderedDict(
+        {
+            key: make_tristate(args.get(key, val), val) for key, val in PARSER_FEATURE_DICT.items()
+        }
+    )
+
+    start_time = time.time()
+    return_dictionary = validate_response(response, uid, feature_weight_dict, **parser_params)
+
+    return_dictionary["computation_time"] = time.time() - start_time
+
+    # Do a lazy math check
+    uid = return_dictionary['uid_used']
+    vocab_dict, uid_used, has_numeric = get_question_data(uid)
+    regexp = re.compile('[\+\-\*\=\/\d]')
+    resp_has_math = regexp.search(response) is not None
+    new_output = return_dictionary['valid'] or (bool(has_numeric) and resp_has_math)
+    return_dictionary['valid'] = new_output
+
+    return jsonify(return_dictionary)
+
+
 @app.route("/train", methods=("GET", "POST"))
 @cross_origin(supports_credentials=True)
 def validation_train():
-    # TODO:
-    # Add a parameter for n_fold: ie, the number of folds to do for cross validation (default = 1, no x-val)
-    # Break the train into n_fold folds, compute coef/intercept for each fold along with accuracy
-    # Return all of this, along with means for everything in the return
 
     # Read out the parser and classifier settings from the path arguments
     if request.method == "POST":

@@ -25,10 +25,10 @@ class StaxStringProc(object):
         corpora_list=[
             "./openform/ml/corpora/all_plaintext.txt",
             "./openform/ml/corpora/big.txt",
+            "./openform/ml/corpora/question_text.txt"
         ],
-        # corpora_list=['/Users/drew/Research/text_validation/corpora/all_plaintext.txt',
-        #               '/Users/drew/Research/text_validation/corpora/big.txt'],
         parse_args=(True, False, True, True, 5),
+        symspell_dictionary_file="./openform/ml/corpora/response_validator_spelling_dictionary.txt"
     ):
 
         # Set the parsing arguments
@@ -90,13 +90,21 @@ class StaxStringProc(object):
         self.NWORDS = self.train(self.get_all_words(train_text))
 
         # Additionally, train the symspell (ultra fast) spelling corrector
-        cfile = corpora_list[0]
-        print(cfile)
         self.suggestion_verbosity = Verbosity.CLOSEST  # TOP, CLOSEST, ALL
-        self.max_edit_distance_dictionary = 2
+        self.max_edit_distance_dictionary = 3
         self.prefix_length = 7
-        self.sym_spell = SymSpell(self.max_edit_distance_dictionary, self.prefix_length)
-        self.sym_spell.create_dictionary(cfile)
+        self.spelling_dictionary_file = symspell_dictionary_file
+        self.create_symspell_parser(self.max_edit_distance_dictionary,
+                                    self.prefix_length,
+                                    self.spelling_dictionary_file)
+
+        # Ensure that all words in the spelling dictionary are in the all_words set
+        self.all_words.update(self.sym_spell.words.keys())
+
+    def create_symspell_parser(self, max_edit_distance, prefix_length, dictionary_filename):
+        self.sym_spell = SymSpell(max_edit_distance, prefix_length)
+        if not self.sym_spell.load_dictionary(dictionary_filename, 0, 1):
+            print("ERROR: CAN'T LOAD THE SPELLING DICTIONARY!")
 
     def get_all_words(self, text):
         return re.findall("[a-z]+", text.lower())
@@ -196,8 +204,16 @@ class StaxStringProc(object):
             answer_text = ""
 
         # Tokenize the string and filter any terms that are pure punctuation
-        # Tuncate length if needed, remove single char items
+        # Strip out weird unicode characters (may undo this later)
+        # Separate out hypens, slashes, ampersands, semicolons, plus signs
+        # Remove "'s" (possessives)
+        # Truncate length if needed, remove single char items
+        answer_text = answer_text.lower()
+        answer_text = re.sub(r'[^\x00-\x7F]+', '', answer_text)
+        answer_text = re.sub("[-/+&;]+", ' ', answer_text)
+        answer_text = re.sub("'s", '', answer_text)
         wordlist = word_tokenize(answer_text.lower())
+
         wordlist = [
             str(w) for w in wordlist if re.match("^[.,!@#$%^&*|{}()[]]*", w) is None
         ]
