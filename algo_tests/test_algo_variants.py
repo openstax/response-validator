@@ -8,6 +8,9 @@ import pandas as pd
 from validator.app import parser
 from sklearn.metrics import confusion_matrix
 
+import warnings
+warnings.filterwarnings('ignore')
+
 
 FEATURES_OLD = OrderedDict(
     {
@@ -16,7 +19,9 @@ FEATURES_OLD = OrderedDict(
         "innovation_word_count": 2.2,
         "domain_word_count": 2.5,
         "bad_word_count": -3,
-        "common_word_count": .7
+        "common_word_count": .7,
+        "intercept": 0,
+        "lazy_math_mode": False
     }
 )
 
@@ -27,7 +32,9 @@ FEATURES_NEW = OrderedDict(
         "innovation_word_count": 0,
         "domain_word_count": 0,
         "bad_word_count": -3,
-        "common_word_count": .7
+        "common_word_count": .7,
+        "intercept": 0,
+        "lazy_math_mode": True
     }
 )
 
@@ -61,34 +68,40 @@ def do_training(df, train_params):
     resp = client.get('/train', query_string=urlencode(params), json={"response_df": df_train})
     resp_dict = resp.json
     new_params = {k: resp_dict[k] for k in train_params.keys() & resp_dict.keys()}
-    train_params.update(new_params)
-    intercept = resp_dict['intercept']
-    return new_params, intercept
+    return new_params
 
 
 
 print("Starting!")
 
-#resp = do_api_call(df.iloc[0], '/validate', FEATURES_OLD)
-#print(resp.json)
-
-# Old doesn't use lazy math evaluation, new does
+### Do a quick look at performance before and after the major algo changes
 df['old'] = df.apply(lambda x: get_validity(x, "/validate", FEATURES_OLD), axis=1)
-df['new'] = df.apply(lambda x: get_validity(x, "/validate_new", FEATURES_NEW), axis=1)
+df['new'] = df.apply(lambda x: get_validity(x, "/validate", FEATURES_NEW), axis=1)
 
-# Let's see what we can get with training (looks like cv performs about as well as hand-tuned)
-new_params_opt, intercept = do_training(df, FEATURES_NEW)
-app.PARSER_FEATURE_INTERCEPT = intercept
-df['new_opt'] = df.apply(lambda x: get_validity(x, "/validate_new", new_params_opt), axis=1)
+### Look at training -- do a global and per subject train
+FEATURES_TRAIN = FEATURES_NEW.copy()
+FEATURES_TRAIN["intercept"] = 1
+df_bio = df[df['subject']=='Biology 2e']
+df_phy = df[df['subject']=='College Physics with Courseware']
+df_soc = df[df['subject']=='Introduction to Sociology 2e']
+params_bio = do_training(df_bio, FEATURES_TRAIN)
+params_phy = do_training(df_phy, FEATURES_TRAIN)
+params_soc = do_training(df_soc, FEATURES_TRAIN)
+df_bio['train_subj'] = df_bio.apply(lambda x: get_validity(x, "/validate", params_bio), axis=1)
+df_phy['train_subj'] = df_phy.apply(lambda x: get_validity(x, "/validate", params_phy), axis=1)
+df_soc['train_subj'] = df_soc.apply(lambda x: get_validity(x, "/validate", params_soc), axis=1)
+subject_validity = df_bio['train_subj'].append(df_phy['train_subj']).append(df_soc['train_subj'])
+df['train_subj'] = subject_validity
 
-# Last thing . . . let's try changing the edit distance limit and examine the effect on the confusion matrix
-parser.create_symspell_parser(3, 7, parser.spelling_dictionary_file)
-df['new_edit3'] = df.apply(lambda x: get_validity(x, "/validate_new", FEATURES_NEW), axis=1)
-parser.create_symspell_parser(4, 7, parser.spelling_dictionary_file)
-df['new_edit4'] = df.apply(lambda x: get_validity(x, "/validate_new", FEATURES_NEW), axis=1)
-
-confusion_matrix(df['valid_truth'], df['new'])
-confusion_matrix(df['valid_truth'], df['new_edit3'])   # works pretty good
-confusion_matrix(df['valid_truth'], df['new_edit4'])
+### Lastly, let's look at the error rate as a function of changes to the spelling corrector
+edit_distances = range(3, 4)
+for edit_distance in edit_distances:
+    parser.create_symspell_parser(
+        edit_distance,
+        parser.prefix_length,
+        parser.spelling_dictionary_file
+    )
+    output_str = 'spell_' + str(edit_distance)
+    df[output_str] = df.apply(lambda x: get_validity(x, "/validate", FEATURES_NEW), axis=1)
 
 print("Done!")

@@ -2,7 +2,7 @@ import pytest
 from urllib.parse import urlencode
 
 from validator import app
-from validator.app import DEFAULTS
+from validator.app import PARSER_DEFAULTS
 
 # A set of weights to use when testing things other than stem/option counts
 NO_QUESTION_WEIGHT_DICT = {
@@ -56,7 +56,7 @@ def test_empty_get(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": None,
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": True,
         "num_spelling_correction": 0,
         "tag_numeric": "auto",
@@ -87,7 +87,7 @@ def test_empty_post(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": None,
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": True,
         "num_spelling_correction": 0,
         "tag_numeric": "auto",
@@ -153,7 +153,7 @@ def test_simple_words(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "Here is my response",
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": False,
         "num_spelling_correction": 0,
         "tag_numeric": "auto",
@@ -186,7 +186,7 @@ def test_domain_words(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "echinacea chemiosmosis",
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": False,
         "num_spelling_correction": 0,
         "tag_numeric": "auto",
@@ -253,7 +253,7 @@ def test_numeric_words(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "0 23 -3 1.2 IV",
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": True,
         "num_spelling_correction": 0,
         "tag_numeric": True,
@@ -461,7 +461,7 @@ def test_spelling_correction_default(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "This is my respones",
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": True,
         "num_spelling_correction": 1,
         "tag_numeric": "auto",
@@ -495,7 +495,7 @@ def test_stem_option_words(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "example leg",
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": False,
         "num_spelling_correction": 0,
         "tag_numeric": "auto",
@@ -529,7 +529,7 @@ def test_no_stem_option_words(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "example leg",
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": False,
         "num_spelling_correction": 0,
         "tag_numeric": "auto",

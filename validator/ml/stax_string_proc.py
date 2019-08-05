@@ -27,7 +27,7 @@ class StaxStringProc(object):
             "./openform/ml/corpora/big.txt",
             "./openform/ml/corpora/question_text.txt"
         ],
-        parse_args=(True, False, True, True, 5),
+        parse_args=(True, False, True, True, 5, 3, 5),
         symspell_dictionary_file="./openform/ml/corpora/response_validator_spelling_dictionary.txt"
     ):
 
@@ -38,6 +38,8 @@ class StaxStringProc(object):
             self.correct_spelling,
             self.kill_nonwords,
             self.spell_correction_max,
+            self.spell_correction_max_edit_distance,
+            self.spell_correction_min_word_length
         ) = parse_args
 
         # Alphabet
@@ -91,10 +93,9 @@ class StaxStringProc(object):
 
         # Additionally, train the symspell (ultra fast) spelling corrector
         self.suggestion_verbosity = Verbosity.CLOSEST  # TOP, CLOSEST, ALL
-        self.max_edit_distance_dictionary = 3
         self.prefix_length = 7
         self.spelling_dictionary_file = symspell_dictionary_file
-        self.create_symspell_parser(self.max_edit_distance_dictionary,
+        self.create_symspell_parser(self.spell_correction_max_edit_distance,
                                     self.prefix_length,
                                     self.spelling_dictionary_file)
 
@@ -119,13 +120,15 @@ class StaxStringProc(object):
         if (
             (self.is_numeric(word) in self.reserved_tags)
             or (word in self.all_words)
-            or (len(word) <= 5)
+            or (len(word) <= self.spell_correction_min_word_length)
         ):
             return word, False
 
         else:
             suggestions = self.sym_spell.lookup(
-                word, self.suggestion_verbosity, self.max_edit_distance_dictionary
+                word,
+                self.suggestion_verbosity,
+                self.spell_correction_max_edit_distance,
             )
             if len(suggestions) > 0:
                 return suggestions[0].term, True
@@ -136,7 +139,7 @@ class StaxStringProc(object):
         if (
             (self.is_numeric(word) in self.reserved_tags)
             or (word in self.all_words)
-            or (len(word) <= 5)
+            or (len(word) <= self.spell_correction_min_word_length)
         ):
             return word, False
         else:

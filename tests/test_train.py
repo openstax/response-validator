@@ -5,7 +5,7 @@ from collections import OrderedDict
 import pandas as pd
 import numpy as np
 from validator import app
-from validator.app import DEFAULTS
+from validator.app import PARSER_DEFAULTS
 from validator.app import df_questions, bad_vocab, common_vocab, get_question_data
 
 # A set of weights to use when testing things other than stem/option counts
@@ -24,7 +24,7 @@ FEATURE_SET_2 = {
         "innovation_word_count": 1,
         "domain_word_count": 1,
         "bad_word_count": 1,
-        "common_word_count": 1
+        "common_word_count": 1,
 }
 
 question_data = df_questions[df_questions['uid'] == '9@6'].iloc[0]
