@@ -470,5 +470,10 @@ def import_ecosystem():
     return jsonify({"msg": "Ecosystem successfully imported"})
 
 
+@app.route("/ping")
+def ping():
+    return "pong"
+
+
 if __name__ == "__main__":
     app.run(debug=False)  # pragma: nocover
