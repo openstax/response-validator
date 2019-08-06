@@ -16,6 +16,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
 
 from collections import OrderedDict
+import collections
 import re
 import time
 
@@ -31,18 +32,18 @@ PARSER_DEFAULTS = {
     "tag_numeric": "auto",
     "spelling_correction": "auto",
     "remove_nonwords": True,
+    "spell_correction_max": 10,
     "lazy_math_mode": True
 }
 
 SPELLING_CORRECTION_DEFAULTS = {
-    "spell_correction_max": 10,
     "spell_correction_max_edit_distance": 3,
     "spell_correction_min_word_length": 5
 }
 
 # If number, feature is used and has the corresponding weight.
 # A value of 0 indicates that the feature won't be computed
-VALIDITY_FEATURE_DICT = OrderedDict(
+VALIDITY_FEATURE_DICT = collections.OrderedDict(
     {
         "stem_word_count": 0,
         "option_word_count": 0,
@@ -75,7 +76,7 @@ parser = StaxStringProc(
         PARSER_DEFAULTS["tag_numeric"],
         PARSER_DEFAULTS["spelling_correction"],
         PARSER_DEFAULTS["remove_nonwords"],
-        SPELLING_CORRECTION_DEFAULTS["spell_correction_max"],
+        PARSER_DEFAULTS["spell_correction_max"],
         SPELLING_CORRECTION_DEFAULTS["spell_correction_max_edit_distance"],
         SPELLING_CORRECTION_DEFAULTS["spell_correction_min_word_length"]
     ),
@@ -208,7 +209,7 @@ def validate_response(
     tag_numeric=PARSER_DEFAULTS["tag_numeric"],
     spelling_correction=PARSER_DEFAULTS["spelling_correction"],
     remove_nonwords=PARSER_DEFAULTS["remove_nonwords"],
-    spell_correction_max=SPELLING_CORRECTION_DEFAULTS["spell_correction_max"],
+    spell_correction_max=PARSER_DEFAULTS["spell_correction_max"],
     lazy_math_mode=PARSER_DEFAULTS["lazy_math_mode"],
 ):
     """Function to estimate validity given response, uid, and parser parameters"""

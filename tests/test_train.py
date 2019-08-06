@@ -72,10 +72,16 @@ def test_train_stem_option(client):
     weight_vect = np.array(list(weights.values()))
 
     uid = question_data.uid
-    responses_type = [np.random.choice(list(vocab_dict.keys()), N_words).tolist() for r in range(0, N_resp)]
+    response_validity = np.random.choice([True, False], N_resp)
+    responses_type = []
     responses = []
-    for rt in responses_type:
-        responses.append(' '.join([np.random.choice(list(vocab_dict[k])) for k in rt]))
+    for r in response_validity:
+        if r:
+            word_types = np.random.choice(['stem', 'mc', 'common'], N_words).tolist()
+        else:
+            word_types = np.random.choice(['bad'], N_words).tolist()
+        responses_type.append(word_types)
+        responses.append(' '.join([np.random.choice(list(vocab_dict[k])) for k in word_types]))
     type_count = [np.array([r.count(t) for t in list(vocab_dict.keys())]) for r in responses_type]
     ip = [np.sum(weight_vect * t) for t in type_count]
     valid = [val > 0 for val in ip]
@@ -109,7 +115,7 @@ def test_train_stem_option(client):
 def test_train_domain_innovation(client):
     """Training with feature set 1"""
     """Make a fake dataframe with known weights. See if estimation is close(ish)"""
-
+    np.random.seed(1000)
     N_resp = 20
     N_words = 10
     weights = OrderedDict(
@@ -128,10 +134,16 @@ def test_train_domain_innovation(client):
     weight_vect = np.array(list(weights.values()))
 
     uid = question_data.uid
-    responses_type = [np.random.choice(list(vocab_dict.keys()), N_words).tolist() for r in range(0, N_resp)]
+    response_validity = np.random.choice([True, False], N_resp)
+    responses_type = []
     responses = []
-    for rt in responses_type:
-        responses.append(' '.join([np.random.choice(list(vocab_dict[k])) for k in rt]))
+    for r in response_validity:
+        if r:
+            word_types = np.random.choice(['domain', 'innovation', 'common'], N_words).tolist()
+        else:
+            word_types = np.random.choice(['bad'], N_words).tolist()
+        responses_type.append(word_types)
+        responses.append(' '.join([np.random.choice(list(vocab_dict[k])) for k in word_types]))
     type_count = [np.array([r.count(t) for t in list(vocab_dict.keys())]) for r in responses_type]
     ip = [np.sum(weight_vect * t) for t in type_count]
     valid = [val > 0 for val in ip]
