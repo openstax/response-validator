@@ -331,12 +331,6 @@ def validation_api_entry():
 
     return jsonify(return_dictionary)
 
-def update_parameter_dictionary(args, defaults):
-    params = {
-        key: make_tristate(args.get(key, val), val) for key, val in defaults.items()
-    }
-    return params
-
 @app.route("/train", methods=("GET", "POST"))
 @cross_origin(supports_credentials=True)
 def validation_train():

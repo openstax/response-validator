@@ -1,0 +1,21 @@
+,bad_word_count,common_word_count,domain_word_count,inner_product,innovation_word_count,intercept,lazy_math_evaluation,num_spelling_correction,option_word_count,processed_response,remove_nonwords,remove_stopwords,response,spelling_correction,spelling_correction_used,stem_word_count,tag_numeric,tag_numeric_input,uid_found,uid_used,valid,valid_label
+0,3,0,2,7,2,1,True,0,0,zzz hi blah ur hi nonsense_word ur,True,True,zzz j hi blah ur k hi no_text k ur,auto,False,0,auto,auto,True,9@6,True,False
+1,3,0,3,8,2,1,True,0,0,na mn zzz wut nonsense_word zz ur zz,True,True,na k mn zzz n wut lol zz ur zz,auto,False,0,auto,auto,True,9@6,True,False
+2,7,0,0,9,2,1,True,0,0,hmm huh nonsense_word na fuck nonsense_word ur nonsense_word nonsense_word,True,True,hmm huh fml n na fuck no_text ur asdf asdf,auto,False,0,auto,auto,True,9@6,True,False
+3,9,0,0,9,0,1,True,0,0,huh zzz nonsense_word nonsense_word nonsense_word huh nonsense_word huh nonsense_word,True,True,huh zzz hm asdf n idk huh fml huh jk,auto,False,0,auto,auto,True,9@6,True,False
+4,0,4,0,4,0,1,True,0,0,linenette unstipulated trinucleate myokinesis,True,True,"d o , linenette unstipulated e trinucleate g myokinesis i",auto,False,0,auto,auto,True,9@6,True,True
+5,6,0,2,9,1,1,True,0,0,nonsense_word nonsense_word shit na nonsense_word hi zz fuck nonsense_word,True,True,fml no_text n/a shit na jk hi zz fuck asdf,auto,False,0,auto,auto,True,9@6,True,False
+6,1,2,1,4,0,1,True,0,0,magnetosphere feel tamein nonsense_word,True,True,"    magnetosphere g t feel , tamein e '",auto,False,0,auto,auto,True,9@6,True,True
+7,5,0,3,9,1,1,True,0,0,hmm ur nonsense_word wut nonsense_word nonsense_word hi mn id,True,True,hmm ur lmao n/a wut idk nonsense_word hi mn id,auto,False,0,auto,auto,True,9@6,True,False
+8,0,5,0,5,0,1,True,0,0,indulgent assishness coxa fretfulness unqueenlike,True,True,"indulgent e e m assishness , coxa fretfulness v unqueenlike",auto,False,0,auto,auto,True,9@6,True,True
+9,1,2,0,3,0,1,True,0,0,nonsense_word pseudovary palaeobotanically,True,True,", , ' y pseudovary e   i e palaeobotanically",auto,False,0,auto,auto,True,9@6,True,True
+10,8,0,1,9,0,1,True,0,0,nonsense_word zzz hmm nonsense_word blah nonsense_word nonsense_word mn nonsense_word,True,True,no_text zzz n/a hmm idk blah nonsense_word nonsense_word mn no_text,auto,False,0,auto,auto,True,9@6,True,False
+11,4,0,3,8,1,1,True,0,0,nonsense_word blah hi mn shit na huh zz,True,True,no_text blah n/a hi mn shit na j huh zz,auto,False,0,auto,auto,True,9@6,True,False
+12,4,0,1,7,2,1,True,0,0,fuck ur mn blah nonsense_word nonsense_word ur,True,True,fuck ur k mn j blah nonsense_word idk ur n/a,auto,False,0,auto,auto,True,9@6,True,False
+13,1,3,0,4,0,1,True,0,0,nonsense_word ungangrened aphelian asinego,True,True,'     ungangrened l aphelian a asinego e o,auto,False,0,auto,auto,True,9@6,True,True
+14,7,0,2,10,1,1,True,0,0,nonsense_word shit hmm mn nonsense_word nonsense_word ur huh fuck wat,True,True,jk shit hmm mn lmao no_text ur huh fuck wat,auto,False,0,auto,auto,True,9@6,True,False
+15,1,3,0,4,0,1,True,0,0,slopes nonsense_word outtinkle fumiduct,True,True,s o   o slopes ' e outtinkle fumiduct  ,auto,False,0,auto,auto,True,9@6,True,True
+16,3,2,0,5,0,1,True,0,0,blockbusting nonsense_word nonsense_word nonsense_word outtell,True,True,"t blockbusting e ' , l   ' ' outtell",auto,False,0,auto,auto,True,9@6,True,True
+17,7,0,2,10,1,1,True,0,0,huh ur nonsense_word nonsense_word blah mn nonsense_word hmm nonsense_word wat,True,True,huh ur fml nonsense_word blah mn idk hmm asdf wat,auto,False,0,auto,auto,True,9@6,True,False
+18,6,0,2,9,1,1,True,0,0,fuck nonsense_word zz zzz nonsense_word nonsense_word lo fuck mn,True,True,n/a fuck lol zz zzz lmao hm lo fuck mn,auto,False,0,auto,auto,True,9@6,True,False
+19,3,3,0,6,0,1,True,0,0,unforcible nonsense_word nonsense_word nonsense_word reconquer hydroquinoline,True,True,o w unforcible ' ' ' reconquer   s hydroquinoline,auto,False,0,auto,auto,True,9@6,True,True
