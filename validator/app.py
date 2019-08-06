@@ -9,7 +9,6 @@ from validator.ml.stax_string_proc import StaxStringProc
 from flask_cors import cross_origin
 import pkg_resources
 
-import nltk
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -23,8 +22,6 @@ import time
 
 DATA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 app = Flask(__name__)
-
-nltk.data.path = [pkg_resources.resource_filename("validator", "ml/corpora/nltk_data")]
 
 # Default parameters for the response parser and validation call
 PARSER_DEFAULTS = {
