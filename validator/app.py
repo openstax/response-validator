@@ -362,8 +362,6 @@ def validation_train():
                                   axis=1)
     output_df = pd.DataFrame(list(output_df))
     output_df["valid_label"] = response_df["valid_label"]
-    response_df.to_csv('stupid_response.csv')
-    output_df.to_csv('stupid_test.csv')
 
     # Do an N-fold cross validation if cv > 1.
     # Then get coefficients/intercept for the entire dataset
