@@ -58,6 +58,7 @@ class StaxStringProc(object):
             "numeric_type_octal",
             "numeric_type_float",
             "numeric_type_int",
+            "numeric_type_0",
             "numeric_type_complex",
             "numeric_type_roman",
             "math_type",
