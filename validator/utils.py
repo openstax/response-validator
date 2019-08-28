@@ -45,10 +45,16 @@ def get_fixed_data():
         print("Finished")
 
     df_questions["qid"] = df_questions["uid"].apply(lambda x: x.split("@")[0])
-    translator = str.maketrans('', '', string.punctuation)
-    df_questions['stem_words'] = df_questions['stem_text'].apply(lambda x: set(x.lower().translate(translator).split()))
-    df_questions['mc_words'] = df_questions['option_text'].apply(lambda x: set(x.lower().translate(translator).split()))
-    df_questions['contains_number'] = df_questions.apply(lambda x: contains_number(x), axis=1)
+    translator = str.maketrans("", "", string.punctuation)
+    df_questions["stem_words"] = df_questions["stem_text"].apply(
+        lambda x: set(x.lower().translate(translator).split())
+    )
+    df_questions["mc_words"] = df_questions["option_text"].apply(
+        lambda x: set(x.lower().translate(translator).split())
+    )
+    df_questions['contains_number'] = df_questions.apply(
+        lambda x: contains_number(x), axis=1
+    )
 
     return df_innovation, df_domain, df_questions
 

@@ -25,10 +25,11 @@ class StaxStringProc(object):
         corpora_list=[
             "./openform/ml/corpora/all_plaintext.txt",
             "./openform/ml/corpora/big.txt",
-            "./openform/ml/corpora/question_text.txt"
+            "./openform/ml/corpora/question_text.txt",
         ],
         parse_args=(True, False, True, True, 5, 3, 5),
-        symspell_dictionary_file="./openform/ml/corpora/response_validator_spelling_dictionary.txt"
+        symspell_dictionary_file="./openform/ml/corpora/"
+        "response_validator_spelling_dictionary.txt",
     ):
 
         # Set the parsing arguments
@@ -39,7 +40,7 @@ class StaxStringProc(object):
             self.kill_nonwords,
             self.spell_correction_max,
             self.spell_correction_max_edit_distance,
-            self.spell_correction_min_word_length
+            self.spell_correction_min_word_length,
         ) = parse_args
 
         # Alphabet
@@ -60,6 +61,7 @@ class StaxStringProc(object):
             "numeric_type_octal",
             "numeric_type_float",
             "numeric_type_int",
+            "numeric_type_0",
             "numeric_type_complex",
             "numeric_type_roman",
             "math_type",
@@ -95,14 +97,18 @@ class StaxStringProc(object):
         self.suggestion_verbosity = Verbosity.CLOSEST  # TOP, CLOSEST, ALL
         self.prefix_length = 7
         self.spelling_dictionary_file = symspell_dictionary_file
-        self.create_symspell_parser(self.spell_correction_max_edit_distance,
-                                    self.prefix_length,
-                                    self.spelling_dictionary_file)
+        self.create_symspell_parser(
+            self.spell_correction_max_edit_distance,
+            self.prefix_length,
+            self.spelling_dictionary_file,
+        )
 
         # Ensure that all words in the spelling dictionary are in the all_words set
         self.all_words.update(self.sym_spell.words.keys())
 
-    def create_symspell_parser(self, max_edit_distance, prefix_length, dictionary_filename):
+    def create_symspell_parser(
+        self, max_edit_distance, prefix_length, dictionary_filename
+    ):
         self.sym_spell = SymSpell(max_edit_distance, prefix_length)
         if not self.sym_spell.load_dictionary(dictionary_filename, 0, 1):
             print("ERROR: CAN'T LOAD THE SPELLING DICTIONARY!")
@@ -126,9 +132,7 @@ class StaxStringProc(object):
 
         else:
             suggestions = self.sym_spell.lookup(
-                word,
-                self.suggestion_verbosity,
-                self.spell_correction_max_edit_distance,
+                word, self.suggestion_verbosity, self.spell_correction_max_edit_distance
             )
             if len(suggestions) > 0:
                 return suggestions[0].term, True
@@ -212,9 +216,9 @@ class StaxStringProc(object):
         # Remove "'s" (possessives)
         # Truncate length if needed, remove single char items
         answer_text = answer_text.lower()
-        answer_text = re.sub(r'[^\x00-\x7F]+', '', answer_text)
-        answer_text = re.sub("[-/+&;]+", ' ', answer_text)
-        answer_text = re.sub("'s", '', answer_text)
+        answer_text = re.sub(r"[^\x00-\x7F]+", "", answer_text)
+        answer_text = re.sub("[-/+&;]+", " ", answer_text)
+        answer_text = re.sub("'s", "", answer_text)
         wordlist = word_tokenize(answer_text.lower())
 
         wordlist = [

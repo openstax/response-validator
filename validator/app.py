@@ -30,12 +30,12 @@ PARSER_DEFAULTS = {
     "spelling_correction": "auto",
     "remove_nonwords": True,
     "spell_correction_max": 10,
-    "lazy_math_mode": True
+    "lazy_math_mode": True,
 }
 
 SPELLING_CORRECTION_DEFAULTS = {
     "spell_correction_max_edit_distance": 3,
-    "spell_correction_min_word_length": 5
+    "spell_correction_min_word_length": 5,
 }
 
 # If number, feature is used and has the corresponding weight.
@@ -47,8 +47,8 @@ VALIDITY_FEATURE_DICT = collections.OrderedDict(
         "innovation_word_count": 2.2,
         "domain_word_count": 2.5,
         "bad_word_count": -3,
-        "common_word_count": .7,
-        "intercept": 0
+        "common_word_count": 0.7,
+        "intercept": 0,
     }
 )
 
@@ -75,9 +75,9 @@ parser = StaxStringProc(
         PARSER_DEFAULTS["remove_nonwords"],
         PARSER_DEFAULTS["spell_correction_max"],
         SPELLING_CORRECTION_DEFAULTS["spell_correction_max_edit_distance"],
-        SPELLING_CORRECTION_DEFAULTS["spell_correction_min_word_length"]
+        SPELLING_CORRECTION_DEFAULTS["spell_correction_min_word_length"],
     ),
-    symspell_dictionary_file=f"{DATA_PATH}/response_validator_spelling_dictionary.txt"
+    symspell_dictionary_file=f"{DATA_PATH}/response_validator_spelling_dictionary.txt",
 )
 
 common_vocab = set(parser.all_words) | set(parser.reserved_tags)
@@ -99,17 +99,17 @@ def get_question_data_by_key(key, val):
     )
 
     # A better way . . . pre-process and then just to a lookup
-    question_vocab = first_q['stem_words']
-    mc_vocab = first_q['mc_words']
+    question_vocab = first_q["stem_words"]
+    mc_vocab = first_q["mc_words"]
     vocab_dict = OrderedDict(
         {
-        "stem_word_count": question_vocab,
-        "option_word_count": mc_vocab,
-        "innovation_word_count": innovation_vocab,
-        "domain_word_count": domain_vocab,
-        "bad_word_count": bad_vocab,
-        "common_word_count": common_vocab,
-        "intercept": set()
+            "stem_word_count": question_vocab,
+            "option_word_count": mc_vocab,
+            "innovation_word_count": innovation_vocab,
+            "domain_word_count": domain_vocab,
+            "bad_word_count": bad_vocab,
+            "common_word_count": common_vocab,
+            "intercept": set(),
         }
     )
 
@@ -126,13 +126,13 @@ def get_question_data(uid):
     # no uid, or not in data sets
     default_vocab_dict = OrderedDict(
         {
-        "stem_word_count": set(),
-        "option_word_count": set(),
-        "innovation_word_count": set(),
-        "domain_word_count": set(),
-        "bad_word_count": bad_vocab,
-        "common_word_count": common_vocab,
-        "intercept": set()
+            "stem_word_count": set(),
+            "option_word_count": set(),
+            "innovation_word_count": set(),
+            "domain_word_count": set(),
+            "bad_word_count": bad_vocab,
+            "common_word_count": common_vocab,
+            "intercept": set(),
         }
     )
 
@@ -162,12 +162,8 @@ def parse_and_classify(
 
     # Initialize all feature counts to 0
     # Then move through the feature list in order and count iff applicable
-    feature_count_dict = OrderedDict(
-        {
-            key: 0 for key in feature_weight_dict.keys()
-        }
-    )
-    feature_count_dict['intercept'] = 1
+    feature_count_dict = OrderedDict({key: 0 for key in feature_weight_dict.keys()})
+    feature_count_dict["intercept"] = 1
 
     for word in response_words:
         for key in feature_weight_dict.keys():
@@ -175,7 +171,6 @@ def parse_and_classify(
                 if word in feature_vocab_dict[key]:
                     feature_count_dict[key] += 1
                     break  # This will kill the inner loop when a feature is matched
-
 
     # Group the counts together and compute an inner product with the weights
     vector = feature_count_dict.values()
@@ -193,8 +188,8 @@ def parse_and_classify(
         "processed_response": " ".join(response_words),
     }
     return_dict.update(feature_count_dict)
-    return_dict['inner_product'] = inner_product
-    return_dict['valid'] = valid
+    return_dict["inner_product"] = inner_product
+    return_dict["valid"] = valid
     return return_dict
 
 
@@ -212,7 +207,8 @@ def validate_response(
     """Function to estimate validity given response, uid, and parser parameters"""
 
     # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
-    #domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab, mc_vocab = get_question_data(uid)
+    # domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab,
+    #  mc_vocab = get_question_data(uid)
     vocab_dict, uid_used, has_numeric = get_question_data(uid)
 
     # Record the input of tag_numeric and then convert in the case of 'auto'
@@ -264,8 +260,10 @@ def validate_response(
 
     # If lazy_math_mode, do a lazy math check and update valid accordingly
     if lazy_math_mode and response is not None:
-        resp_has_math = re.search('[\+\-\*\=\/\d]', response) is not None
-        return_dictionary['valid'] = return_dictionary['valid'] or (bool(has_numeric) and resp_has_math)
+        resp_has_math = re.search(r"[\+\-\*\=\/\d]", response) is not None
+        return_dictionary["valid"] = return_dictionary["valid"] or (
+            bool(has_numeric) and resp_has_math
+        )
 
     return return_dictionary
 
@@ -278,7 +276,7 @@ def make_tristate(var, default=True):
             pass
         try:
             return float(var)
-        except:
+        except:  # noqa
             pass
     if var == "auto" or type(var) == bool:
         return var
@@ -313,20 +311,25 @@ def validation_api_entry():
     response = args.get("response", None)
     uid = args.get("uid", None)
     parser_params = {
-        key: make_tristate(args.get(key, val), val) for key, val in PARSER_DEFAULTS.items()
+        key: make_tristate(args.get(key, val), val)
+        for key, val in PARSER_DEFAULTS.items()
     }
     feature_weight_dict = OrderedDict(
         {
-            key: make_tristate(args.get(key, val), val) for key, val in VALIDITY_FEATURE_DICT.items()
+            key: make_tristate(args.get(key, val), val)
+            for key, val in VALIDITY_FEATURE_DICT.items()
         }
     )
 
     start_time = time.time()
-    return_dictionary = validate_response(response, uid, feature_weight_dict, **parser_params)
+    return_dictionary = validate_response(
+        response, uid, feature_weight_dict, **parser_params
+    )
 
     return_dictionary["computation_time"] = time.time() - start_time
 
     return jsonify(return_dictionary)
+
 
 @app.route("/train", methods=("GET", "POST"))
 @cross_origin(supports_credentials=True)
@@ -338,15 +341,19 @@ def validation_train():
     else:
         args = request.args
     train_feature_dict = {
-        key: make_tristate(args.get(key, val), val) for key, val in VALIDITY_FEATURE_DICT.items()
+        key: make_tristate(args.get(key, val), val)
+        for key, val in VALIDITY_FEATURE_DICT.items()
     }
-    features_to_consider = [k for k in train_feature_dict.keys() if train_feature_dict[k]]
-    if ('intecept') in features_to_consider:
-        features_to_consider.remove('intercept')
+    features_to_consider = [
+        k for k in train_feature_dict.keys() if train_feature_dict[k]
+    ]
+    if ("intecept") in features_to_consider:
+        features_to_consider.remove("intercept")
     parser_params = {
-        key: make_tristate(args.get(key, val), val) for key, val in PARSER_DEFAULTS.items()
+        key: make_tristate(args.get(key, val), val)
+        for key, val in PARSER_DEFAULTS.items()
     }
-    cv_input = args.get('cv', 5)
+    cv_input = args.get("cv", 5)
 
     # Read in the dataframe of responses from json input
     response_df = request.json.get("response_df", None)
@@ -354,46 +361,41 @@ def validation_train():
 
     # Parse the responses in response_df to get counts on the various word categories
     # Map the valid label of the input to the output
-    output_df = response_df.apply(lambda x: validate_response(x.free_response,
-                                                              x.uid,
-                                                              train_feature_dict,
-                                                              **parser_params
-                                                              ),
-                                  axis=1)
+    output_df = response_df.apply(
+        lambda x: validate_response(
+            x.free_response, x.uid, train_feature_dict, **parser_params
+        ),
+        axis=1,
+    )
     output_df = pd.DataFrame(list(output_df))
     output_df["valid_label"] = response_df["valid_label"]
 
     # Do an N-fold cross validation if cv > 1.
     # Then get coefficients/intercept for the entire dataset
-    lr = LogisticRegression(solver='saga',
-                            max_iter=1000,
-                            fit_intercept=train_feature_dict["intercept"]!=0)
+    lr = LogisticRegression(
+        solver="saga", max_iter=1000, fit_intercept=train_feature_dict["intercept"] != 0
+    )
     X = output_df[features_to_consider].values
     y = output_df["valid_label"].values
 
     validation_array = -1
-    if (cv_input > 1):
-        validation_array = cross_val_score(lr,
-                                           X,
-                                           y,
-                                           cv=cv_input)
+    if cv_input > 1:
+        validation_array = cross_val_score(lr, X, y, cv=cv_input)
     lr.fit(X, y)
     coef = lr.coef_
     intercept = lr.intercept_[0]
     validation_score = float(np.mean(validation_array))
 
-    # Create the return dictionary with the coefficients/intercepts as well as the parsed datafrane
-    # We really don't need to the return the dataframe but it's nice for debugging!
-    return_dictionary = dict(
-        zip(
-            features_to_consider,
-            coef[0].tolist()
-        )
-    )
+    # Create the return dictionary with the coefficients/intercepts as well as
+    # the parsed datafrane We really don't need to the return the dataframe but
+    # it's nice for debugging!
+
+    return_dictionary = dict(zip(features_to_consider, coef[0].tolist()))
     return_dictionary["intercept"] = intercept
     return_dictionary["output_df"] = output_df.to_json()
     return_dictionary["cross_val_score"] = validation_score
     return jsonify(return_dictionary)
+
 
 if __name__ == "__main__":
     app.run(debug=False)  # pragma: nocover
