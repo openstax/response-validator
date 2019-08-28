@@ -12,6 +12,15 @@ import string
 
 import pkg_resources
 
+def contains_number(df_row):
+    math_words = ['meter', 'newton', 'time', 'rate', 'variable', 'unit', 'contant', 'meter', 'charge']
+    if df_row['contains_number']:
+        return True
+    elif re.search('[\+\-\*\=\/\d]', df_row.text) is not None:
+        return True
+    else:
+        text = df_row.text.lower()
+        return (any([m in text for m in math_words]))
 
 def get_fixed_data():
 
@@ -39,6 +48,7 @@ def get_fixed_data():
     translator = str.maketrans('', '', string.punctuation)
     df_questions['stem_words'] = df_questions['stem_text'].apply(lambda x: set(x.lower().translate(translator).split()))
     df_questions['mc_words'] = df_questions['option_text'].apply(lambda x: set(x.lower().translate(translator).split()))
+    df_questions['contains_number'] = df_questions.apply(lambda x: contains_number(x), axis=1)
 
     return df_innovation, df_domain, df_questions
 
