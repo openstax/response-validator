@@ -40,6 +40,7 @@ setup(
         'pandas',
         'nltk',
         'symspellpy',
+        'sklearn',
     ],
     extras_require={
         'test': [
