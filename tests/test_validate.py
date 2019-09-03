@@ -2,14 +2,33 @@ import pytest
 from urllib.parse import urlencode
 
 from validator import app
-from validator.app import DEFAULTS
+from validator.app import PARSER_DEFAULTS
+
+# A set of weights to use when testing things other than stem/option counts
+NO_QUESTION_WEIGHT_DICT = {
+    "stem_word_count": 0,
+    "option_word_count": 0,
+    "innovation_word_count": 2.2,
+    "domain_word_count": 2.5,
+    "bad_word_count": -3,
+    "common_word_count": 0.7,
+}
+
+# A set of weights to use for testing stem/option counts
+QUESTION_WEIGHT_DICT = {
+    "stem_word_count": 1,
+    "option_word_count": 1,
+    "innovation_word_count": 0,
+    "domain_word_count": 0,
+    "bad_word_count": -3,
+    "common_word_count": 0.7,
+}
 
 
 @pytest.fixture
 def client():
     app.app.config["TESTING"] = True
     client = app.app.test_client()
-
     yield client
 
 
@@ -35,7 +54,7 @@ def test_empty_get(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": None,
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": True,
         "num_spelling_correction": 0,
         "tag_numeric": "auto",
@@ -47,6 +66,7 @@ def test_empty_get(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    result = {k: result[k] for k in expected.keys()}
     assert result == expected
 
 
@@ -65,7 +85,7 @@ def test_empty_post(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": None,
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": True,
         "num_spelling_correction": 0,
         "tag_numeric": "auto",
@@ -77,6 +97,7 @@ def test_empty_post(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    result = {k: result[k] for k in expected.keys()}
     assert result == expected
 
 
@@ -84,10 +105,11 @@ def test_non_words(client):
     """Just well-known not-a-word"""
 
     params = {"response": "idk asdf lol n/a"}
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 3,
-        "common_word_count": 1,
+        "common_word_count": 0,
         "computation_time": 0.015013456344604492,
         "domain_word_count": 0,
         "inner_product": -8.3,
@@ -108,14 +130,18 @@ def test_non_words(client):
 
     result = resp.json
     assert result["computation_time"] != 0
-    expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert result["common_word_count"] == expected["common_word_count"]
+    assert result["bad_word_count"] == expected["bad_word_count"]
+    assert result["valid"] == expected["valid"]
+    # expected["computation_time"] = result["computation_time"]
+    # assert expected.items() <= result.items()
 
 
 def test_simple_words(client):
     """Just well-known not-a-word"""
 
     params = {"response": "Here is my response"}
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -128,7 +154,7 @@ def test_simple_words(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "Here is my response",
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": False,
         "num_spelling_correction": 0,
         "tag_numeric": "auto",
@@ -141,13 +167,14 @@ def test_simple_words(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert expected.items() <= result.items()
 
 
 def test_domain_words(client):
     """Word in the domain of the exercise (the book)"""
 
     params = {"response": "echinacea chemiosmosis", "uid": "1340@1"}
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -160,7 +187,7 @@ def test_domain_words(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "echinacea chemiosmosis",
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": False,
         "num_spelling_correction": 0,
         "tag_numeric": "auto",
@@ -173,13 +200,14 @@ def test_domain_words(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert expected.items() <= result.items()
 
 
 def test_innovation_words(client):
     """A word in the innovation list of the exercise"""
 
     params = {"response": "1.0 echinacea cytosol", "uid": "290@1", "tag_numerics": True}
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -205,46 +233,51 @@ def test_innovation_words(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert expected.items() <= result.items()
 
 
 def test_numeric_words(client):
     """Various numerics"""
 
     params = {"response": "0 23 -3 1.2 IV", "tag_numeric": True}
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
-        "bad_word_count": 1,
-        "common_word_count": 4,
-        "computation_time": 0.0003266334533691406,
+        "bad_word_count": 0,
+        "common_word_count": 5,
+        "computation_time": 0.000492095947265625,
         "domain_word_count": 0,
-        "inner_product": -0.20000000000000018,
+        "inner_product": 3.5,
         "innovation_word_count": 0,
-        "processed_response": "nonsense_word numeric_type_int numeric_type_int "
-        "numeric_type_float numeric_type_roman",
+        "intercept": 1,
+        "lazy_math_evaluation": True,
+        "num_spelling_correction": 0,
+        "option_word_count": 0,
+        "processed_response": "numeric_type_0 numeric_type_int numeric_type_int numeric_type_float numeric_type_roman",
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "0 23 -3 1.2 IV",
-        "spelling_correction": DEFAULTS["spelling_correction"],
-        "spelling_correction_used": True,
-        "num_spelling_correction": 0,
+        "spelling_correction": "auto",
+        "spelling_correction_used": False,
+        "stem_word_count": 0,
         "tag_numeric": True,
         "tag_numeric_input": True,
         "uid_found": False,
         "uid_used": None,
-        "valid": False,
+        "valid": True,
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert expected.items() <= result.items()
 
 
 def test_no_spelling_correction(client):
     """Various numerics"""
 
     params = {"response": "This is my respones", "spelling_correction": False}
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 1,
@@ -270,13 +303,14 @@ def test_no_spelling_correction(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert expected.items() <= result.items()
 
 
 def test_auto_spelling_correction_invalid(client):
     """Various numerics"""
 
     params = {"response": "This is my respones", "spelling_correction": "auto"}
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -302,13 +336,14 @@ def test_auto_spelling_correction_invalid(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert expected.items() <= result.items()
 
 
 def test_auto_spelling_correction_valid(client):
     """Various numerics"""
 
     params = {"response": "This is my response", "spelling_correction": "auto"}
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -334,7 +369,7 @@ def test_auto_spelling_correction_valid(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert expected.items() <= result.items()
 
 
 def test_auto_spelling_correction_limit_3(client):
@@ -345,6 +380,7 @@ def test_auto_spelling_correction_limit_3(client):
         "spelling_correction": "auto",
         "spell_correction_max": 3,
     }
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 7,
@@ -372,7 +408,7 @@ def test_auto_spelling_correction_limit_3(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert expected.items() <= result.items()
 
 
 def test_auto_spelling_correction_limit_10(client):
@@ -383,6 +419,7 @@ def test_auto_spelling_correction_limit_10(client):
         "spelling_correction": "auto",
         "spell_correction_max": 10,
     }
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -408,13 +445,14 @@ def test_auto_spelling_correction_limit_10(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert expected.items() <= result.items()
 
 
 def test_spelling_correction_default(client):
     """Various numerics"""
 
     params = {"response": "This is my respones", "spelling_correction": "odd"}
+    params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -427,7 +465,7 @@ def test_spelling_correction_default(client):
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "This is my respones",
-        "spelling_correction": DEFAULTS["spelling_correction"],
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": True,
         "num_spelling_correction": 1,
         "tag_numeric": "auto",
@@ -440,4 +478,74 @@ def test_spelling_correction_default(client):
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    assert result == expected
+    assert expected.items() <= result.items()
+
+
+def test_stem_option_words(client):
+    """Word in the domain of the exercise (the book)"""
+
+    params = {"response": "example leg", "uid": "9@6"}
+    params.update(QUESTION_WEIGHT_DICT)
+    resp = client.get("/validate", query_string=urlencode(params))
+    expected = {
+        "stem_word_count": 1,
+        "option_word_count": 1,
+        "bad_word_count": 0,
+        "common_word_count": 0,
+        "computation_time": 0.07029032707214355,
+        "domain_word_count": 0,
+        "inner_product": 2,
+        "innovation_word_count": 0,
+        "processed_response": "example leg",
+        "remove_nonwords": True,
+        "remove_stopwords": True,
+        "response": "example leg",
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
+        "spelling_correction_used": False,
+        "num_spelling_correction": 0,
+        "tag_numeric": "auto",
+        "tag_numeric_input": "auto",
+        "uid_used": "9@6",
+        "uid_found": True,
+        "valid": True,
+    }
+
+    result = resp.json
+    assert result["computation_time"] != 0
+    expected["computation_time"] = result["computation_time"]
+    assert expected.items() <= result.items()
+
+
+def test_no_stem_option_words(client):
+    """Word in the domain of the exercise (the book)"""
+
+    params = {"response": "example leg", "uid": "9@6"}
+    params.update(NO_QUESTION_WEIGHT_DICT)
+    resp = client.get("/validate", query_string=urlencode(params))
+    expected = {
+        "stem_word_count": 0,
+        "option_word_count": 0,
+        "bad_word_count": 0,
+        "common_word_count": 0,
+        "computation_time": 0.07029032707214355,
+        "domain_word_count": 2,
+        "inner_product": 5.0,
+        "innovation_word_count": 0,
+        "processed_response": "example leg",
+        "remove_nonwords": True,
+        "remove_stopwords": True,
+        "response": "example leg",
+        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
+        "spelling_correction_used": False,
+        "num_spelling_correction": 0,
+        "tag_numeric": "auto",
+        "tag_numeric_input": "auto",
+        "uid_used": "9@6",
+        "uid_found": True,
+        "valid": True,
+    }
+
+    result = resp.json
+    assert result["computation_time"] != 0
+    expected["computation_time"] = result["computation_time"]
+    assert expected.items() <= result.items()
