@@ -6,25 +6,23 @@ from validator.app import PARSER_DEFAULTS
 
 # A set of weights to use when testing things other than stem/option counts
 NO_QUESTION_WEIGHT_DICT = {
-        "stem_word_count": 0,
-        "option_word_count": 0,
-        "innovation_word_count": 2.2,
-        "domain_word_count": 2.5,
-        "bad_word_count": -3,
-        "common_word_count": .7
+    "stem_word_count": 0,
+    "option_word_count": 0,
+    "innovation_word_count": 2.2,
+    "domain_word_count": 2.5,
+    "bad_word_count": -3,
+    "common_word_count": 0.7,
 }
 
 # A set of weights to use for testing stem/option counts
 QUESTION_WEIGHT_DICT = {
-        "stem_word_count": 1,
-        "option_word_count": 1,
-        "innovation_word_count": 0,
-        "domain_word_count": 0,
-        "bad_word_count": -3,
-        "common_word_count": .7
+    "stem_word_count": 1,
+    "option_word_count": 1,
+    "innovation_word_count": 0,
+    "domain_word_count": 0,
+    "bad_word_count": -3,
+    "common_word_count": 0.7,
 }
-
-
 
 
 @pytest.fixture
@@ -135,8 +133,8 @@ def test_non_words(client):
     assert result["common_word_count"] == expected["common_word_count"]
     assert result["bad_word_count"] == expected["bad_word_count"]
     assert result["valid"] == expected["valid"]
-    #expected["computation_time"] = result["computation_time"]
-    #assert expected.items() <= result.items()
+    # expected["computation_time"] = result["computation_time"]
+    # assert expected.items() <= result.items()
 
 
 def test_simple_words(client):
@@ -245,25 +243,28 @@ def test_numeric_words(client):
     params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
-        "bad_word_count": 1,
-        "common_word_count": 4,
-        "computation_time": 0.0003266334533691406,
+        "bad_word_count": 0,
+        "common_word_count": 5,
+        "computation_time": 0.000492095947265625,
         "domain_word_count": 0,
-        "inner_product": -0.20000000000000018,
+        "inner_product": 3.5,
         "innovation_word_count": 0,
-        "processed_response": "nonsense_word numeric_type_int numeric_type_int "
-        "numeric_type_float numeric_type_roman",
+        "intercept": 1,
+        "lazy_math_evaluation": True,
+        "num_spelling_correction": 0,
+        "option_word_count": 0,
+        "processed_response": "numeric_type_0 numeric_type_int numeric_type_int numeric_type_float numeric_type_roman",
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "0 23 -3 1.2 IV",
-        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
-        "spelling_correction_used": True,
-        "num_spelling_correction": 0,
+        "spelling_correction": "auto",
+        "spelling_correction_used": False,
+        "stem_word_count": 0,
         "tag_numeric": True,
         "tag_numeric_input": True,
         "uid_found": False,
         "uid_used": None,
-        "valid": False,
+        "valid": True,
     }
 
     result = resp.json
@@ -479,6 +480,7 @@ def test_spelling_correction_default(client):
     expected["computation_time"] = result["computation_time"]
     assert expected.items() <= result.items()
 
+
 def test_stem_option_words(client):
     """Word in the domain of the exercise (the book)"""
 
@@ -512,6 +514,7 @@ def test_stem_option_words(client):
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
     assert expected.items() <= result.items()
+
 
 def test_no_stem_option_words(client):
     """Word in the domain of the exercise (the book)"""
