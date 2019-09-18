@@ -20,6 +20,8 @@ import collections
 import re
 import time
 
+from . import __version__, _version
+
 
 DATA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 app = Flask(__name__)
@@ -360,6 +362,8 @@ def validation_api_entry():
 
     return_dictionary["computation_time"] = time.time() - start_time
 
+    return_dictionary["version"] = __version__
+
     return jsonify(return_dictionary)
 
 
@@ -475,5 +479,29 @@ def ping():
     return "pong"
 
 
+@app.route("/status")
+def version():
+    global start_time
+    return jsonify(
+        {
+            "version": _version.get_versions(),
+            "started": start_time,
+            "data_sets": {
+                "domains": [
+                    {"name": b[1], "vuid": b[2]}
+                    for b in df_domain[["CNX Book Name", "vuid"]].itertuples()
+                ]
+            },
+        }
+    )
+
+
+@app.route("/rev.txt")
+def simple_version():
+    return __version__
+
+
 if __name__ == "__main__":
+    global start_time
+    start_time = time.ctime()
     app.run(debug=False)  # pragma: nocover
