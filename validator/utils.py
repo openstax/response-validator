@@ -49,7 +49,13 @@ def get_fixed_data():
     if num_missing_files == 0:
         print("Loading existing data...")
         df_innovation = pd.read_csv(data_dir + files_to_find[0])
+        df_innovation["innovation_words"] = df_innovation["innovation_words"].apply(
+            lambda x: [w[1:-1] for w in x.split(", ")]
+        )
         df_domain = pd.read_csv(data_dir + files_to_find[1])
+        df_domain["domain_words"] = df_domain["domain_words"].apply(
+            lambda x: [w[1:-1] for w in x.split(", ")]
+        )
         df_questions = pd.read_csv(data_dir + files_to_find[2])
         # Convert domain and innovation words from comma-separated strings to list
         # This works in memory just fine but won't persist in file

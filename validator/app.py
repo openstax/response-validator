@@ -8,6 +8,7 @@ from validator.utils import get_fixed_data, write_fixed_data
 from validator.ecosystem_importer import EcosystemImporter
 from validator.ml.stax_string_proc import StaxStringProc
 from flask_cors import cross_origin
+import json
 import pkg_resources
 
 import numpy as np
@@ -472,6 +473,14 @@ def import_ecosystem():
     update_fixed_data(df_domain_, df_innovation_, df_questions_)
 
     return jsonify({"msg": "Ecosystem successfully imported"})
+
+
+@app.route("/data_sets/vocabularies/domain/<vuid>")
+def fetch_domain(vuid):
+    data = df_domain[df_domain["vuid"] == vuid].rename(
+        {"CNX Book Name": "name"}, axis=1
+    )
+    return jsonify(json.loads(data.to_json(orient="records"))[0])
 
 
 @app.route("/ping")

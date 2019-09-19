@@ -523,29 +523,33 @@ def test_no_stem_option_words(client):
     params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
-        "stem_word_count": 0,
-        "option_word_count": 0,
         "bad_word_count": 0,
-        "common_word_count": 0,
-        "computation_time": 0.07029032707214355,
-        "domain_word_count": 2,
-        "inner_product": 5.0,
+        "common_word_count": 2,
+        "computation_time": 0.0066986083984375,
+        "domain_word_count": 0,
+        "inner_product": 1.4,
         "innovation_word_count": 0,
+        "intercept": 1,
+        "lazy_math_evaluation": True,
+        "num_spelling_correction": 0,
+        "option_word_count": 0,
         "processed_response": "example leg",
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "example leg",
-        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
+        "spelling_correction": "auto",
         "spelling_correction_used": False,
-        "num_spelling_correction": 0,
+        "stem_word_count": 0,
         "tag_numeric": "auto",
         "tag_numeric_input": "auto",
-        "uid_used": "9@6",
         "uid_found": True,
+        "uid_used": "9@6",
         "valid": True,
+        "version": "2.3.0",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    expected["version"] = result["version"]
     assert expected.items() <= result.items()
