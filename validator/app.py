@@ -5,6 +5,7 @@
 
 from flask import Flask, jsonify, request
 from validator.utils import get_fixed_data
+from validator.ecosystem_importer import EcosystemImporter
 from validator.ml.stax_string_proc import StaxStringProc
 from flask_cors import cross_origin
 import pkg_resources
@@ -59,6 +60,9 @@ VALIDITY_FEATURE_DICT = collections.OrderedDict(
 df_innovation, df_domain, df_questions = get_fixed_data()
 uid_set = df_questions.uid.values.tolist()
 qid_set = df_questions.qid.values.tolist()
+
+# Instantiate the ecosystem importer that will be used by the import route
+ecosystem_importer = EcosystemImporter(common_vocabulary_filename=f"{DATA_PATH}/big.txt")
 
 # Define common and bad vocab
 with open(f"{DATA_PATH}/bad.txt") as f:
