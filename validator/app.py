@@ -93,13 +93,14 @@ def get_question_data_by_key(key, val):
     uid = first_q.uid
     has_numeric = df_questions[df_questions[key] == val].iloc[0].contains_number
     innovation_vocab = (
-        df_innovation[df_innovation["module_id"] == module_id].iloc[0].innovation_words
+        df_innovation[df_innovation["cvuid"] == module_id].iloc[0].innovation_words
     )
     subject_name = (
-        df_innovation[df_innovation["module_id"] == module_id].iloc[0].subject_name
+        df_innovation[df_innovation["cvuid"] == module_id].iloc[0].subject_name
     )
+    # Eventually do this by book_id!!!!
     domain_vocab = (
-        df_domain[df_domain["CNX Book Name"] == subject_name].iloc[0].domain_words
+        df_domain[df_domain["book_name"] == subject_name].iloc[0].domain_words
     )
 
     # A better way . . . pre-process and then just to a lookup
