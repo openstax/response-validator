@@ -23,6 +23,7 @@ import time
 
 from . import __version__, _version
 
+start_time = time.ctime()
 
 DATA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 app = Flask(__name__)
@@ -475,7 +476,24 @@ def import_ecosystem():
     return jsonify({"msg": "Ecosystem successfully imported"})
 
 
-@app.route("/data_sets/vocabularies/domain/<vuid>")
+@app.route("/datasets")
+def datasets_index():
+    return jsonify(["vocabularies"])
+
+
+@app.route("/datasets/vocabularies")
+def vocabularies_index():
+    return jsonify(["domains"])
+
+
+@app.route("/datasets/vocabularies/domains")
+def domains_index():
+    data = df_domain[["CNX Book Name", "vuid"]].rename(
+        {"CNX Book Name": "name"}, axis=1)
+    return jsonify(json.loads(data.to_json(orient="records")))
+
+
+@app.route("/datasets/vocabularies/domains/<vuid>")
 def fetch_domain(vuid):
     data = df_domain[df_domain["vuid"] == vuid].rename(
         {"CNX Book Name": "name"}, axis=1
@@ -495,7 +513,7 @@ def version():
         {
             "version": _version.get_versions(),
             "started": start_time,
-            "data_sets": {
+            "datasets": {
                 "domains": [
                     {"name": b[1], "vuid": b[2]}
                     for b in df_domain[["CNX Book Name", "vuid"]].itertuples()
@@ -511,6 +529,4 @@ def simple_version():
 
 
 if __name__ == "__main__":
-    global start_time
-    start_time = time.ctime()
     app.run(debug=False)  # pragma: nocover
