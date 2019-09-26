@@ -4,7 +4,7 @@
 # accuracy/complexity tradeoffs
 
 from flask import Flask, jsonify, request
-from validator.utils import get_fixed_data
+from validator.utils import get_fixed_data, write_fixed_data
 from validator.ecosystem_importer import EcosystemImporter
 from validator.ml.stax_string_proc import StaxStringProc
 from flask_cors import cross_origin
@@ -85,22 +85,45 @@ parser = StaxStringProc(
 )
 
 common_vocab = set(parser.all_words) | set(parser.reserved_tags)
+ 
+def update_fixed_data(df_domain_, df_innovation_, df_questions_):
+
+    # AEW: I feel like I am sinning against nature here . . .
+    # Do we need to store these in a Redis cache or db???
+    # This was all well and good before we ever tried to modify things
+    global df_domain, df_innovation, df_questions
+
+    # Remove any entries from the domain, innovation, and question dataframes that are duplicated by the new data
+    book_id = df_domain_.iloc[0]["vuid"]
+    df_domain = df_domain[df_domain["vuid"]!=book_id]
+    df_innovation = df_innovation[df_innovation["cvuid"].apply(lambda x: book_id not in x)]
+    uids = df_questions_["uid"].unique()
+    df_questions = df_questions[~df_questions["uid"].isin(uids)]
+
+    # Now append the new dataframes to the in-memory ones
+    df_domain = df_domain.append(df_domain_)
+    df_innovation = df_innovation.append(df_innovation_)
+    df_questions = df_questions.append(df_questions_)
+
+    # Finally, write the updated dataframes to disk and declare victory
+    write_fixed_data(df_domain, df_innovation, df_questions)
+
+
 
 
 def get_question_data_by_key(key, val):
     first_q = df_questions[df_questions[key] == val].iloc[0]
-    module_id = first_q.module_id
+    module_id = first_q.cvuid
     uid = first_q.uid
     has_numeric = df_questions[df_questions[key] == val].iloc[0].contains_number
     innovation_vocab = (
         df_innovation[df_innovation["cvuid"] == module_id].iloc[0].innovation_words
     )
-    subject_name = (
-        df_innovation[df_innovation["cvuid"] == module_id].iloc[0].subject_name
+    vuid = (
+        cvuid.split(":")[0]
     )
-    # Eventually do this by book_id!!!!
     domain_vocab = (
-        df_domain[df_domain["book_name"] == subject_name].iloc[0].domain_words
+        df_domain[df_domain["vuid"] == vuid].iloc[0].domain_words
     )
 
     # A better way . . . pre-process and then just to a lookup
@@ -273,6 +296,7 @@ def validate_response(
     return return_dictionary
 
 
+
 def make_tristate(var, default=True):
     if type(default) == int:
         try:
@@ -401,6 +425,32 @@ def validation_train():
     return_dictionary["cross_val_score"] = validation_score
     return jsonify(return_dictionary)
 
+@app.route("/import", methods=["POST"])
+@cross_origin(supports_credentials=True)
+def import_ecosystem():
+
+    # Extract arguments for the ecosystem to import
+    # Will either be a file location, YAML-as-string, or book_id and list of question uids
+    args = request.form
+
+    yaml_filename = request.json.get("filename", None)
+    yaml_string = request.json.get("yaml_string", None)
+    book_id = request.json.get("book_id", None)
+    exercise_list = request.json.get("question_list", None)
+
+    if (yaml_filename):
+        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_file(yaml_filename)
+    elif (yaml_string):
+        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_string(yaml_string)
+    elif book_id and exercise_list:
+        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_content(book_id, exercise_list)
+
+    else:
+        return jsonify({'msg': 'Could not process input. Provide either a location of a YAML file, a string of YAML content, or a book_id and question_list'})
+
+    update_fixed_data(df_domain_, df_innovation_, df_questions_)
+
+    return jsonify({'msg': 'Ecosystem successfully imported'})
 
 if __name__ == "__main__":
     app.run(debug=False)  # pragma: nocover

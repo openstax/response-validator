@@ -33,6 +33,11 @@ def contains_number(df_row):
         text = df_row.text.lower()
         return any([m in text for m in math_words])
 
+def write_fixed_data(df_domain, df_innovation, df_questions):
+    data_dir = pkg_resources.resource_filename("validator", "ml/data/")
+    df_domain.to_csv(data_dir + 'df_domain.csv', index=None)
+    df_innovation.to_csv(data_dir + 'df_innovation.csv', index=None)
+    df_questions.to_csv(data_dir + 'df_questions.csv', index=None)
 
 def get_fixed_data():
 
@@ -56,13 +61,27 @@ def get_fixed_data():
         df_questions.to_csv(data_dir + files_to_find[2], index=None)
         print("Finished")
 
-    df_questions["qid"] = df_questions["uid"].apply(lambda x: x.split("@")[0])
-    translator = str.maketrans("", "", string.punctuation)
-    df_questions["stem_words"] = df_questions["stem_text"].apply(
-        lambda x: set(x.lower().translate(translator).split())
+    # Convert domain and innovation words from comma-separated strings to list
+    # This works in memory just fine but won't persist in file
+    df_domain = df_domain.fillna('')
+    df_innovation = df_innovation.fillna('')
+
+    df_domain['domain_words'] = df_domain['domain_words'].apply(
+        lambda x: x.split(',')
     )
-    df_questions["mc_words"] = df_questions["option_text"].apply(
-        lambda x: set(x.lower().translate(translator).split())
+    df_innovation['innovation_words'] = df_innovation['innovation_words'].apply(
+        lambda x: x.split(',')
+    )
+
+    df_questions["qid"] = df_questions["uid"].apply(
+        lambda x: x.split("@")[0]
+    )
+    translator = str.maketrans("", "", string.punctuation)
+    df_questions["stem_words"] = df_questions["stem_text"].fillna('').apply(
+        lambda x: set(x.lower().translate(translator).split(','))
+    )
+    df_questions["mc_words"] = df_questions["option_text"].fillna('').apply(
+        lambda x: set(x.lower().translate(translator).split(','))
     )
     df_questions["contains_number"] = df_questions.apply(
         lambda x: contains_number(x), axis=1
