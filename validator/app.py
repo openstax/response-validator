@@ -58,13 +58,19 @@ VALIDITY_FEATURE_DICT = collections.OrderedDict(
 #    domain words by subject,
 #    and table linking question uid to cnxmod
 df_innovation, df_domain, df_questions = get_fixed_data()
-uid_set = df_questions.uid.values.tolist()
-qid_set = df_questions.qid.values.tolist()
+qids = {}
+for idcol in ("uid", "qid"):
+    if idcol in df_questions:
+        qids[idcol] = df_questions[idcol].values.tolist()
+    else:
+        qids[idcol] = []
 
 # Instantiate the ecosystem importer that will be used by the import route
-ecosystem_importer = EcosystemImporter(common_vocabulary_filename=f"{DATA_PATH}/big.txt")
+ecosystem_importer = EcosystemImporter(
+    common_vocabulary_filename=f"{DATA_PATH}/big.txt"
+)
 
-# Define common and bad vocab
+# Define bad vocab
 with open(f"{DATA_PATH}/bad.txt") as f:
     bad_vocab = set([re.sub("\n", "", w) for w in f])
 
@@ -85,7 +91,8 @@ parser = StaxStringProc(
 )
 
 common_vocab = set(parser.all_words) | set(parser.reserved_tags)
- 
+
+
 def update_fixed_data(df_domain_, df_innovation_, df_questions_):
 
     # AEW: I feel like I am sinning against nature here . . .
@@ -93,10 +100,13 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
     # This was all well and good before we ever tried to modify things
     global df_domain, df_innovation, df_questions
 
-    # Remove any entries from the domain, innovation, and question dataframes that are duplicated by the new data
+    # Remove any entries from the domain, innovation, and question dataframes
+    # that are duplicated by the new data
     book_id = df_domain_.iloc[0]["vuid"]
-    df_domain = df_domain[df_domain["vuid"]!=book_id]
-    df_innovation = df_innovation[df_innovation["cvuid"].apply(lambda x: book_id not in x)]
+    df_domain = df_domain[df_domain["vuid"] != book_id]
+    df_innovation = df_innovation[
+        df_innovation["cvuid"].apply(lambda x: book_id not in x)
+    ]
     uids = df_questions_["uid"].unique()
     df_questions = df_questions[~df_questions["uid"].isin(uids)]
 
@@ -109,8 +119,6 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
     write_fixed_data(df_domain, df_innovation, df_questions)
 
 
-
-
 def get_question_data_by_key(key, val):
     first_q = df_questions[df_questions[key] == val].iloc[0]
     module_id = first_q.cvuid
@@ -119,12 +127,8 @@ def get_question_data_by_key(key, val):
     innovation_vocab = (
         df_innovation[df_innovation["cvuid"] == module_id].iloc[0].innovation_words
     )
-    vuid = (
-        cvuid.split(":")[0]
-    )
-    domain_vocab = (
-        df_domain[df_domain["vuid"] == vuid].iloc[0].domain_words
-    )
+    vuid = module_id.split(":")[0]
+    domain_vocab = df_domain[df_domain["vuid"] == vuid].iloc[0].domain_words
 
     # A better way . . . pre-process and then just to a lookup
     question_vocab = first_q["stem_words"]
@@ -147,9 +151,9 @@ def get_question_data_by_key(key, val):
 def get_question_data(uid):
     if uid is not None:
         qid = uid.split("@")[0]
-        if uid in uid_set:
+        if uid in qids["uid"]:
             return get_question_data_by_key("uid", uid)
-        elif qid in qid_set:
+        elif qid in qids["qid"]:
             return get_question_data_by_key("qid", qid)
     # no uid, or not in data sets
     default_vocab_dict = OrderedDict(
@@ -164,7 +168,7 @@ def get_question_data(uid):
         }
     )
 
-    return default_vocab_dict, None, None
+    return default_vocab_dict, uid, None
 
 
 def parse_and_classify(
@@ -283,7 +287,7 @@ def validate_response(
     return_dictionary["tag_numeric_input"] = tag_numeric_input
     return_dictionary["spelling_correction"] = spelling_correction
     return_dictionary["uid_used"] = uid_used
-    return_dictionary["uid_found"] = uid_used in uid_set
+    return_dictionary["uid_found"] = uid_used in qids["uid"]
     return_dictionary["lazy_math_evaluation"] = lazy_math_mode
 
     # If lazy_math_mode, do a lazy math check and update valid accordingly
@@ -294,7 +298,6 @@ def validate_response(
         )
 
     return return_dictionary
-
 
 
 def make_tristate(var, default=True):
@@ -425,12 +428,13 @@ def validation_train():
     return_dictionary["cross_val_score"] = validation_score
     return jsonify(return_dictionary)
 
+
 @app.route("/import", methods=["POST"])
 @cross_origin(supports_credentials=True)
 def import_ecosystem():
 
     # Extract arguments for the ecosystem to import
-    # Will either be a file location, YAML-as-string, or book_id and list of question uids
+    # Either be a file location, YAML-as-string, or book_id and list of question uids
     args = request.form
 
     yaml_filename = request.json.get("filename", None)
@@ -438,19 +442,33 @@ def import_ecosystem():
     book_id = request.json.get("book_id", None)
     exercise_list = request.json.get("question_list", None)
 
-    if (yaml_filename):
-        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_file(yaml_filename)
-    elif (yaml_string):
-        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_string(yaml_string)
+    if yaml_filename:
+        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_file(
+            yaml_filename
+        )
+    elif yaml_string:
+        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_string(
+            yaml_string
+        )
     elif book_id and exercise_list:
-        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_content(book_id, exercise_list)
+        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_content(
+            book_id, exercise_list
+        )
 
     else:
-        return jsonify({'msg': 'Could not process input. Provide either a location of a YAML file, a string of YAML content, or a book_id and question_list'})
+        return jsonify(
+            {
+                "msg": "Could not process input. Provide either"
+                " a location of a YAML file,"
+                " a string of YAML content,"
+                " or a book_id and question_list"
+            }
+        )
 
     update_fixed_data(df_domain_, df_innovation_, df_questions_)
 
-    return jsonify({'msg': 'Ecosystem successfully imported'})
+    return jsonify({"msg": "Ecosystem successfully imported"})
+
 
 if __name__ == "__main__":
     app.run(debug=False)  # pragma: nocover
