@@ -50,11 +50,11 @@ def get_fixed_data():
         print("Loading existing data...")
         df_innovation = pd.read_csv(data_dir + files_to_find[0])
         df_innovation["innovation_words"] = df_innovation["innovation_words"].apply(
-            lambda x: [w[1:-1] for w in x.split(", ")]
+            lambda x: [w[1:-1] for w in x[1:-1].split(", ")]
         )
         df_domain = pd.read_csv(data_dir + files_to_find[1])
         df_domain["domain_words"] = df_domain["domain_words"].apply(
-            lambda x: [w[1:-1] for w in x.split(", ")]
+            lambda x: [w[1:-1] for w in x[1:-1].split(", ")]
         )
         df_questions = pd.read_csv(data_dir + files_to_find[2])
         # Convert domain and innovation words from comma-separated strings to list
