@@ -59,7 +59,7 @@ class EcosystemImporter(object):
             page_words = self.get_words(book_dataframe.iloc[ii]["content"])
             page_words = set(page_words)
             new_words = page_words - current_vocab
-            innovation_words.append(",".join(list(new_words)))
+            innovation_words.append(new_words)
             current_vocab = current_vocab | new_words
         book_dataframe["innovation_words"] = innovation_words
         return book_dataframe
@@ -89,10 +89,8 @@ class EcosystemImporter(object):
             lambda x: x.book_id + ":" + x.page_id, axis=1
         )
         df_innovation = df_innovation[["cvuid", "innovation_words"]]
-        all_vocab = (
-            df_innovation.groupby("cvuid")["innovation_words"].agg("sum").values[0]
-        )
-        df_domain = pd.DataFrame({"vuid": [book_cnx_id], "domain_words": all_vocab})
+        all_vocab = set(df_innovation["innovation_words"].apply(list).agg("sum"))
+        df_domain = pd.DataFrame({"vuid": [book_cnx_id], "domain_words": [all_vocab]})
 
         return df_domain, df_innovation
 
@@ -116,7 +114,8 @@ class EcosystemImporter(object):
             item_list.extend(question_json.json()["items"])
 
         # Now iterate through all items and questions within items
-        # For each item/question pair extract the clean stem_html, and cleaned (joined) answers
+        # For each item/question pair extract the clean stem_html,
+        #  and cleaned (joined) answers
         uid_list = []
         stem_list = []
         answer_list = []
@@ -132,60 +131,75 @@ class EcosystemImporter(object):
                         for answer in question["answers"]
                     ]
                 )
-                modules_in_tags = [t for t in item["tags"] if 'context-cnxmod' in t]
+                modules_in_tags = [t for t in item["tags"] if "context-cnxmod" in t]
                 modules_in_tags = set([t.split(":")[1] for t in modules_in_tags])
                 target_module_id = modules_in_tags & module_id_set
-                if (len(target_module_id)==0):
-                	target_module_id = np.nan
+                if len(target_module_id) == 0:
+                    target_module_id = np.nan
                 else:
-                	target_module_id = list(target_module_id)[0]
+                    target_module_id = list(target_module_id)[0]
                 module_id = target_module_id
                 uid_list.append(uid)
                 stem_list.append(stem_text)
                 answer_list.append(answer_text)
-                print(module_id)
                 module_id_list.append(module_id)
         question_df = pd.DataFrame(
-            {"uid": uid_list, "module_id": module_id_list, "stem_text": stem_list, "option_text": answer_list}
+            {
+                "uid": uid_list,
+                "module_id": module_id_list,
+                "stem_text": stem_list,
+                "option_text": answer_list,
+            }
         )
 
         return question_df
 
     def parse_content(
-        self, book_id, question_uid_list, book_title, archive_url="https://archive.cnx.org" 
+        self,
+        book_id,
+        question_uid_list,
+        book_title,
+        archive_url="https://archive.cnx.org",
     ):
 
         df_domain, df_innovation = self.get_book_content(archive_url, book_id)
         df_domain["book_name"] = book_title
         df_innovation["book_name"] = book_title
 
-        module_id_set = df_innovation['cvuid'].apply(lambda x: x.split(":")[1]).values.tolist()
+        module_id_set = (
+            df_innovation["cvuid"].apply(lambda x: x.split(":")[1]).values.tolist()
+        )
         unversioned_module_id_set = [m.split("@")[0] for m in module_id_set]
-        module_id_df = pd.DataFrame({'vers_module_id': module_id_set, 'module_id': unversioned_module_id_set})
-        df_questions = self.get_question_content(question_uid_list, book_id, set(unversioned_module_id_set))
+        module_id_df = pd.DataFrame(
+            {"vers_module_id": module_id_set, "module_id": unversioned_module_id_set}
+        )
+        df_questions = self.get_question_content(
+            question_uid_list, book_id, set(unversioned_module_id_set)
+        )
         df_questions = df_questions.merge(module_id_df)
-        df_questions["cvuid"] = df_questions.apply(lambda x: book_id + ":" + x.vers_module_id, axis=1)
+        df_questions["cvuid"] = df_questions.apply(
+            lambda x: book_id + ":" + x.vers_module_id, axis=1
+        )
         df_questions = df_questions[["uid", "cvuid", "stem_text", "option_text"]]
 
         return df_domain, df_innovation, df_questions
 
-    def parse_yaml_content(
-    	self, yaml_content):
+    def parse_yaml_content(self, yaml_content):
 
-    	book_title = yaml_content["title"]
-    	archive_url = yaml_content["books"][0]["archive_url"] + "/contents/{}"
-    	book_cnx_id = yaml_content["books"][0]["cnx_id"]
-    	question_uid_list = yaml_content["books"][0]["exercise_ids"]
+        book_title = yaml_content["title"]
+        archive_url = yaml_content["books"][0]["archive_url"] + "/contents/{}"
+        book_cnx_id = yaml_content["books"][0]["cnx_id"]
+        question_uid_list = yaml_content["books"][0]["exercise_ids"]
 
-    	return self.parse_content(book_cnx_id, question_uid_list, book_title, archive_url)
+        return self.parse_content(
+            book_cnx_id, question_uid_list, book_title, archive_url
+        )
 
-    def parse_yaml_string(
-    	self, yaml_string):
+    def parse_yaml_string(self, yaml_string):
 
-    	data_loaded = yaml.safe_load(yaml_string)
+        data_loaded = yaml.safe_load(yaml_string)
 
-    	return self.parse_yaml_content(data_loaded)
-
+        return self.parse_yaml_content(data_loaded)
 
     def parse_yaml_file(self, yaml_filename):
 

@@ -107,12 +107,15 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
     # Remove any entries from the domain, innovation, and question dataframes
     # that are duplicated by the new data
     book_id = df_domain_.iloc[0]["vuid"]
-    df_domain = df_domain[df_domain["vuid"] != book_id]
-    df_innovation = df_innovation[
-        df_innovation["cvuid"].apply(lambda x: book_id not in x)
-    ]
+    if "vuid" in df_domain.columns:
+        df_domain = df_domain[df_domain["vuid"] != book_id]
+    if "cvuid" in df_domain.columns:
+        df_innovation = df_innovation[
+            df_innovation["cvuid"].apply(lambda x: book_id not in x)
+        ]
     uids = df_questions_["uid"].unique()
-    df_questions = df_questions[~df_questions["uid"].isin(uids)]
+    if "uid" in df_questions.columns:
+        df_questions = df_questions[~df_questions["uid"].isin(uids)]
 
     # Now append the new dataframes to the in-memory ones
     df_domain = df_domain.append(df_domain_)
@@ -443,33 +446,40 @@ def import_ecosystem():
     # Either be a file location, YAML-as-string, or book_id and list of question uids
     args = request.form
 
-    yaml_filename = request.json.get("filename", None)
-    yaml_string = request.json.get("yaml_string", None)
-    book_id = request.json.get("book_id", None)
-    exercise_list = request.json.get("question_list", None)
-
-    if yaml_filename:
-        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_file(
-            yaml_filename
-        )
-    elif yaml_string:
+    yaml_string = request.files["file"].read()
+    if "file" in request.files:
         df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_string(
             yaml_string
         )
-    elif book_id and exercise_list:
-        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_content(
-            book_id, exercise_list
-        )
 
-    else:
-        return jsonify(
-            {
-                "msg": "Could not process input. Provide either"
-                " a location of a YAML file,"
-                " a string of YAML content,"
-                " or a book_id and question_list"
-            }
-        )
+    elif request.json is not None:
+        yaml_filename = request.json.get("filename", None)
+        yaml_string = request.json.get("yaml_string", None)
+        book_id = request.json.get("book_id", None)
+        exercise_list = request.json.get("question_list", None)
+
+        if yaml_filename:
+            df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_file(
+                yaml_filename
+            )
+        elif yaml_string:
+            df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_string(
+                yaml_string
+            )
+        elif book_id and exercise_list:
+            df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_content(
+                book_id, exercise_list
+            )
+
+        else:
+            return jsonify(
+                {
+                    "msg": "Could not process input. Provide either"
+                    " a location of a YAML file,"
+                    " a string of YAML content,"
+                    " or a book_id and question_list"
+                }
+            )
 
     update_fixed_data(df_domain_, df_innovation_, df_questions_)
 
@@ -488,15 +498,16 @@ def vocabularies_index():
 
 @app.route("/datasets/vocabularies/domains")
 def domains_index():
-    data = df_domain[["CNX Book Name", "vuid"]].rename(
-        {"CNX Book Name": "name"}, axis=1)
+    data = df_domain[["book_name", "vuid"]].rename(
+        {"book_name": "name"}, axis=1
+    )
     return jsonify(json.loads(data.to_json(orient="records")))
 
 
 @app.route("/datasets/vocabularies/domains/<vuid>")
 def fetch_domain(vuid):
     data = df_domain[df_domain["vuid"] == vuid].rename(
-        {"CNX Book Name": "name"}, axis=1
+        {"book_name": "name"}, axis=1
     )
     return jsonify(json.loads(data.to_json(orient="records"))[0])
 
@@ -507,20 +518,18 @@ def ping():
 
 
 @app.route("/status")
-def version():
+def status():
     global start_time
-    return jsonify(
-        {
-            "version": _version.get_versions(),
-            "started": start_time,
-            "datasets": {
-                "domains": [
-                    {"name": b[1], "vuid": b[2]}
-                    for b in df_domain[["CNX Book Name", "vuid"]].itertuples()
-                ]
-            },
+    data = {"version": _version.get_versions(), "started": start_time}
+
+    if "vuid" in df_domain.columns:
+        data["datasets"] = {
+            "domains": [
+                {"name": b[1], "vuid": b[2]}
+                for b in df_domain[["book_name", "vuid"]].itertuples()
+            ]
         }
-    )
+    return jsonify(data)
 
 
 @app.route("/rev.txt")
