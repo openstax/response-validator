@@ -71,12 +71,12 @@ def get_fixed_data():
         df_questions["stem_words"] = (
             df_questions["stem_text"]
             .fillna("")
-            .apply(lambda x: set(x.lower().translate(translator).split(",")))
+            .apply(lambda x: set(x.lower().translate(translator).split()))
         )
         df_questions["mc_words"] = (
             df_questions["option_text"]
             .fillna("")
-            .apply(lambda x: set(x.lower().translate(translator).split(",")))
+            .apply(lambda x: set(x.lower().translate(translator).split()))
         )
         df_questions["contains_number"] = df_questions.apply(
             lambda x: contains_number(x), axis=1
