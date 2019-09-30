@@ -179,27 +179,34 @@ def test_domain_words(client):
     expected = {
         "bad_word_count": 0,
         "common_word_count": 0,
-        "computation_time": 0.07029032707214355,
+        "computation_time": 0.008275270462036133,
         "domain_word_count": 1,
         "inner_product": 4.7,
         "innovation_word_count": 1,
+        "intercept": 1,
+        "lazy_math_evaluation": True,
+        "num_spelling_correction": 0,
+        "option_word_count": 0,
         "processed_response": "echinacea chemiosmosis",
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "echinacea chemiosmosis",
-        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
+        "spelling_correction": "auto",
         "spelling_correction_used": False,
-        "num_spelling_correction": 0,
+        "stem_word_count": 0,
         "tag_numeric": "auto",
         "tag_numeric_input": "auto",
-        "uid_used": "1340@4",
         "uid_found": True,
+        "uid_used": "1340@6",
         "valid": True,
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
 
 
@@ -212,27 +219,34 @@ def test_innovation_words(client):
     expected = {
         "bad_word_count": 0,
         "common_word_count": 1,
-        "computation_time": 0.006117343902587891,
+        "computation_time": 0.0060193538665771484,
         "domain_word_count": 1,
         "inner_product": 5.4,
         "innovation_word_count": 1,
+        "intercept": 1,
+        "lazy_math_evaluation": True,
         "num_spelling_correction": 0,
+        "option_word_count": 0,
         "processed_response": "numeric_type_float echinacea cytosol",
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "1.0 echinacea cytosol",
         "spelling_correction": "auto",
         "spelling_correction_used": False,
+        "stem_word_count": 0,
         "tag_numeric": "auto",
         "tag_numeric_input": "auto",
         "uid_found": True,
-        "uid_used": "290@5",
+        "uid_used": "290@7",
         "valid": True,
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
 
 
@@ -253,7 +267,8 @@ def test_numeric_words(client):
         "lazy_math_evaluation": True,
         "num_spelling_correction": 0,
         "option_word_count": 0,
-        "processed_response": "numeric_type_0 numeric_type_int numeric_type_int numeric_type_float numeric_type_roman",
+        "processed_response": "numeric_type_0 numeric_type_int "
+        "numeric_type_int numeric_type_float numeric_type_roman",
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "0 23 -3 1.2 IV",
@@ -265,11 +280,14 @@ def test_numeric_words(client):
         "uid_found": False,
         "uid_used": None,
         "valid": True,
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
 
 
@@ -298,11 +316,14 @@ def test_no_spelling_correction(client):
         "uid_found": False,
         "uid_used": None,
         "valid": False,
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
 
 
@@ -331,11 +352,14 @@ def test_auto_spelling_correction_invalid(client):
         "uid_found": False,
         "uid_used": None,
         "valid": True,
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
 
 
@@ -364,11 +388,14 @@ def test_auto_spelling_correction_valid(client):
         "uid_found": False,
         "uid_used": None,
         "valid": True,
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
 
 
@@ -403,11 +430,14 @@ def test_auto_spelling_correction_limit_3(client):
         "uid_found": False,
         "uid_used": None,
         "valid": False,
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
 
 
@@ -440,11 +470,14 @@ def test_auto_spelling_correction_limit_10(client):
         "uid_found": False,
         "uid_used": None,
         "valid": True,
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
 
 
@@ -473,11 +506,14 @@ def test_spelling_correction_default(client):
         "uid_found": False,
         "uid_used": None,
         "valid": True,
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
 
 
@@ -488,31 +524,36 @@ def test_stem_option_words(client):
     params.update(QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
-        "stem_word_count": 1,
-        "option_word_count": 1,
         "bad_word_count": 0,
         "common_word_count": 0,
-        "computation_time": 0.07029032707214355,
+        "computation_time": 0.004462242126464844,
         "domain_word_count": 0,
-        "inner_product": 2,
+        "inner_product": 2.0,
         "innovation_word_count": 0,
+        "intercept": 1,
+        "lazy_math_evaluation": True,
+        "num_spelling_correction": 0,
+        "option_word_count": 1,
         "processed_response": "example leg",
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "example leg",
-        "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
+        "spelling_correction": "auto",
         "spelling_correction_used": False,
-        "num_spelling_correction": 0,
+        "stem_word_count": 1,
         "tag_numeric": "auto",
         "tag_numeric_input": "auto",
-        "uid_used": "9@6",
         "uid_found": True,
+        "uid_used": "9@7",
         "valid": True,
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
 
 
@@ -525,7 +566,7 @@ def test_no_stem_option_words(client):
     expected = {
         "bad_word_count": 0,
         "common_word_count": 2,
-        "computation_time": 0.0066986083984375,
+        "computation_time": 0.005262136459350586,
         "domain_word_count": 0,
         "inner_product": 1.4,
         "innovation_word_count": 0,
@@ -543,13 +584,14 @@ def test_no_stem_option_words(client):
         "tag_numeric": "auto",
         "tag_numeric_input": "auto",
         "uid_found": True,
-        "uid_used": "9@6",
+        "uid_used": "9@7",
         "valid": True,
-        "version": "2.3.0",
+        "version": "testing",
     }
 
     result = resp.json
     assert result["computation_time"] != 0
     expected["computation_time"] = result["computation_time"]
-    expected["version"] = result["version"]
+    assert "." in result["version"]
+    result["version"] = "testing"
     assert expected.items() <= result.items()
