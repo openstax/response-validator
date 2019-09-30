@@ -4,9 +4,11 @@
 # accuracy/complexity tradeoffs
 
 from flask import Flask, jsonify, request
-from validator.utils import get_fixed_data
+from validator.utils import get_fixed_data, write_fixed_data
+from validator.ecosystem_importer import EcosystemImporter
 from validator.ml.stax_string_proc import StaxStringProc
 from flask_cors import cross_origin
+import json
 import pkg_resources
 
 import numpy as np
@@ -19,6 +21,9 @@ import collections
 import re
 import time
 
+from . import __version__, _version
+
+start_time = time.ctime()
 
 DATA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 app = Flask(__name__)
@@ -57,10 +62,19 @@ VALIDITY_FEATURE_DICT = collections.OrderedDict(
 #    domain words by subject,
 #    and table linking question uid to cnxmod
 df_innovation, df_domain, df_questions = get_fixed_data()
-uid_set = df_questions.uid.values.tolist()
-qid_set = df_questions.qid.values.tolist()
+qids = {}
+for idcol in ("uid", "qid"):
+    if idcol in df_questions:
+        qids[idcol] = df_questions[idcol].values.tolist()
+    else:
+        qids[idcol] = []
 
-# Define common and bad vocab
+# Instantiate the ecosystem importer that will be used by the import route
+ecosystem_importer = EcosystemImporter(
+    common_vocabulary_filename=f"{DATA_PATH}/big.txt"
+)
+
+# Define bad vocab
 with open(f"{DATA_PATH}/bad.txt") as f:
     bad_vocab = set([re.sub("\n", "", w) for w in f])
 
@@ -83,20 +97,45 @@ parser = StaxStringProc(
 common_vocab = set(parser.all_words) | set(parser.reserved_tags)
 
 
+def update_fixed_data(df_domain_, df_innovation_, df_questions_):
+
+    # AEW: I feel like I am sinning against nature here . . .
+    # Do we need to store these in a Redis cache or db???
+    # This was all well and good before we ever tried to modify things
+    global df_domain, df_innovation, df_questions
+
+    # Remove any entries from the domain, innovation, and question dataframes
+    # that are duplicated by the new data
+    book_id = df_domain_.iloc[0]["vuid"]
+    if "vuid" in df_domain.columns:
+        df_domain = df_domain[df_domain["vuid"] != book_id]
+    if "cvuid" in df_domain.columns:
+        df_innovation = df_innovation[
+            df_innovation["cvuid"].apply(lambda x: book_id not in x)
+        ]
+    uids = df_questions_["uid"].unique()
+    if "uid" in df_questions.columns:
+        df_questions = df_questions[~df_questions["uid"].isin(uids)]
+
+    # Now append the new dataframes to the in-memory ones
+    df_domain = df_domain.append(df_domain_)
+    df_innovation = df_innovation.append(df_innovation_)
+    df_questions = df_questions.append(df_questions_)
+
+    # Finally, write the updated dataframes to disk and declare victory
+    write_fixed_data(df_domain, df_innovation, df_questions)
+
+
 def get_question_data_by_key(key, val):
     first_q = df_questions[df_questions[key] == val].iloc[0]
-    module_id = first_q.module_id
+    module_id = first_q.cvuid
     uid = first_q.uid
     has_numeric = df_questions[df_questions[key] == val].iloc[0].contains_number
     innovation_vocab = (
-        df_innovation[df_innovation["module_id"] == module_id].iloc[0].innovation_words
+        df_innovation[df_innovation["cvuid"] == module_id].iloc[0].innovation_words
     )
-    subject_name = (
-        df_innovation[df_innovation["module_id"] == module_id].iloc[0].subject_name
-    )
-    domain_vocab = (
-        df_domain[df_domain["CNX Book Name"] == subject_name].iloc[0].domain_words
-    )
+    vuid = module_id.split(":")[0]
+    domain_vocab = df_domain[df_domain["vuid"] == vuid].iloc[0].domain_words
 
     # A better way . . . pre-process and then just to a lookup
     question_vocab = first_q["stem_words"]
@@ -119,9 +158,9 @@ def get_question_data_by_key(key, val):
 def get_question_data(uid):
     if uid is not None:
         qid = uid.split("@")[0]
-        if uid in uid_set:
+        if uid in qids["uid"]:
             return get_question_data_by_key("uid", uid)
-        elif qid in qid_set:
+        elif qid in qids["qid"]:
             return get_question_data_by_key("qid", qid)
     # no uid, or not in data sets
     default_vocab_dict = OrderedDict(
@@ -136,7 +175,7 @@ def get_question_data(uid):
         }
     )
 
-    return default_vocab_dict, None, None
+    return default_vocab_dict, uid, None
 
 
 def parse_and_classify(
@@ -255,7 +294,7 @@ def validate_response(
     return_dictionary["tag_numeric_input"] = tag_numeric_input
     return_dictionary["spelling_correction"] = spelling_correction
     return_dictionary["uid_used"] = uid_used
-    return_dictionary["uid_found"] = uid_used in uid_set
+    return_dictionary["uid_found"] = uid_used in qids["uid"]
     return_dictionary["lazy_math_evaluation"] = lazy_math_mode
 
     # If lazy_math_mode, do a lazy math check and update valid accordingly
@@ -328,6 +367,8 @@ def validation_api_entry():
 
     return_dictionary["computation_time"] = time.time() - start_time
 
+    return_dictionary["version"] = __version__
+
     return jsonify(return_dictionary)
 
 
@@ -395,6 +436,131 @@ def validation_train():
     return_dictionary["output_df"] = output_df.to_json()
     return_dictionary["cross_val_score"] = validation_score
     return jsonify(return_dictionary)
+
+
+@app.route("/import", methods=["POST"])
+@cross_origin(supports_credentials=True)
+def import_ecosystem():
+
+    # Extract arguments for the ecosystem to import
+    # Either be a file location, YAML-as-string, or book_id and list of question uids
+
+    yaml_string = request.files["file"].read()
+    if "file" in request.files:
+        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_string(
+            yaml_string
+        )
+
+    elif request.json is not None:
+        yaml_filename = request.json.get("filename", None)
+        yaml_string = request.json.get("yaml_string", None)
+        book_id = request.json.get("book_id", None)
+        exercise_list = request.json.get("question_list", None)
+
+        if yaml_filename:
+            df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_file(
+                yaml_filename
+            )
+        elif yaml_string:
+            df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_string(
+                yaml_string
+            )
+        elif book_id and exercise_list:
+            df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_content(
+                book_id, exercise_list
+            )
+
+        else:
+            return jsonify(
+                {
+                    "msg": "Could not process input. Provide either"
+                    " a location of a YAML file,"
+                    " a string of YAML content,"
+                    " or a book_id and question_list"
+                }
+            )
+
+    update_fixed_data(df_domain_, df_innovation_, df_questions_)
+
+    return jsonify({"msg": "Ecosystem successfully imported"})
+
+
+@app.route("/datasets")
+def datasets_index():
+    return jsonify(["books"])  # FIXME , "questions", "feature_coefficients"])
+
+
+@app.route("/datasets/books")
+def books_index():
+    data = df_domain[["book_name", "vuid"]].rename({"book_name": "name"}, axis=1)
+    data["vocabularies"] = [["domain", "innovation"]] * len(data)
+    data_json = json.loads(data.to_json(orient="records"))
+    return jsonify(data_json)
+
+
+@app.route("/datasets/books/<vuid>")
+def fetch_book(vuid):
+    data = df_domain[df_domain["vuid"] == vuid][["book_name", "vuid"]].rename(
+        {"book_name": "name"}, axis=1
+    )
+    data["vocabularies"] = [["domain", "innovation"]] * len(data)
+    data_json = json.loads(data.to_json(orient="records"))
+    return jsonify(data_json[0])
+
+
+@app.route("/datasets/books/<vuid>/vocabularies")
+def fetch_vocabs(vuid):
+    return jsonify(["domain", "innovation"])
+
+
+@app.route("/datasets/books/<vuid>/vocabularies/domain")
+def fetch_domain(vuid):
+    data = df_domain[df_domain["vuid"] == vuid]["domain_words"]
+    return jsonify(data.tolist()[0])
+
+
+@app.route("/datasets/books/<vuid>/vocabularies/innovation")
+def fetch_innovation(vuid):
+    data = df_innovation[df_innovation["cvuid"].str.startswith(vuid)][
+        ["cvuid", "innovation_words"]
+    ]
+    data["page_vuid"] = data.cvuid.str.split(":", expand=True)[1]
+    return jsonify(
+        json.loads(data[["page_vuid", "innovation_words"]].to_json(orient="records"))
+    )
+
+
+@app.route("/datasets/books/<vuid>/vocabularies/innovation/<pvuid>")
+def fetch_page_innovation(vuid, pvuid):
+    data = df_innovation[df_innovation["cvuid"] == ":".join((vuid, pvuid))][
+        "innovation_words"
+    ]
+    return jsonify(data.tolist()[0])
+
+
+@app.route("/ping")
+def ping():
+    return "pong"
+
+
+@app.route("/status")
+def status():
+    global start_time
+    data = {"version": _version.get_versions(), "started": start_time}
+
+    if "vuid" in df_domain.columns:
+        data["datasets"] = {
+            "domains": [
+                {"name": b[1], "vuid": b[2]}
+                for b in df_domain[["book_name", "vuid"]].itertuples()
+            ]
+        }
+    return jsonify(data)
+
+
+@app.route("/rev.txt")
+def simple_version():
+    return __version__
 
 
 if __name__ == "__main__":

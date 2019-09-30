@@ -49,6 +49,7 @@ setup(
         'nltk',
         'symspellpy',
         'sklearn',
+        'PyYAML',
     ],
     extras_require={
         'test': [

@@ -27,7 +27,7 @@ FEATURE_SET_2 = {
     "common_word_count": 1,
 }
 
-question_data = df_questions[df_questions["uid"] == "9@6"].iloc[0]
+question_data = df_questions[df_questions["uid"] == "9@7"].iloc[0]
 stem_vocab = question_data["stem_words"]
 mc_vocab = question_data["mc_words"]
 vocab_set = get_question_data(question_data.uid)[0]
