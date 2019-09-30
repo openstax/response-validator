@@ -122,7 +122,6 @@ class EcosystemImporter(object):
         module_id_list = []
         for item in item_list:
             uid = item["uid"]
-            L = len(item["questions"])
             for question in item["questions"]:
                 stem_text = self.format_cnxml(question["stem_html"])
                 answer_text = " ".join(
@@ -190,6 +189,10 @@ class EcosystemImporter(object):
         archive_url = yaml_content["books"][0]["archive_url"] + "/contents/{}"
         book_cnx_id = yaml_content["books"][0]["cnx_id"]
         question_uid_list = yaml_content["books"][0]["exercise_ids"]
+
+        # Strip ' (uuid@ver)' from end of title in yaml: 'book name (uuid@ver)'
+        if book_cnx_id in book_title:
+            book_title = book_title[:book_title.find(book_cnx_id) - 2]
 
         return self.parse_content(
             book_cnx_id, question_uid_list, book_title, archive_url
