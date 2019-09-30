@@ -444,7 +444,6 @@ def import_ecosystem():
 
     # Extract arguments for the ecosystem to import
     # Either be a file location, YAML-as-string, or book_id and list of question uids
-    args = request.form
 
     yaml_string = request.files["file"].read()
     if "file" in request.files:
@@ -488,28 +487,55 @@ def import_ecosystem():
 
 @app.route("/datasets")
 def datasets_index():
-    return jsonify(["vocabularies"])
+    return jsonify(["books"])  # FIXME , "questions", "feature_coefficients"])
 
 
-@app.route("/datasets/vocabularies")
-def vocabularies_index():
-    return jsonify(["domains"])
+@app.route("/datasets/books")
+def books_index():
+    data = df_domain[["book_name", "vuid"]].rename({"book_name": "name"}, axis=1)
+    data["vocabularies"] = [["domain", "innovation"]] * len(data)
+    data_json = json.loads(data.to_json(orient="records"))
+    return jsonify(data_json)
 
 
-@app.route("/datasets/vocabularies/domains")
-def domains_index():
-    data = df_domain[["book_name", "vuid"]].rename(
+@app.route("/datasets/books/<vuid>")
+def fetch_book(vuid):
+    data = df_domain[df_domain["vuid"] == vuid][["book_name", "vuid"]].rename(
         {"book_name": "name"}, axis=1
     )
-    return jsonify(json.loads(data.to_json(orient="records")))
+    data["vocabularies"] = [["domain", "innovation"]] * len(data)
+    data_json = json.loads(data.to_json(orient="records"))
+    return jsonify(data_json[0])
 
 
-@app.route("/datasets/vocabularies/domains/<vuid>")
+@app.route("/datasets/books/<vuid>/vocabularies")
+def fetch_vocabs(vuid):
+    return jsonify(["domain", "innovation"])
+
+
+@app.route("/datasets/books/<vuid>/vocabularies/domain")
 def fetch_domain(vuid):
-    data = df_domain[df_domain["vuid"] == vuid].rename(
-        {"book_name": "name"}, axis=1
+    data = df_domain[df_domain["vuid"] == vuid]["domain_words"]
+    return jsonify(data.tolist()[0])
+
+
+@app.route("/datasets/books/<vuid>/vocabularies/innovation")
+def fetch_innovation(vuid):
+    data = df_innovation[df_innovation["cvuid"].str.startswith(vuid)][
+        ["cvuid", "innovation_words"]
+    ]
+    data["page_vuid"] = data.cvuid.str.split(":", expand=True)[1]
+    return jsonify(
+        json.loads(data[["page_vuid", "innovation_words"]].to_json(orient="records"))
     )
-    return jsonify(json.loads(data.to_json(orient="records"))[0])
+
+
+@app.route("/datasets/books/<vuid>/vocabularies/innovation/<pvuid>")
+def fetch_page_innovation(vuid, pvuid):
+    data = df_innovation[df_innovation["cvuid"] == ":".join((vuid, pvuid))][
+        "innovation_words"
+    ]
+    return jsonify(data.tolist()[0])
 
 
 @app.route("/ping")
