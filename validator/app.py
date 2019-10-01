@@ -550,7 +550,7 @@ def status():
 
     if "vuid" in df_domain.columns:
         data["datasets"] = {
-            "domains": [
+            "books": [
                 {"name": b[1], "vuid": b[2]}
                 for b in df_domain[["book_name", "vuid"]].itertuples()
             ]
@@ -558,6 +558,7 @@ def status():
     return jsonify(data)
 
 
+@app.route("/version")
 @app.route("/rev.txt")
 def simple_version():
     return __version__
