@@ -490,12 +490,16 @@ def datasets_index():
     return jsonify(["books"])  # FIXME , "questions", "feature_coefficients"])
 
 
-@app.route("/datasets/books")
-def books_index():
+def _books_json():
     data = df_domain[["book_name", "vuid"]].rename({"book_name": "name"}, axis=1)
     data["vocabularies"] = [["domain", "innovation"]] * len(data)
     data_json = json.loads(data.to_json(orient="records"))
-    return jsonify(data_json)
+    return data_json
+
+
+@app.route("/datasets/books")
+def books_index():
+    return jsonify(_books_json())
 
 
 @app.route("/datasets/books/<vuid>")
@@ -549,12 +553,8 @@ def status():
     data = {"version": _version.get_versions(), "started": start_time}
 
     if "vuid" in df_domain.columns:
-        data["datasets"] = {
-            "books": [
-                {"name": b[1], "vuid": b[2]}
-                for b in df_domain[["book_name", "vuid"]].itertuples()
-            ]
-        }
+        data["datasets"] = {'books': _books_json()}
+
     return jsonify(data)
 
 
