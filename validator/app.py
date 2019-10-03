@@ -111,11 +111,16 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
         df_domain = df_domain[df_domain["vuid"] != book_id]
     if "cvuid" in df_domain.columns:
         df_innovation = df_innovation[
-            df_innovation["cvuid"].apply(lambda x: book_id not in x)
+            ~(df_innovation["cvuid"].star.startswith(book_id))
         ]
     uids = df_questions_["uid"].unique()
     if "uid" in df_questions.columns:
-        df_questions = df_questions[~df_questions["uid"].isin(uids)]
+        df_questions = df_questions[
+            ~(
+                df_questions["uid"].isin(uids)
+                & df_questions["cvuid"].str.startswith(book_id)
+            )
+        ]
 
     # Now append the new dataframes to the in-memory ones
     df_domain = df_domain.append(df_domain_)
@@ -487,12 +492,12 @@ def import_ecosystem():
 
 @app.route("/datasets")
 def datasets_index():
-    return jsonify(["books"])  # FIXME , "questions", "feature_coefficients"])
+    return jsonify(["books", "questions"])  # FIXME , "feature_coefficients"])
 
 
 def _books_json():
     data = df_domain[["book_name", "vuid"]].rename({"book_name": "name"}, axis=1)
-    data["vocabularies"] = [["domain", "innovation"]] * len(data)
+    data["vocabularies"] = [["domain", "innovation", "questions"]] * len(data)
     data_json = json.loads(data.to_json(orient="records"))
     return data_json
 
@@ -507,14 +512,50 @@ def fetch_book(vuid):
     data = df_domain[df_domain["vuid"] == vuid][["book_name", "vuid"]].rename(
         {"book_name": "name"}, axis=1
     )
-    data["vocabularies"] = [["domain", "innovation"]] * len(data)
-    data_json = json.loads(data.to_json(orient="records"))
-    return jsonify(data_json[0])
+    data["vocabularies"] = [["domain", "innovation", "questions"]] * len(data)
+    page_list = (
+        df_innovation[df_innovation["cvuid"].str.startswith(vuid)]
+        .cvuid.str.split(":", expand=True)[1]
+        .tolist()
+    )
+    data_json = json.loads(data.to_json(orient="records"))[0]
+    data_json["pages"] = page_list
+    return jsonify(data_json)
+
+
+@app.route("/datasets/books/<vuid>/pages")
+def fetch_page_list(vuid):
+    page_list = (
+        df_innovation[df_innovation["cvuid"].str.startswith(vuid)]
+        .cvuid.str.split(":", expand=True)[1]
+        .tolist()
+    )
+    return jsonify(page_list)
+
+
+@app.route("/datasets/books/<vuid>/pages/<pvuid>")
+def fetch_page(vuid, pvuid):
+    innovation = df_innovation[df_innovation["cvuid"] == ":".join((vuid, pvuid))][
+        "innovation_words"
+    ].tolist()
+    questions = (
+        df_questions[df_questions["cvuid"] == ":".join((vuid, pvuid))][
+            ["uid", "mc_words", "stem_words"]
+        ]
+        .rename({"uid": "exercise_uid", "mc_words": "option_words"}, axis=1)
+        .to_json(orient="records")
+    )
+
+    data = {
+        "cvuid": ":".join((vuid, pvuid)),
+        "vocabularies": {"innovation": innovation, "questions": json.loads(questions)},
+    }
+    return jsonify(data)
 
 
 @app.route("/datasets/books/<vuid>/vocabularies")
 def fetch_vocabs(vuid):
-    return jsonify(["domain", "innovation"])
+    return jsonify(["domain", "innovation", "questions"])
 
 
 @app.route("/datasets/books/<vuid>/vocabularies/domain")
@@ -542,6 +583,47 @@ def fetch_page_innovation(vuid, pvuid):
     return jsonify(data.tolist()[0])
 
 
+@app.route("/datasets/books/<vuid>/vocabularies/questions")
+def fetch_questions(vuid):
+    data = df_questions[df_questions["cvuid"].str.startswith(vuid)][
+        ["uid", "cvuid", "mc_words", "stem_words"]
+    ].rename({"uid": "exercise_uid", "mc_words": "option_words"}, axis=1)
+    data["page_vuid"] = data.cvuid.str.split(":", expand=True)[1]
+    pages = data.groupby("page_vuid")
+    data_json = [
+        {
+            "page_vuid": page[0],
+            "questions": json.loads(
+                page[1][["exercise_uid", "option_words", "stem_words"]].to_json(
+                    orient="records"
+                )
+            ),
+        }
+        for page in pages
+    ]
+    return jsonify(data_json)
+
+
+@app.route("/datasets/books/<vuid>/vocabularies/questions/<pvuid>")
+def fetch_page_questions(vuid, pvuid):
+    data = df_questions[df_questions["cvuid"] == ":".join((vuid, pvuid))][
+        "mc_words", "stem_words"
+    ]
+    return jsonify(data.tolist()[0])
+
+
+@app.route("/datasets/questions")
+def questions_index():
+    return jsonify(df_questions.uid.tolist())
+
+
+@app.route("/datasets/questions/<uid>")
+def fetch_question(uid):
+    data = df_questions[df_questions["uid"] == uid]
+    data_json = json.loads(data.to_json(orient="records"))
+    return jsonify(data_json)
+
+
 @app.route("/ping")
 def ping():
     return "pong"
@@ -553,7 +635,7 @@ def status():
     data = {"version": _version.get_versions(), "started": start_time}
 
     if "vuid" in df_domain.columns:
-        data["datasets"] = {'books': _books_json()}
+        data["datasets"] = {"books": _books_json()}
 
     return jsonify(data)
 
