@@ -217,7 +217,7 @@ def parse_and_classify(
             if feature_weight_dict[key]:
                 if word in feature_vocab_dict[key]:
                     feature_count_dict[key] += 1
-                    break  # This will kill the inner loop when a feature is matched
+                    break  # only count each word as first feature matched (key order matters!)
 
     # Group the counts together and compute an inner product with the weights
     vector = feature_count_dict.values()
@@ -528,7 +528,7 @@ def _books_json(include_vocabs=True):
     data = df_domain[["book_name", "vuid"]].rename({"book_name": "name"}, axis=1)
     if include_vocabs:
         data["vocabularies"] = [["domain", "innovation", "questions"]] * len(data)
-    return json.loads(data.to_json(orient="records"))
+    return data.to_dict(orient="records")
 
 
 def _validate_version(ver):
@@ -573,7 +573,7 @@ def fetch_book(vuid):
         .cvuid.str.split(":", expand=True)[1]
         .tolist()
     )
-    data_json = json.loads(data.to_json(orient="records"))[0]
+    data_json = data.to_dict(orient="records")[0]
     data_json["pages"] = page_list
     return jsonify(data_json)
 
@@ -610,7 +610,7 @@ def fetch_page(vuid, pvuid):
     data = {
         "cvuid": ":".join((vuid, pvuid)),
         "vocabularies": {
-            "innovation": innovation.tolist()[0],
+            "innovation": list(innovation.iloc[0]),
             "questions": json.loads(questions),
         },
     }
@@ -629,7 +629,7 @@ def fetch_domain(vuid):
         _validate_vuid(vuid)
         raise InvalidUsage("No such book", status_code=404)
 
-    return jsonify(data.tolist()[0])
+    return jsonify(list(data.tolist()[0]))
 
 
 @app.route("/datasets/books/<vuid>/vocabularies/innovation")
@@ -642,8 +642,9 @@ def fetch_innovation(vuid):
         raise InvalidUsage("No such book", status_code=404)
 
     data["page_vuid"] = data.cvuid.str.split(":", expand=True)[1]
+    data['innovation_words'] = data['innovation_words'].map(list)
     return jsonify(
-        json.loads(data[["page_vuid", "innovation_words"]].to_json(orient="records"))
+        data[["page_vuid", "innovation_words"]].to_dict(orient="records")
     )
 
 
@@ -657,7 +658,7 @@ def fetch_page_innovation(vuid, pvuid):
         _validate_vuid(pvuid, vuid_type="page")
         raise InvalidUsage("No such book or page", status_code=404)
 
-    return jsonify(data.tolist()[0])
+    return jsonify(list(data.iloc[0]))
 
 
 @app.route("/datasets/books/<vuid>/vocabularies/questions")
