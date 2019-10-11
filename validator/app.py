@@ -4,10 +4,13 @@
 # accuracy/complexity tradeoffs
 
 from flask import Flask, jsonify, request
+from flask_cors import cross_origin
+from uuid import UUID
+
 from validator.utils import get_fixed_data, write_fixed_data
 from validator.ecosystem_importer import EcosystemImporter
 from validator.ml.stax_string_proc import StaxStringProc
-from flask_cors import cross_origin
+
 import json
 import pkg_resources
 
@@ -111,11 +114,16 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
         df_domain = df_domain[df_domain["vuid"] != book_id]
     if "cvuid" in df_domain.columns:
         df_innovation = df_innovation[
-            df_innovation["cvuid"].apply(lambda x: book_id not in x)
+            ~(df_innovation["cvuid"].star.startswith(book_id))
         ]
     uids = df_questions_["uid"].unique()
     if "uid" in df_questions.columns:
-        df_questions = df_questions[~df_questions["uid"].isin(uids)]
+        df_questions = df_questions[
+            ~(
+                df_questions["uid"].isin(uids)
+                & df_questions["cvuid"].str.startswith(book_id)
+            )
+        ]
 
     # Now append the new dataframes to the in-memory ones
     df_domain = df_domain.append(df_domain_)
@@ -209,7 +217,7 @@ def parse_and_classify(
             if feature_weight_dict[key]:
                 if word in feature_vocab_dict[key]:
                     feature_count_dict[key] += 1
-                    break  # This will kill the inner loop when a feature is matched
+                    break  # only count each word as first feature matched (key order matters!)
 
     # Group the counts together and compute an inner product with the weights
     vector = feature_count_dict.values()
@@ -485,16 +493,64 @@ def import_ecosystem():
     return jsonify({"msg": "Ecosystem successfully imported"})
 
 
+# API read routes
+
+
+class InvalidUsage(Exception):
+    status_code = 400
+
+    def __init__(self, message, status_code=None, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        if status_code is not None:
+            self.status_code = status_code
+        self.payload = payload
+
+    def to_dict(self):
+        rv = dict(self.payload or ())
+        rv["message"] = self.message
+        return rv
+
+
+@app.errorhandler(InvalidUsage)
+def handle_invalid_usage(error):
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
+
+
 @app.route("/datasets")
 def datasets_index():
-    return jsonify(["books"])  # FIXME , "questions", "feature_coefficients"])
+    return jsonify(["books", "questions"])  # FIXME , "feature_coefficients"])
 
 
-def _books_json():
+def _books_json(include_vocabs=True):
     data = df_domain[["book_name", "vuid"]].rename({"book_name": "name"}, axis=1)
-    data["vocabularies"] = [["domain", "innovation"]] * len(data)
-    data_json = json.loads(data.to_json(orient="records"))
-    return data_json
+    if include_vocabs:
+        data["vocabularies"] = [["domain", "innovation", "questions"]] * len(data)
+    return data.to_dict(orient="records")
+
+
+def _validate_version(ver):
+    parts = ver.split(".")
+    try:
+        [int(part) for part in parts]
+    except ValueError:
+        raise InvalidUsage("Bad version")
+
+
+def _validate_vuid(vuid, vuid_type="book"):
+    try:
+        v_uuid, ver = vuid.split("@")
+    except ValueError:
+        raise InvalidUsage("Need uuid and version")
+
+    try:
+        _ = UUID(v_uuid)
+    except ValueError:
+        raise InvalidUsage(f"Not a valid uuid for {vuid_type}")
+
+    _validate_version(ver)
 
 
 @app.route("/datasets/books")
@@ -507,20 +563,73 @@ def fetch_book(vuid):
     data = df_domain[df_domain["vuid"] == vuid][["book_name", "vuid"]].rename(
         {"book_name": "name"}, axis=1
     )
-    data["vocabularies"] = [["domain", "innovation"]] * len(data)
-    data_json = json.loads(data.to_json(orient="records"))
-    return jsonify(data_json[0])
+    if data.empty:
+        _validate_vuid(vuid)
+        raise InvalidUsage("No such book", status_code=404)
+
+    data["vocabularies"] = [["domain", "innovation", "questions"]] * len(data)
+    page_list = (
+        df_innovation[df_innovation["cvuid"].str.startswith(vuid)]
+        .cvuid.str.split(":", expand=True)[1]
+        .tolist()
+    )
+    data_json = data.to_dict(orient="records")[0]
+    data_json["pages"] = page_list
+    return jsonify(data_json)
+
+
+@app.route("/datasets/books/<vuid>/pages")
+def fetch_page_list(vuid):
+    book = df_innovation[df_innovation["cvuid"].str.startswith(vuid)]
+    if book.empty:
+        _validate_vuid(vuid)
+        raise InvalidUsage("No such book", status_code=404)
+
+    page_list = book.cvuid.str.split(":", expand=True)[1].tolist()
+    return jsonify(page_list)
+
+
+@app.route("/datasets/books/<vuid>/pages/<pvuid>")
+def fetch_page(vuid, pvuid):
+    innovation = df_innovation[df_innovation["cvuid"] == ":".join((vuid, pvuid))][
+        "innovation_words"
+    ]
+    if innovation.empty:
+        _validate_vuid(vuid)
+        _validate_vuid(pvuid, vuid_type="page")
+        raise InvalidUsage("No such book or page", status_code=404)
+
+    questions = (
+        df_questions[df_questions["cvuid"] == ":".join((vuid, pvuid))][
+            ["uid", "mc_words", "stem_words"]
+        ]
+        .rename({"uid": "exercise_uid", "mc_words": "option_words"}, axis=1)
+        .to_json(orient="records")
+    )
+
+    data = {
+        "cvuid": ":".join((vuid, pvuid)),
+        "vocabularies": {
+            "innovation": list(innovation.iloc[0]),
+            "questions": json.loads(questions),
+        },
+    }
+    return jsonify(data)
 
 
 @app.route("/datasets/books/<vuid>/vocabularies")
 def fetch_vocabs(vuid):
-    return jsonify(["domain", "innovation"])
+    return jsonify(["domain", "innovation", "questions"])
 
 
 @app.route("/datasets/books/<vuid>/vocabularies/domain")
 def fetch_domain(vuid):
     data = df_domain[df_domain["vuid"] == vuid]["domain_words"]
-    return jsonify(data.tolist()[0])
+    if data.empty:
+        _validate_vuid(vuid)
+        raise InvalidUsage("No such book", status_code=404)
+
+    return jsonify(list(data.tolist()[0]))
 
 
 @app.route("/datasets/books/<vuid>/vocabularies/innovation")
@@ -528,9 +637,14 @@ def fetch_innovation(vuid):
     data = df_innovation[df_innovation["cvuid"].str.startswith(vuid)][
         ["cvuid", "innovation_words"]
     ]
+    if data.empty:
+        _validate_vuid(vuid)
+        raise InvalidUsage("No such book", status_code=404)
+
     data["page_vuid"] = data.cvuid.str.split(":", expand=True)[1]
+    data['innovation_words'] = data['innovation_words'].map(list)
     return jsonify(
-        json.loads(data[["page_vuid", "innovation_words"]].to_json(orient="records"))
+        data[["page_vuid", "innovation_words"]].to_dict(orient="records")
     )
 
 
@@ -539,7 +653,77 @@ def fetch_page_innovation(vuid, pvuid):
     data = df_innovation[df_innovation["cvuid"] == ":".join((vuid, pvuid))][
         "innovation_words"
     ]
-    return jsonify(data.tolist()[0])
+    if data.empty:
+        _validate_vuid(vuid)
+        _validate_vuid(pvuid, vuid_type="page")
+        raise InvalidUsage("No such book or page", status_code=404)
+
+    return jsonify(list(data.iloc[0]))
+
+
+@app.route("/datasets/books/<vuid>/vocabularies/questions")
+def fetch_questions(vuid):
+    data = df_questions[df_questions["cvuid"].str.startswith(vuid)].rename(
+        {"uid": "exercise_uid", "mc_words": "option_words"}, axis=1
+    )
+    if data.empty:
+        _validate_vuid(vuid)
+        raise InvalidUsage("No such book", status_code=404)
+
+    data["page_vuid"] = data.cvuid.str.split(":", expand=True)[1]
+    pages = data.groupby("page_vuid")
+    data_json = [
+        {
+            "page_vuid": page[0],
+            "questions": json.loads(
+                page[1][["exercise_uid", "option_words", "stem_words"]].to_json(
+                    orient="records"
+                )
+            ),
+        }
+        for page in pages
+    ]
+    return jsonify(data_json)
+
+
+@app.route("/datasets/books/<vuid>/vocabularies/questions/<pvuid>")
+def fetch_page_questions(vuid, pvuid):
+    data = df_questions[df_questions["cvuid"] == ":".join((vuid, pvuid))].rename(
+        {"uid": "exercise_uid", "mc_words": "option_words"}, axis=1
+    )
+    if data.empty:
+        _validate_vuid(vuid)
+        _validate_vuid(pvuid, vuid_type="page")
+        book = df_domain[df_domain["vuid"] == vuid]
+        if book.empty:
+            raise InvalidUsage("No such book", status_code=404)
+        page = df_innovation[df_innovation["cvuid"] == ":".join((vuid, pvuid))]
+        if page.empty:
+            raise InvalidUsage("No such page in book", status_code=404)
+
+        return jsonify([])
+
+    json_data = json.loads(
+        data[["exercise_uid", "option_words", "stem_words"]].to_json(orient="records")
+    )
+    return jsonify(json_data)
+
+
+@app.route("/datasets/questions")
+def questions_index():
+    return jsonify(df_questions.uid.tolist())
+
+
+@app.route("/datasets/questions/<uid>")
+def fetch_question(uid):
+    data = df_questions[df_questions["uid"] == uid].rename(
+        {"uid": "exercise_uid", "mc_words": "option_words"}, axis=1
+    )
+
+    json_data = json.loads(
+        data[["exercise_uid", "option_words", "stem_words"]].to_json(orient="records")
+    )
+    return jsonify(json_data)
 
 
 @app.route("/ping")
@@ -553,7 +737,7 @@ def status():
     data = {"version": _version.get_versions(), "started": start_time}
 
     if "vuid" in df_domain.columns:
-        data["datasets"] = {'books': _books_json()}
+        data["datasets"] = {"books": _books_json(include_vocabs=False)}
 
     return jsonify(data)
 
