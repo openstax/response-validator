@@ -20,7 +20,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
 
 from collections import OrderedDict
-import collections
 import re
 import time
 
@@ -28,43 +27,24 @@ from . import __version__, _version
 
 start_time = time.ctime()
 
-DATA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
+CORPORA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 app = Flask(__name__)
+app.config.from_object("validator.default_settings")
+app.config.from_envvar("VALIDATOR_SETTINGS", silent=True)
 
-# Default parameters for the response parser and validation call
-PARSER_DEFAULTS = {
-    "remove_stopwords": True,
-    "tag_numeric": "auto",
-    "spelling_correction": "auto",
-    "remove_nonwords": True,
-    "spell_correction_max": 10,
-    "lazy_math_mode": True,
-}
-
-SPELLING_CORRECTION_DEFAULTS = {
-    "spell_correction_max_edit_distance": 3,
-    "spell_correction_min_word_length": 5,
-}
-
-# If number, feature is used and has the corresponding weight.
-# A value of 0 indicates that the feature won't be computed
-VALIDITY_FEATURE_DICT = collections.OrderedDict(
-    {
-        "stem_word_count": 0,
-        "option_word_count": 0,
-        "innovation_word_count": 2.2,
-        "domain_word_count": 2.5,
-        "bad_word_count": -3,
-        "common_word_count": 0.7,
-        "intercept": 0,
-    }
-)
+PARSER_DEFAULTS = app.config["PARSER_DEFAULTS"]
+SPELLING_CORRECTION_DEFAULTS = app.config["SPELLING_CORRECTION_DEFAULTS"]
+VALIDITY_FEATURE_DICT = app.config["VALIDITY_FEATURE_DICT"]
 
 # Get the global data for the app:
-#    innovation words by module,
-#    domain words by subject,
-#    and table linking question uid to cnxmod
-df_innovation, df_domain, df_questions = get_fixed_data()
+#    innovation words by page,
+#    domain words by subject/book,
+#    and table linking question uid to page-in-book id
+data_dir = app.config.get(
+    "DATA_DIR", pkg_resources.resource_filename("validator", "ml/data/")
+)
+
+df_innovation, df_domain, df_questions = get_fixed_data(data_dir)
 qids = {}
 for idcol in ("uid", "qid"):
     if idcol in df_questions:
@@ -74,17 +54,17 @@ for idcol in ("uid", "qid"):
 
 # Instantiate the ecosystem importer that will be used by the import route
 ecosystem_importer = EcosystemImporter(
-    common_vocabulary_filename=f"{DATA_PATH}/big.txt"
+    common_vocabulary_filename=f"{CORPORA_PATH}/big.txt"
 )
 
 # Define bad vocab
-with open(f"{DATA_PATH}/bad.txt") as f:
+with open(f"{CORPORA_PATH}/bad.txt") as f:
     bad_vocab = set([re.sub("\n", "", w) for w in f])
 
 # Create the parser, initially assign default values
 # (these can be overwritten during calls to process_string)
 parser = StaxStringProc(
-    corpora_list=[f"{DATA_PATH}/all_join.txt", f"{DATA_PATH}/question_text.txt"],
+    corpora_list=[f"{CORPORA_PATH}/all_join.txt", f"{CORPORA_PATH}/question_text.txt"],
     parse_args=(
         PARSER_DEFAULTS["remove_stopwords"],
         PARSER_DEFAULTS["tag_numeric"],
@@ -94,7 +74,7 @@ parser = StaxStringProc(
         SPELLING_CORRECTION_DEFAULTS["spell_correction_max_edit_distance"],
         SPELLING_CORRECTION_DEFAULTS["spell_correction_min_word_length"],
     ),
-    symspell_dictionary_file=f"{DATA_PATH}/response_validator_spelling_dictionary.txt",
+    symspell_dictionary_file=f"{CORPORA_PATH}/response_validator_spelling_dictionary.txt",
 )
 
 common_vocab = set(parser.all_words) | set(parser.reserved_tags)
@@ -126,12 +106,12 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
         ]
 
     # Now append the new dataframes to the in-memory ones
-    df_domain = df_domain.append(df_domain_)
-    df_innovation = df_innovation.append(df_innovation_)
-    df_questions = df_questions.append(df_questions_)
+    df_domain = df_domain.append(df_domain_, sort=False)
+    df_innovation = df_innovation.append(df_innovation_, sort=False)
+    df_questions = df_questions.append(df_questions_, sort=False)
 
     # Finally, write the updated dataframes to disk and declare victory
-    write_fixed_data(df_domain, df_innovation, df_questions)
+    write_fixed_data(df_domain, df_innovation, df_questions, data_dir)
 
 
 def get_question_data_by_key(key, val):

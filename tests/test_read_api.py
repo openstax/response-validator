@@ -1,6 +1,8 @@
 import time
 import pytest
+import os
 
+os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
 from validator import app
 
 start_time = time.ctime()
@@ -268,7 +270,7 @@ def test_book_page_no_book(client):
     assert resp.json["message"] == "No such book or page"
 
 
-NUM_QUESTIONS = 19968
+NUM_QUESTIONS = 23218
 NUM_QUESTIONS_UID = 1
 
 

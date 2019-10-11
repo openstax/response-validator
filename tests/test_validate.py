@@ -1,6 +1,8 @@
+import os
 import pytest
 from urllib.parse import urlencode
 
+os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
 from validator import app
 from validator.app import PARSER_DEFAULTS
 

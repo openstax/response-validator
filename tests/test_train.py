@@ -1,11 +1,12 @@
+import os
 import pytest
 from urllib.parse import urlencode
 from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
+os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
 from validator import app
-from validator.app import PARSER_DEFAULTS
 from validator.app import df_questions, bad_vocab, common_vocab, get_question_data
 
 # A set of weights to use when testing things other than stem/option counts

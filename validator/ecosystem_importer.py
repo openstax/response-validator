@@ -4,7 +4,7 @@ import requests
 import re
 import yaml
 
-# MAKE INTO A CLASS
+from .utils import split_to_words, contains_number
 
 
 class EcosystemImporter(object):
@@ -18,8 +18,8 @@ class EcosystemImporter(object):
         self.base_exercise_url = base_exercise_url
 
         if common_vocabulary_filename:
-            f = open(common_vocabulary_filename, "r")
-            words = f.read()
+            with open(common_vocabulary_filename, "r") as f:
+                words = f.read()
             words = self.get_words(words)
             self.common_vocabulary_set = set(words)
         else:
@@ -150,6 +150,12 @@ class EcosystemImporter(object):
                 "option_text": answer_list,
             }
         )
+        question_df["qid"] = question_df["uid"].apply(lambda x: x.split("@")[0])
+        question_df["stem_words"] = split_to_words(question_df, "stem_text")
+        question_df["mc_words"] = split_to_words(question_df, "option_text")
+        question_df["contains_number"] = question_df.apply(
+            lambda x: contains_number(x), axis=1
+        )
 
         return question_df
 
@@ -179,7 +185,18 @@ class EcosystemImporter(object):
         df_questions["cvuid"] = df_questions.apply(
             lambda x: book_id + ":" + x.vers_module_id, axis=1
         )
-        df_questions = df_questions[["uid", "cvuid", "stem_text", "option_text"]]
+        df_questions = df_questions[
+            [
+                "qid",
+                "contains_number",
+                "uid",
+                "cvuid",
+                "mc_words",
+                "stem_words",
+                "stem_text",
+                "option_text",
+            ]
+        ]
 
         return df_domain, df_innovation, df_questions
 
@@ -192,7 +209,7 @@ class EcosystemImporter(object):
 
         # Strip ' (uuid@ver)' from end of title in yaml: 'book name (uuid@ver)'
         if book_cnx_id in book_title:
-            book_title = book_title[:book_title.find(book_cnx_id) - 2]
+            book_title = book_title[: book_title.find(book_cnx_id) - 2]
 
         return self.parse_content(
             book_cnx_id, question_uid_list, book_title, archive_url
