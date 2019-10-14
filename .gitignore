@@ -1,4 +1,5 @@
 venv
+pyvenv.cfg
 .ipynb_checkpoints
 *.pyc
 .DS_Store
@@ -12,6 +13,10 @@ venv
 *.*~
 /*.log
 /.eggs
+
+lib
+lib64
+share
 
 # Downloaded by setup.py install and build
 validator/ml/corpora/nltk_data/
