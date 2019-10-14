@@ -6,8 +6,8 @@ from collections import OrderedDict
 import pandas as pd
 import numpy as np
 os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
-from validator import app
-from validator.app import df_questions, bad_vocab, common_vocab, get_question_data
+from validator import app, df
+from validator.app import bad_vocab, common_vocab, get_question_data
 
 # A set of weights to use when testing things other than stem/option counts
 FEATURE_SET_1 = {
@@ -28,7 +28,7 @@ FEATURE_SET_2 = {
     "common_word_count": 1,
 }
 
-question_data = df_questions[df_questions["uid"] == "9@7"].iloc[0]
+question_data = df["questions"][df["questions"]["uid"] == "9@7"].iloc[0]
 stem_vocab = question_data["stem_words"]
 mc_vocab = question_data["mc_words"]
 vocab_set = get_question_data(question_data.uid)[0]
