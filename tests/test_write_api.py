@@ -2,6 +2,8 @@ import pytest
 import os
 import time
 
+import vcr
+
 from validator import app
 
 start_time = time.ctime()
@@ -19,16 +21,17 @@ def import_yaml(client):
     data_dir = app.app.config['DATA_DIR']
     if os.listdir(data_dir) != []:
         raise LookupError(f"Error! pointing at existing data files at {data_dir}")
-    res = client.post(
-        "/import",
-        data={
-            "file": (
-                "tutor_manifests/"
-                "Introduction_to_Sociology_2e_02040312-72c8-441e-a685-20e9333f3e1d_10.1.yml",
-                "test.yml",
-            )
-        },
-    )
+    with vcr.use_cassette("tests/cassettes/import.yaml"):
+        res = client.post(
+            "/import",
+            data={
+                "file": (
+                    "tutor_manifests/"
+                    "Introduction_to_Sociology_2e_02040312-72c8-441e-a685-20e9333f3e1d_10.1.yml",
+                    "test.yml",
+                )
+            },
+        )
     yield res
 
     data_dir = app.app.config['DATA_DIR']

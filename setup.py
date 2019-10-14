@@ -55,6 +55,7 @@ setup(
         'test': [
             'pytest',
             'coverage',
+            'vcrpy',
         ],
     },
 )
