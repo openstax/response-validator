@@ -82,6 +82,8 @@ def get_fixed_data(data_dir):
         df_questions["mc_words"] = df_questions["mc_words"].apply(
             lambda x: set([w[1:-1] for w in x[1:-1].split(", ")])
         )
+        # Question qids are imported as ints - let's convert that to strings for comparison
+        df_questions["qid"] = df_questions["qid"].apply(str)
 
     else:
         print("No data loaded: rolling with empty datasets")

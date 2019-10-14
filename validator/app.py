@@ -47,10 +47,7 @@ data_dir = app.config.get(
 df_innovation, df_domain, df_questions = get_fixed_data(data_dir)
 qids = {}
 for idcol in ("uid", "qid"):
-    if idcol in df_questions:
-        qids[idcol] = df_questions[idcol].values.tolist()
-    else:
-        qids[idcol] = []
+    qids[idcol] = set(df_questions[idcol].values.tolist())
 
 # Instantiate the ecosystem importer that will be used by the import route
 ecosystem_importer = EcosystemImporter(
