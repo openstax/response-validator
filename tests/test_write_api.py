@@ -1,24 +1,34 @@
 import pytest
 import os
+import tempfile
 import time
 
 import vcr
 
-from validator import app
+from validator import app, __version__ as app_version
 
 start_time = time.ctime()
 
 
 @pytest.fixture(scope="module")
-def client():
-    app.app.config["TESTING"] = True
-    client = app.app.test_client()
+def test_app():
+    tmpdir = tempfile.mkdtemp()
+    write_app = app.create_app(test_config={"DATA_DIR": tmpdir})
+    yield write_app
+
+    os.removedirs(tmpdir)
+
+
+@pytest.fixture(scope="module")
+def client(test_app):
+    test_app.config["TESTING"] = True
+    client = test_app.test_client()
     yield client
 
 
 @pytest.fixture(scope="module")
-def import_yaml(client):
-    data_dir = app.app.config['DATA_DIR']
+def import_yaml(test_app, client):
+    data_dir = test_app.config['DATA_DIR']
     if os.listdir(data_dir) != []:
         raise LookupError(f"Error! pointing at existing data files at {data_dir}")
     with vcr.use_cassette("tests/cassettes/import.yaml"):
@@ -34,7 +44,7 @@ def import_yaml(client):
         )
     yield res
 
-    data_dir = app.app.config['DATA_DIR']
+    data_dir = test_app.config['DATA_DIR']
     data_files = os.listdir(data_dir)
     for dfile in data_files:
         os.remove(os.path.join(data_dir, dfile))
@@ -73,7 +83,7 @@ def test_status(client, import_yaml):
     assert json_status["started"][:11] == start_time[:11]
     assert json_status["started"][19:] == start_time[19:]
 
-    assert json_status["version"]["version"] == app.__version__
+    assert json_status["version"]["version"] == app_version
 
     assert set(json_status["datasets"].keys()) == set(["books"])
     assert set(json_status["datasets"]["books"][0].keys()) == set(

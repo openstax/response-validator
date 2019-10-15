@@ -11,6 +11,26 @@ import string
 # from nltk.corpus import words
 
 
+def make_tristate(var, default=True):
+    if type(default) == int:
+        try:
+            return int(var)
+        except ValueError:
+            pass
+        try:
+            return float(var)
+        except:  # noqa
+            pass
+    if var == "auto" or type(var) == bool:
+        return var
+    elif var in ("False", "false", "f", "0", "None", ""):
+        return False
+    elif var in ("True", "true", "t", "1"):
+        return True
+    else:
+        return default
+
+
 def contains_number(df_row):
     math_words = [
         "meter",

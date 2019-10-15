@@ -1,17 +1,18 @@
 import time
 import pytest
-import os
 
-os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
-from validator import app
+from validator import app, __version__ as app_version
+
+
+myapp = app.create_app(test_config={"DATA_DIR": "tests/data"})
 
 start_time = time.ctime()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def client():
-    app.app.config["TESTING"] = True
-    client = app.app.test_client()
+    myapp.config["TESTING"] = True
+    client = myapp.test_client()
     yield client
 
 
@@ -33,7 +34,7 @@ def test_version(client):
     """Simple version string"""
 
     resp = client.get("/version")
-    assert resp.data.decode(resp.content_encoding or "utf-8") == app.__version__
+    assert resp.data.decode(resp.content_encoding or "utf-8") == app_version
 
 
 EXPECTED_BOOK_NAMES = set(
@@ -73,7 +74,7 @@ def test_status(client):
     assert json_status["started"][:11] == start_time[:11]
     assert json_status["started"][19:] == start_time[19:]
 
-    assert json_status["version"]["version"] == app.__version__
+    assert json_status["version"]["version"] == app_version
 
     assert set(json_status["datasets"].keys()) == set(["books"])
     assert set(json_status["datasets"]["books"][0].keys()) == set(

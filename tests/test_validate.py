@@ -2,9 +2,13 @@ import os
 import pytest
 from urllib.parse import urlencode
 
-os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
 from validator import app
-from validator.app import PARSER_DEFAULTS
+
+
+os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
+
+myapp = app.create_app()
+PARSER_DEFAULTS = myapp.config["PARSER_DEFAULTS"]
 
 # A set of weights to use when testing things other than stem/option counts
 NO_QUESTION_WEIGHT_DICT = {
@@ -27,10 +31,10 @@ QUESTION_WEIGHT_DICT = {
 }
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def client():
-    app.app.config["TESTING"] = True
-    client = app.app.test_client()
+    myapp.config["TESTING"] = True
+    client = myapp.test_client()
     yield client
 
 

@@ -5,9 +5,12 @@ from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
-os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
 from validator import app, df
-from validator.app import bad_vocab, common_vocab, get_question_data
+
+os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
+myapp = app.create_app()
+
+from validator.validate_api import bad_vocab, common_vocab, get_question_data
 
 # A set of weights to use when testing things other than stem/option counts
 FEATURE_SET_1 = {
@@ -40,10 +43,10 @@ vocab_dict = OrderedDict(
 )
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def client():
-    app.app.config["TESTING"] = True
-    client = app.app.test_client()
+    myapp.config["TESTING"] = True
+    client = myapp.test_client()
     yield client
 
 
