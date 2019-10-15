@@ -1,0 +1,5 @@
+[run]
+source = validator
+omit =
+    # omit versioneer code
+    validator/_version.py
