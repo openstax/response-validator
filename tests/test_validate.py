@@ -41,7 +41,6 @@ def client():
 def test_validate_response():
     from validator.validate_api import validate_response
 
-    res = validate_response("foo bar", "100@1", {})
     expected = {
         "inner_product": 0,
         "intercept": 1,
@@ -59,6 +58,9 @@ def test_validate_response():
         "uid_used": "100@7",
         "valid": False,
     }
+
+    with myapp.app_context():
+        res = validate_response("foo bar", "100@1", {})
 
     assert res == expected
 

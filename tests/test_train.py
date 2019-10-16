@@ -5,10 +5,11 @@ from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
-from validator import app, df
+from validator import app
 
 os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
 myapp = app.create_app()
+df = myapp.df
 
 from validator.validate_api import bad_vocab, common_vocab, get_question_data
 
@@ -31,12 +32,13 @@ FEATURE_SET_2 = {
     "common_word_count": 1,
 }
 
-question_data = df["questions"][df["questions"]["uid"] == "9@7"].iloc[0]
-stem_vocab = question_data["stem_words"]
-mc_vocab = question_data["mc_words"]
-vocab_set = get_question_data(question_data.uid)[0]
-domain_vocab = vocab_set["domain_word_count"]
-innovation_vocab = vocab_set["innovation_word_count"]
+with myapp.app_context():
+    question_data = df["questions"][df["questions"]["uid"] == "9@7"].iloc[0]
+    stem_vocab = question_data["stem_words"]
+    mc_vocab = question_data["mc_words"]
+    vocab_set = get_question_data(question_data.uid)[0]
+    domain_vocab = vocab_set["domain_word_count"]
+    innovation_vocab = vocab_set["innovation_word_count"]
 
 vocab_dict = OrderedDict(
     {"stem": stem_vocab, "mc": mc_vocab, "bad": bad_vocab, "common": common_vocab}

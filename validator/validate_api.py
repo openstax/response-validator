@@ -3,7 +3,7 @@
 # This file implements the unsupervised garbage detection variants and simulates
 # accuracy/complexity tradeoffs
 
-from flask import jsonify, request, Blueprint
+from flask import jsonify, request, Blueprint, current_app
 from flask_cors import cross_origin
 
 from .utils import make_tristate
@@ -15,7 +15,7 @@ from collections import OrderedDict
 import re
 import time
 
-from . import __version__, df
+from . import __version__
 
 
 CORPORA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
@@ -38,9 +38,12 @@ def setup_parse_and_data(setup_state):
     global VALIDITY_FEATURE_DICT, PARSER_DEFAULTS, qids, parser, common_vocab
 
     PARSER_DEFAULTS = setup_state.app.config["PARSER_DEFAULTS"]
-    SPELLING_CORRECTION_DEFAULTS = setup_state.app.config["SPELLING_CORRECTION_DEFAULTS"]
+    SPELLING_CORRECTION_DEFAULTS = setup_state.app.config[
+        "SPELLING_CORRECTION_DEFAULTS"
+    ]
     VALIDITY_FEATURE_DICT = setup_state.app.config["VALIDITY_FEATURE_DICT"]
 
+    df = setup_state.app.df
     qids = {}
     for idcol in ("uid", "qid"):
         qids[idcol] = set(df["questions"][idcol].values.tolist())
@@ -48,7 +51,10 @@ def setup_parse_and_data(setup_state):
     # Create the parser, initially assign default values
     # (these can be overwritten during calls to process_string)
     parser = StaxStringProc(
-        corpora_list=[f"{CORPORA_PATH}/all_join.txt", f"{CORPORA_PATH}/question_text.txt"],
+        corpora_list=[
+            f"{CORPORA_PATH}/all_join.txt",
+            f"{CORPORA_PATH}/question_text.txt",
+        ],
         parse_args=(
             PARSER_DEFAULTS["remove_stopwords"],
             PARSER_DEFAULTS["tag_numeric"],
@@ -65,6 +71,7 @@ def setup_parse_and_data(setup_state):
 
 
 def get_question_data_by_key(key, val):
+    df = current_app.df
     first_q = df["questions"][df["questions"][key] == val].iloc[0]
     module_id = first_q.cvuid
     uid = first_q.uid

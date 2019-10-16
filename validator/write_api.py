@@ -11,8 +11,6 @@ import pkg_resources
 from .ecosystem_importer import EcosystemImporter
 from .utils import write_fixed_data
 
-from . import df
-
 
 CORPORA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 
@@ -29,7 +27,7 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
     # AEW: I feel like I am sinning against nature here . . .
     # Do we need to store these in a Redis cache or db???
     # This was all well and good before we ever tried to modify things
-    global data
+    df = current_app.df
 
     # Remove any entries from the domain, innovation, and question dataframes
     # that are duplicated by the new data

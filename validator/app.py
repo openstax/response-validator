@@ -9,11 +9,11 @@ from .utils import get_fixed_data
 
 import pkg_resources
 
-from . import df, read_api, write_api, validate_api, training_api
+from . import read_api, write_api, validate_api, training_api
 
 
 def create_app(test_config=None):
-    app = Flask(__name__)
+    app = Flask(__name__.split(".")[0])
     app.config.from_object("validator.default_settings")
     app.config.from_envvar("VALIDATOR_SETTINGS", silent=True)
     if test_config is not None:
@@ -29,9 +29,12 @@ def create_app(test_config=None):
 
     df_innovation_, df_domain_, df_questions_ = get_fixed_data(data_dir)
 
+    df = {}
     df["innovation"] = df_innovation_
     df["domain"] = df_domain_
     df["questions"] = df_questions_
+
+    app.df = df
 
     app.register_blueprint(read_api.bp)
     app.register_blueprint(write_api.bp)

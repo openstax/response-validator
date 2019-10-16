@@ -46,10 +46,7 @@ def contains_number(df_row):
     qtext = " ".join((df_row.stem_text, df_row.option_text)).lower()
     if "contains_number" in df_row:
         return df_row["contains_number"]
-    elif (
-        re.search(r"[\+\-\*\=\/\d]", qtext)
-        is not None
-    ):
+    elif re.search(r"[\+\-\*\=\/\d]", qtext) is not None:
         return True
     else:
         return any([m in qtext for m in math_words])
@@ -68,9 +65,15 @@ def split_to_words(df, text_column):
 
 def write_fixed_data(df_domain, df_innovation, df_questions, data_dir):
     print(f"Writing data to: {data_dir}")
-    df_domain.replace(set(), "").to_csv(os.path.join(data_dir, "df_domain.csv"), index=None)
-    df_innovation.replace(set(), "").to_csv(os.path.join(data_dir, "df_innovation.csv"), index=None)
-    df_questions.replace(set(), "").to_csv(os.path.join(data_dir, "df_questions.csv"), index=None)
+    df_domain.replace(set(), "").to_csv(
+        os.path.join(data_dir, "df_domain.csv"), index=None
+    )
+    df_innovation.replace(set(), "").to_csv(
+        os.path.join(data_dir, "df_innovation.csv"), index=None
+    )
+    df_questions.replace(set(), "").to_csv(
+        os.path.join(data_dir, "df_questions.csv"), index=None
+    )
 
 
 def get_fixed_data(data_dir):
@@ -109,7 +112,17 @@ def get_fixed_data(data_dir):
         print("No data loaded: rolling with empty datasets")
         df_innovation = pd.DataFrame(columns=["cvuid", "innovation_words", "book_name"])
         df_domain = pd.DataFrame(columns=["vuid", "domain_words", "book_name"])
-        df_questions = pd.DataFrame(columns=["contains_number", "cvuid", "mc_words", "option_text",
-                                             "qid", "stem_text", "stem_words", "uid"])
+        df_questions = pd.DataFrame(
+            columns=[
+                "contains_number",
+                "cvuid",
+                "mc_words",
+                "option_text",
+                "qid",
+                "stem_text",
+                "stem_words",
+                "uid",
+            ]
+        )
 
     return df_innovation, df_domain, df_questions

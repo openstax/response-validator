@@ -1,6 +1,6 @@
 import collections
 
-DATA_DIR = 'validator/ml/data'
+DATA_DIR = "validator/ml/data"
 
 PARSER_DEFAULTS = {
     "remove_stopwords": True,
