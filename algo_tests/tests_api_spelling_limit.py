@@ -21,6 +21,7 @@ NONWORDS = [True]
 USE_UID = [True]
 SPELLING_LIMIT = range(0, 10)
 DATAPATHS = ["./data/expert_grader_valid_100.csv", "./data/alicia_valid.csv"]
+
 COLUMNS = [
     "bad_word_count",
     "common_word_count",
@@ -28,18 +29,23 @@ COLUMNS = [
     "domain_word_count",
     "inner_product",
     "innovation_word_count",
+    "intercept",
+    "lazy_math_evaluation",
     "num_spelling_correction",
+    "option_word_count",
     "processed_response",
     "remove_nonwords",
     "remove_stopwords",
     "response",
     "spelling_correction",
     "spelling_correction_used",
+    "stem_word_count",
     "tag_numeric",
     "tag_numeric_input",
     "uid_found",
     "uid_used",
     "valid_result",
+    "version"
 ]
 
 
