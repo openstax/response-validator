@@ -50,6 +50,7 @@ setup(
         'symspellpy',
         'sklearn',
         'PyYAML',
+        'requests',
     ],
     extras_require={
         'test': [
