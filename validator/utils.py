@@ -109,7 +109,7 @@ def get_fixed_data(data_dir):
         df_questions["qid"] = df_questions["qid"].apply(str)
 
     else:
-        print("No data loaded: rolling with empty datasets")
+        print(f"No data loaded from {data_dir}: rolling with empty datasets")
         df_innovation = pd.DataFrame(columns=["cvuid", "innovation_words", "book_name"])
         df_domain = pd.DataFrame(columns=["vuid", "domain_words", "book_name"])
         df_questions = pd.DataFrame(

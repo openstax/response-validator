@@ -4,7 +4,7 @@ import pytest
 from validator import app, __version__ as app_version
 
 
-myapp = app.create_app(test_config={"DATA_DIR": "tests/data"})
+myapp = app.create_app(DATA_DIR="tests/data")
 
 start_time = time.ctime()
 

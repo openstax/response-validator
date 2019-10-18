@@ -13,7 +13,7 @@ start_time = time.ctime()
 @pytest.fixture(scope="module")
 def test_app():
     tmpdir = tempfile.mkdtemp()
-    write_app = app.create_app(test_config={"DATA_DIR": tmpdir})
+    write_app = app.create_app(DATA_DIR=tmpdir)
     yield write_app
 
     os.removedirs(tmpdir)
