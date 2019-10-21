@@ -28,16 +28,63 @@ pip install -r requirements.txt
 
 ## Usage
 
+### Development
 Once installed, `python -m validator.app` will run the Flask dev webserver.
 
+Note that this will launch a server with _no_ loaded book-specific data, and
+will use a temporary directory, _that it will delete on exit_ to store any
+uploaded/imported book data. In order to persist the book vocabulary data
+between invocations, the `DATA_DIR` setting needs to be set to a path pointing
+to an existing directory. This can be set in several ways.
+
+1. set the VALIDATOR_SETTINGS environment variable to the path of a file
+that contains the DATA_DIR setting:
+
+`VALIDATOR_SETTINGS=data/dev.cfg python -m validator.app`
+
+Where the contents of dev.cfg is:
+
+```
+DATA_DIR=data
+```
+and that directory `data` exists.
+
+2. Pass a key-value command line argument:
+
+
+`python -m validator.app DATA_DIR=data`
+
+
+3. use gunicorn, provide arguments to app factory:
+
+
+`gunicorn 'validator.app:create_app(DATA_DIR="data")'`
+
+
+4. Use gunicorn, with an environment variable pointing to a config file:
+
+
+`VALIDATOR_SETTINGS=../data/dev.cfg gunicorn "validator.app:create_app()"`
+
+Note that this one can get confusing with relative paths, since flask  uses
+directory the app is imported from (in this case, `validator`) as the config path when interpreting environment variables, while paths inside such files will be based on the python current working directory. When in doubt, use full paths:
+
+`VALIDATOR_SETTINGS="$PWD/data/dev.cfg" gunicorn "validator.app:create_app()"`
+
+### Production
 The recommended production method for deployment is to use a WSGI compliant
 server, such as gunicorn:
 
 ```bash
-pip install gunicorn
-gunicorn validator.app:app
+pip install gunicorn gevent
+gunicorn -k gevent -b 5000 "validator.app:create_app(DATA_DIR='/var/lib/validator/data')" 
 ```
 
+Ideally, use a socket, and place nginx or other webserver in front of flask, for https termination, if nothing else.
+
+```bash
+gunicorn -k gevent --bind /run/gunicorn.sock "validator.app:create_app(DATA_DIR='/var/lib/validator/data')"
+```
 ## API
 
 ### Response Validation

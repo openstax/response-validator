@@ -81,7 +81,7 @@ def get_fixed_data(data_dir):
     files_to_find = ["df_innovation.csv", "df_domain.csv", "df_questions.csv"]
     num_missing_files = len(set(files_to_find) - set(data_files))
     if num_missing_files == 0:
-        print("Loading existing data...")
+        print(f"Loading existing data from {data_dir}...")
         df_innovation = pd.read_csv(os.path.join(data_dir, files_to_find[0]))
         df_domain = pd.read_csv(os.path.join(data_dir, files_to_find[1]))
         df_questions = pd.read_csv(os.path.join(data_dir, files_to_find[2]))

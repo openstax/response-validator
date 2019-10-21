@@ -4,6 +4,7 @@
 # accuracy/complexity tradeoffs
 import atexit
 import os
+import sys
 import tempfile
 
 from flask import Flask
@@ -18,6 +19,7 @@ def create_app(**kwargs):
     app.url_map.strict_slashes = False
     app.config.from_object("validator.default_settings")
     app.config.from_envvar("VALIDATOR_SETTINGS", silent=True)
+    app.config.from_envvar("VALIDATOR_CONFIG", silent=True)
 
     if kwargs:
         app.config.from_mapping(kwargs)
@@ -59,5 +61,5 @@ def create_app(**kwargs):
 
 
 if __name__ == "__main__":
-    app = create_app()
+    app = create_app(**dict([a.split('=') for a in sys.argv[1:]]))
     app.run()
