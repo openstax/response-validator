@@ -20,7 +20,7 @@ pip install -e .
 ```
 Note that this step will download several NLTK corpora, silently, and add them to the deployed tree.
 
-Additional functionality for running algorith tests, etc. can be enabled by installing additional libraries:
+Additional functionality for running algorithm tests, etc. can be enabled by installing additional libraries:
 
 ```bash
 pip install -r requirements.txt
@@ -37,8 +37,8 @@ uploaded/imported book data. In order to persist the book vocabulary data
 between invocations, the `DATA_DIR` setting needs to be set to a path pointing
 to an existing directory. This can be set in several ways.
 
-1. set the VALIDATOR_SETTINGS environment variable to the path of a file
-that contains the DATA_DIR setting:
+1. set the `VALIDATOR_SETTINGS` environment variable to the path of a file
+that contains the `DATA_DIR` setting:
 
 `VALIDATOR_SETTINGS=data/dev.cfg python -m validator.app`
 
@@ -47,7 +47,7 @@ Where the contents of dev.cfg is:
 ```
 DATA_DIR=data
 ```
-and that directory `data` exists.
+and the directory `data` exists.
 
 2. Pass a key-value command line argument:
 
@@ -66,8 +66,11 @@ and that directory `data` exists.
 
 `VALIDATOR_SETTINGS=../data/dev.cfg gunicorn "validator.app:create_app()"`
 
-Note that this one can get confusing with relative paths, since flask  uses
-directory the app is imported from (in this case, `validator`) as the config path when interpreting environment variables, while paths inside such files will be based on the python current working directory. When in doubt, use full paths:
+Note that this one can get confusing with relative paths, since flask  uses the
+directory the app is imported from (in this case, `validator`) as the config
+path when interpreting environment variables, while paths inside such files
+will be based on the python current working directory. When in doubt, use full
+paths:
 
 `VALIDATOR_SETTINGS="$PWD/data/dev.cfg" gunicorn "validator.app:create_app()"`
 
@@ -141,7 +144,7 @@ print(json.dumps(r.json(), indent=2))
   "uid_found": true,
   "uid_used": "100@7",
   "valid": true,
-  "version": "2.3.0"
+  "version": "2.4.0"
 }
 ```
 
@@ -164,7 +167,7 @@ for each exercise.
 |`/status`| json response (see below)| Detailed service info (extended version, start time) and datasets|
 
 
-Here is the `/status` response for a server started on Oct 1, with a clean install of version 2.3.0,
+Here is the `/status` response for a server started on Oct 15, with a clean install of version 2.4.0,
 and vocabularies for 5 books loaded:
 
 ```json
@@ -173,53 +176,33 @@ and vocabularies for 5 books loaded:
     "books": [
       {
         "name": "Biology 2e",
-        "vocabularies": [
-          "domain",
-          "innovation"
-        ],
         "vuid": "8d50a0af-948b-4204-a71d-4826cba765b8@15.45"
       },
       {
         "name": "College Physics for AP® Courses",
-        "vocabularies": [
-          "domain",
-          "innovation"
-        ],
         "vuid": "8d04a686-d5e8-4798-a27d-c608e4d0e187@26.1"
       },
       {
         "name": "College Physics with Courseware",
-        "vocabularies": [
-          "domain",
-          "innovation"
-        ],
         "vuid": "405335a3-7cff-4df2-a9ad-29062a4af261@7.53"
       },
       {
         "name": "Introduction to Sociology 2e",
-        "vocabularies": [
-          "domain",
-          "innovation"
-        ],
         "vuid": "02040312-72c8-441e-a685-20e9333f3e1d@10.1"
       },
       {
         "name": "Biology for AP® Courses",
-        "vocabularies": [
-          "domain",
-          "innovation"
-        ],
         "vuid": "6c322e32-9fb0-4c4d-a1d7-20c95c5c7af2@18.4"
       }
     ]
   },
-  "started": "Tue Oct  1 16:09:23 2019",
+  "started": "Tue Oct 15 16:09:23 2019",
   "version": {
-    "date": "2019-10-01T14:40:38-0500",
+    "date": "2019-10-15T14:40:38-0500",
     "dirty": false,
     "error": null,
-    "full-revisionid": "ca00a4f816dabe4e97950b81bc8f178437b105e3",
-    "version": "2.3.0"
+    "full-revisionid": "463fc5ef4c9d8c37aa600720c8bc814dfa44557c",
+    "version": "2.4.0"
   }
 }
 ```
@@ -227,20 +210,24 @@ The `datasets` at the top list the books that have their vocabularies loaded and
 
 ### Dataset APIs
 
-The following routes all serve JSON formatted representations of the datasets used by the
-validator to make its validity determinations. Currently, book vocabularies are available.
-In the future, this will be expanded to the exercise vocabularies, as well as the weights used
-to combine the feature values (feature coefficients).
+The following routes all serve JSON formatted representations of the datasets
+used by the validator to make its validity determinations. Currently, book and
+exercise vocabularies are available.  In the future, this will be expanded to
+include the weights used to combine the feature values (feature coefficients).
 
 |Route|Response
 |-----|--------
 /datasets | list of classes of datasets available
 /datasets/books| list of books
 /datasets/books/`<book-vuid>`| Data for a single book
+/datasets/books/`<book-vuid>`/pages | list of pages for a single book
+/datasets/books/`<book-vuid>`/pages/`<page-vuid>` | Data for a single page - ID, innovation words, list of questions
 /datasets/books/`<book-vuid>`/vocabularies | list of vocabularies for a single book
 /datasets/books/`<book-vuid>`/vocabularies/domain | list of non-common words in the book
 /datasets/books/`<book-vuid>`/vocabularies/innovation | lists of novel words in each page of the book, by page
 /datasets/books/`<book-vuid>`/vocabularies/innovation/`<page-vuid>` | list of novel words for a specific page in the book
+/datasets/questions| list of questions
+/datasets/questions/`<question-vid>`| Data for a single question (id + vocabularies)
 
 ### Processing APIs
 
@@ -253,7 +240,7 @@ Route|Propose|Use
 #### TODO:
 
 - store feature coefficent sets, return IDs
-- additional data APIs for downloading exercise vocabularies and feature cofficient sets
+- additional data APIs for downloading ~exercise vocabularies and~ feature cofficient sets
 - Currently there is no security for this app (anything can call it).  I am not sure how this is usually handled in Tutor but it should not be too difficult to add an api key or similar security measures.
 - Depending on UX, we may want to return more granular information about the response rather than a simple valid/non-valid label.  We can modify this easily enough as the need arises.
 
