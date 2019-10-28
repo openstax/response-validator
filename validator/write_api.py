@@ -52,6 +52,10 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
     df["innovation"] = df["innovation"].append(df_innovation_, sort=False)
     df["questions"] = df["questions"].append(df_questions_, sort=False)
 
+    # Update qid sets - for shortcutting question lookup
+    for idcol in ("uid", "qid"):
+        current_app.qids[idcol] = set(df["questions"][idcol].values.tolist())
+
     # Finally, write the updated dataframes to disk and declare victory
     data_dir = current_app.config["DATA_DIR"]
     write_fixed_data(df["domain"], df["innovation"], df["questions"], data_dir)

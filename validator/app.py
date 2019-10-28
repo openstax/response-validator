@@ -42,6 +42,10 @@ def create_app(**kwargs):
 
     app.df = df
 
+    app.qids = {}
+    for idcol in ("uid", "qid"):
+        app.qids[idcol] = set(df["questions"][idcol].values.tolist())
+
     app.register_blueprint(read_api.bp)
     app.register_blueprint(write_api.bp)
     app.register_blueprint(validate_api.bp)
