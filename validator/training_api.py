@@ -42,7 +42,7 @@ def validation_train():
     features_to_consider = [
         k for k in train_feature_dict.keys() if train_feature_dict[k]
     ]
-    if ("intecept") in features_to_consider:
+    if ("intercept") in features_to_consider:
         features_to_consider.remove("intercept")
     parser_params = {
         key: make_tristate(args.get(key, val), val)
