@@ -29,15 +29,18 @@ pip install -r requirements.txt
 ## Usage
 
 ### Development
-Once installed, `python -m validator.app` will run the Flask dev webserver.
 
-Note that this will launch a server with _no_ loaded book-specific data, and
-will use a temporary directory, _that it will delete on exit_ to store any
-uploaded/imported book data. In order to persist the book vocabulary data
-between invocations, the `DATA_DIR` setting needs to be set to a path pointing
-to an existing directory. This can be set in several ways.
+In order to persist the book vocabulary data between invocations, the Flask
+server needs the `DATA_DIR` setting to contain a path pointing to an existing
+directory.  This can be set in several ways.
 
-1. set the `VALIDATOR_SETTINGS` environment variable to the path of a file
+1. Pass a key-value command line argument:
+
+
+`python -m validator.app DATA_DIR=data`
+
+
+2. set the `VALIDATOR_SETTINGS` environment variable to the path of a file
 that contains the `DATA_DIR` setting:
 
 `VALIDATOR_SETTINGS=data/dev.cfg python -m validator.app`
@@ -48,12 +51,6 @@ Where the contents of dev.cfg is:
 DATA_DIR=data
 ```
 and the directory `data` exists.
-
-2. Pass a key-value command line argument:
-
-
-`python -m validator.app DATA_DIR=data`
-
 
 3. use gunicorn, provide arguments to app factory:
 

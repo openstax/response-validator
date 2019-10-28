@@ -2,10 +2,8 @@
 # Created by: Drew
 # This file implements the unsupervised garbage detection variants and simulates
 # accuracy/complexity tradeoffs
-import atexit
 import os
 import sys
-import tempfile
 
 from flask import Flask
 
@@ -33,15 +31,7 @@ def create_app(**kwargs):
     try:
         os.listdir(data_dir)
     except FileNotFoundError:
-        data_dir = tempfile.mkdtemp()
-        app.config["DATA_DIR"] = data_dir
-
-        def del_temp_data(dd=data_dir):
-            for f in os.listdir(dd):
-                os.remove(os.path.join(dd, f))
-            os.rmdir(dd)
-
-        atexit.register(del_temp_data)
+        raise FileNotFoundError("Bad or no DATA_DIR defined")
 
     df_innovation_, df_domain_, df_questions_ = get_fixed_data(data_dir)
 
