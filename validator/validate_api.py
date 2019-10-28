@@ -26,7 +26,6 @@ with open(f"{CORPORA_PATH}/bad.txt") as f:
 
 VALIDITY_FEATURE_DICT = {}
 PARSER_DEFAULTS = {}
-qids = {}
 parser = None
 common_vocab = set()
 
@@ -35,18 +34,13 @@ bp = Blueprint("validate_api", __name__, url_prefix="/")
 
 @bp.record_once
 def setup_parse_and_data(setup_state):
-    global VALIDITY_FEATURE_DICT, PARSER_DEFAULTS, qids, parser, common_vocab
+    global VALIDITY_FEATURE_DICT, PARSER_DEFAULTS, parser, common_vocab
 
     PARSER_DEFAULTS = setup_state.app.config["PARSER_DEFAULTS"]
     SPELLING_CORRECTION_DEFAULTS = setup_state.app.config[
         "SPELLING_CORRECTION_DEFAULTS"
     ]
     VALIDITY_FEATURE_DICT = setup_state.app.config["VALIDITY_FEATURE_DICT"]
-
-    df = setup_state.app.df
-    qids = {}
-    for idcol in ("uid", "qid"):
-        qids[idcol] = set(df["questions"][idcol].values.tolist())
 
     # Create the parser, initially assign default values
     # (these can be overwritten during calls to process_string)
@@ -72,21 +66,28 @@ def setup_parse_and_data(setup_state):
 
 def get_question_data_by_key(key, val):
     df = current_app.df
-    first_q = df["questions"][df["questions"][key] == val].iloc[0]
-    module_id = first_q.cvuid
-    uid = first_q.uid
-    has_numeric = df["questions"][df["questions"][key] == val].iloc[0].contains_number
+    # FIXME - should use all the questions and combine associated pages
+    # FIXME - last_q works better because of some dirty data getting through
+    # that has innovation pages but not the exact book those pages are from
+    last_q = df["questions"][df["questions"][key] == val].iloc[-1]
+    module_id = last_q.cvuid
+    uid = last_q.uid
+    has_numeric = last_q.contains_number
     innovation_vocab = (
         df["innovation"][df["innovation"]["cvuid"] == module_id]
         .iloc[0]
         .innovation_words
     )
     vuid = module_id.split(":")[0]
-    domain_vocab = df["domain"][df["domain"]["vuid"] == vuid].iloc[0].domain_words
+    domain_vocab_df = df["domain"][df["domain"]["vuid"] == vuid]
+    if domain_vocab_df.empty:
+        domain_vocab = set()
+    else:
+        domain_vocab = domain_vocab_df.iloc[-1].domain_words
 
     # A better way . . . pre-process and then just to a lookup
-    question_vocab = first_q["stem_words"]
-    mc_vocab = first_q["mc_words"]
+    question_vocab = last_q["stem_words"]
+    mc_vocab = last_q["mc_words"]
     vocab_dict = OrderedDict(
         {
             "stem_word_count": question_vocab,
@@ -105,9 +106,9 @@ def get_question_data_by_key(key, val):
 def get_question_data(uid):
     if uid is not None:
         qid = uid.split("@")[0]
-        if uid in qids["uid"]:
+        if uid in current_app.qids["uid"]:
             return get_question_data_by_key("uid", uid)
-        elif qid in qids["qid"]:
+        elif qid in current_app.qids["qid"]:
             return get_question_data_by_key("qid", qid)
     # no uid, or not in data sets
     default_vocab_dict = OrderedDict(
@@ -254,7 +255,7 @@ def validate_response(
     return_dictionary["tag_numeric_input"] = tag_numeric_input
     return_dictionary["spelling_correction"] = spelling_correction
     return_dictionary["uid_used"] = uid_used
-    return_dictionary["uid_found"] = uid_used in qids["uid"]
+    return_dictionary["uid_found"] = uid_used in current_app.qids["uid"]
     return_dictionary["lazy_math_evaluation"] = lazy_math_mode
 
     # If lazy_math_mode, do a lazy math check and update valid accordingly
