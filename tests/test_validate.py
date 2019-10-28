@@ -1,8 +1,14 @@
+import os
 import pytest
 from urllib.parse import urlencode
 
 from validator import app
-from validator.app import PARSER_DEFAULTS
+
+
+os.environ["VALIDATOR_SETTINGS"] = "../tests/testing.cfg"
+
+myapp = app.create_app()
+PARSER_DEFAULTS = myapp.config["PARSER_DEFAULTS"]
 
 # A set of weights to use when testing things other than stem/option counts
 NO_QUESTION_WEIGHT_DICT = {
@@ -25,11 +31,38 @@ QUESTION_WEIGHT_DICT = {
 }
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def client():
-    app.app.config["TESTING"] = True
-    client = app.app.test_client()
+    myapp.config["TESTING"] = True
+    client = myapp.test_client()
     yield client
+
+
+def test_validate_response():
+    from validator.validate_api import validate_response
+
+    expected = {
+        "inner_product": 0,
+        "intercept": 1,
+        "lazy_math_evaluation": True,
+        "num_spelling_correction": 0,
+        "processed_response": "foo bar",
+        "remove_nonwords": True,
+        "remove_stopwords": True,
+        "response": "foo bar",
+        "spelling_correction": "auto",
+        "spelling_correction_used": True,
+        "tag_numeric": "auto",
+        "tag_numeric_input": "auto",
+        "uid_found": True,
+        "uid_used": "100@7",
+        "valid": False,
+    }
+
+    with myapp.app_context():
+        res = validate_response("foo bar", "100@1", {})
+
+    assert res == expected
 
 
 def test_404(client):

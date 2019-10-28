@@ -1,3 +1,4 @@
+import os
 import pytest
 from urllib.parse import urlencode
 from collections import OrderedDict
@@ -5,8 +6,12 @@ from collections import OrderedDict
 import pandas as pd
 import numpy as np
 from validator import app
-from validator.app import PARSER_DEFAULTS
-from validator.app import df_questions, bad_vocab, common_vocab, get_question_data
+
+os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
+myapp = app.create_app()
+df = myapp.df
+
+from validator.validate_api import bad_vocab, common_vocab, get_question_data
 
 # A set of weights to use when testing things other than stem/option counts
 FEATURE_SET_1 = {
@@ -27,22 +32,23 @@ FEATURE_SET_2 = {
     "common_word_count": 1,
 }
 
-question_data = df_questions[df_questions["uid"] == "9@7"].iloc[0]
-stem_vocab = question_data["stem_words"]
-mc_vocab = question_data["mc_words"]
-vocab_set = get_question_data(question_data.uid)[0]
-domain_vocab = vocab_set["domain_word_count"]
-innovation_vocab = vocab_set["innovation_word_count"]
+with myapp.app_context():
+    question_data = df["questions"][df["questions"]["uid"] == "9@7"].iloc[0]
+    stem_vocab = question_data["stem_words"]
+    mc_vocab = question_data["mc_words"]
+    vocab_set = get_question_data(question_data.uid)[0]
+    domain_vocab = vocab_set["domain_word_count"]
+    innovation_vocab = vocab_set["innovation_word_count"]
 
 vocab_dict = OrderedDict(
     {"stem": stem_vocab, "mc": mc_vocab, "bad": bad_vocab, "common": common_vocab}
 )
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def client():
-    app.app.config["TESTING"] = True
-    client = app.app.test_client()
+    myapp.config["TESTING"] = True
+    client = myapp.test_client()
     yield client
 
 

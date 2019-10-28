@@ -27,18 +27,23 @@ COLUMNS = [
     "domain_word_count",
     "inner_product",
     "innovation_word_count",
+    "intercept",
+    "lazy_math_evaluation",
     "num_spelling_correction",
+    "option_word_count",
     "processed_response",
     "remove_nonwords",
     "remove_stopwords",
     "response",
     "spelling_correction",
     "spelling_correction_used",
+    "stem_word_count",
     "tag_numeric",
     "tag_numeric_input",
     "uid_found",
     "uid_used",
     "valid_result",
+    "version"
 ]
 
 
