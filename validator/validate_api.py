@@ -168,7 +168,7 @@ def parse_and_classify(
     return_dict = {
         "response": response,
         "remove_stopwords": remove_stopwords,
-        "tag_numeric": tag_numeric,
+        "tag_numeric": bool(tag_numeric),
         "spelling_correction_used": spelling_correction,
         "num_spelling_correction": num_spelling_corrections,
         "remove_nonwords": remove_nonwords,
@@ -211,9 +211,12 @@ def validate_response(
     #  mc_vocab = get_question_data(uid)
     vocab_dict, uid_used, has_numeric = get_question_data(uid)
 
-    # Record the input of tag_numeric and then convert in the case of 'auto'
+    # Record the input of tag_numeric and then convert in the case of "auto"
+    # The conversion is thus: if auto, we will tag numeric is has_numeric is not False
+    # This means that has_numeric = True and has_numeric is None will go through (question not found)
     tag_numeric_input = tag_numeric
-    tag_numeric = tag_numeric or ((tag_numeric == "auto") and has_numeric)
+    if tag_numeric == 'auto':
+        tag_numeric = has_numeric != False
 
     if spelling_correction != "auto":
         return_dictionary = parse_and_classify(

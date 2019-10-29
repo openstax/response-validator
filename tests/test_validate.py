@@ -52,7 +52,7 @@ def test_validate_response():
         "response": "foo bar",
         "spelling_correction": "auto",
         "spelling_correction_used": True,
-        "tag_numeric": "auto",
+        "tag_numeric": False,
         "tag_numeric_input": "auto",
         "uid_found": True,
         "uid_used": "100@7",
@@ -90,7 +90,7 @@ def test_empty_get(client):
         "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": True,
         "num_spelling_correction": 0,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": False,
         "uid_used": None,
@@ -121,7 +121,7 @@ def test_empty_post(client):
         "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": True,
         "num_spelling_correction": 0,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": False,
         "uid_used": None,
@@ -190,7 +190,7 @@ def test_simple_words(client):
         "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": False,
         "num_spelling_correction": 0,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": False,
         "uid_used": None,
@@ -227,7 +227,7 @@ def test_domain_words(client):
         "spelling_correction": "auto",
         "spelling_correction_used": False,
         "stem_word_count": 0,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": True,
         "uid_used": "1340@6",
@@ -246,7 +246,7 @@ def test_domain_words(client):
 def test_innovation_words(client):
     """A word in the innovation list of the exercise"""
 
-    params = {"response": "1.0 echinacea cytosol", "uid": "290@1", "tag_numerics": True}
+    params = {"response": "1.0 echinacea cytosol", "uid": "290@1"}
     params.update(NO_QUESTION_WEIGHT_DICT)
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
@@ -267,7 +267,7 @@ def test_innovation_words(client):
         "spelling_correction": "auto",
         "spelling_correction_used": False,
         "stem_word_count": 0,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": True,
         "uid_used": "290@7",
@@ -321,6 +321,7 @@ def test_numeric_words(client):
     expected["computation_time"] = result["computation_time"]
     assert "." in result["version"]
     result["version"] = "testing"
+    assert expected["tag_numeric"] == result["tag_numeric"]
     assert expected.items() <= result.items()
 
 
@@ -344,7 +345,7 @@ def test_no_spelling_correction(client):
         "spelling_correction": False,
         "spelling_correction_used": False,
         "num_spelling_correction": 0,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": False,
         "uid_used": None,
@@ -380,7 +381,7 @@ def test_auto_spelling_correction_invalid(client):
         "spelling_correction": "auto",
         "spelling_correction_used": True,
         "num_spelling_correction": 1,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": False,
         "uid_used": None,
@@ -416,7 +417,7 @@ def test_auto_spelling_correction_valid(client):
         "spelling_correction": "auto",
         "spelling_correction_used": False,
         "num_spelling_correction": 0,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": False,
         "uid_used": None,
@@ -458,7 +459,7 @@ def test_auto_spelling_correction_limit_3(client):
         "spelling_correction": "auto",
         "spelling_correction_used": True,
         "num_spelling_correction": 3,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": False,
         "uid_used": None,
@@ -498,7 +499,7 @@ def test_auto_spelling_correction_limit_10(client):
         "spelling_correction": "auto",
         "spelling_correction_used": True,
         "num_spelling_correction": 10,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": False,
         "uid_used": None,
@@ -534,7 +535,7 @@ def test_spelling_correction_default(client):
         "spelling_correction": PARSER_DEFAULTS["spelling_correction"],
         "spelling_correction_used": True,
         "num_spelling_correction": 1,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": False,
         "uid_used": None,
@@ -574,7 +575,7 @@ def test_stem_option_words(client):
         "spelling_correction": "auto",
         "spelling_correction_used": False,
         "stem_word_count": 1,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": True,
         "uid_used": "9@7",
@@ -614,7 +615,7 @@ def test_no_stem_option_words(client):
         "spelling_correction": "auto",
         "spelling_correction_used": False,
         "stem_word_count": 0,
-        "tag_numeric": "auto",
+        "tag_numeric": True,
         "tag_numeric_input": "auto",
         "uid_found": True,
         "uid_used": "9@7",
@@ -628,3 +629,52 @@ def test_no_stem_option_words(client):
     assert "." in result["version"]
     result["version"] = "testing"
     assert expected.items() <= result.items()
+
+def test_tag_numeric_no_question(client):
+    """With no question supplied, tag_numeric should be True"""
+
+    params = {"response": "1.0 5 10 some words"}
+    params.update(QUESTION_WEIGHT_DICT)
+    resp = client.get("/validate", query_string=urlencode(params))
+    result = resp.json
+    assert result["tag_numeric"] == True
+    assert result["valid"] == True
+
+def test_tag_numeric_auto_no_question(client):
+    """With no question supplied, tag_numeric should be True"""
+
+    params = {"response": "1.0 5 10 some words", "tag_numeric": "auto"}
+    params.update(QUESTION_WEIGHT_DICT)
+    resp = client.get("/validate", query_string=urlencode(params))
+    result = resp.json
+    assert result["tag_numeric"] == True
+
+def test_tag_numeric_auto_numeric_question(client):
+    """With no question supplied, tag_numeric should be True"""
+
+    params = {"response": "1.0 5 some words", "tag_numeric": "auto", "uid": "9@6"}
+    params.update(QUESTION_WEIGHT_DICT)
+    resp = client.get("/validate", query_string=urlencode(params))
+    result = resp.json
+    assert result["tag_numeric"] == True
+    assert result["valid"] == True
+
+def test_tag_numeric_auto_nonnumeric_question(client):
+    """With no question supplied, tag_numeric should be True"""
+
+    params = {"response": "1.0 5 10 some words", "tag_numeric": "auto", "uid": "100@1"}
+    params.update(QUESTION_WEIGHT_DICT)
+    resp = client.get("/validate", query_string=urlencode(params))
+    result = resp.json
+    assert result["tag_numeric"] == False
+    assert result["valid"] == False
+
+def test_tag_numeric_true_nonnumeric_question(client):
+    """With no question supplied, tag_numeric should be True"""
+
+    params = {"response": "1.0 5 10 some words", "tag_numeric": True, "uid": "100@1"}
+    params.update(QUESTION_WEIGHT_DICT)
+    resp = client.get("/validate", query_string=urlencode(params))
+    result = resp.json
+    assert result["tag_numeric"] == True
+    assert result["valid"] == True
