@@ -212,11 +212,11 @@ def validate_response(
     vocab_dict, uid_used, has_numeric = get_question_data(uid)
 
     # Record the input of tag_numeric and then convert in the case of "auto"
-    # The conversion is thus: if auto, we will tag numeric is has_numeric is not False
-    # This means that has_numeric = True and has_numeric is None will go through (question not found)
+    # The conversion is thus: if auto, we will tag numeric if has_numeric is not False
+    # This means that has_numeric = True and has_numeric is None (question not found) will be True
     tag_numeric_input = tag_numeric
     if tag_numeric == 'auto':
-        tag_numeric = has_numeric != False
+        tag_numeric = (has_numeric is not False)
 
     if spelling_correction != "auto":
         return_dictionary = parse_and_classify(
