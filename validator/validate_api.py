@@ -72,7 +72,7 @@ def get_question_data_by_key(key, val):
     last_q = df["questions"][df["questions"][key] == val].iloc[-1]
     module_id = last_q.cvuid
     uid = last_q.uid
-    has_numeric = last_q.contains_number
+    has_numeric = bool(last_q.contains_number)
     innovation_vocab = (
         df["innovation"][df["innovation"]["cvuid"] == module_id]
         .iloc[0]
