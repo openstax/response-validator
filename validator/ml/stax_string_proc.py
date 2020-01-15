@@ -84,6 +84,7 @@ class StaxStringProc(object):
         self.stops.remove("no")
         self.stops.remove("not")
         self.stops.remove("does")
+        self.stops.remove("it")
 
         # Train the stax spelling corrector using all corpora
         train_text = ""
