@@ -81,6 +81,10 @@ class StaxStringProc(object):
         # Set up the stopwords, remove 'a' due to math issues
         # TODO make stops come from file rather than nltk
         self.stops = set(stopwords.words("english"))
+        self.stops.remove("no")
+        self.stops.remove("not")
+        self.stops.remove("does")
+        self.stops.remove("it")
 
         # Train the stax spelling corrector using all corpora
         train_text = ""
