@@ -122,8 +122,10 @@ class EcosystemImporter(object):
         module_id_list = []
         for item in item_list:
             uid = item["uid"]
+            top_stimulus_text = self.format_cnxml(item.get("stimulus_html", ""))
             for question in item["questions"]:
                 stem_text = self.format_cnxml(question["stem_html"])
+                stimulus_text = self.format_cnxml(question.get("stimulus_html", ""))
                 answer_text = " ".join(
                     [
                         self.format_cnxml(answer["content_html"])
@@ -139,7 +141,11 @@ class EcosystemImporter(object):
                     target_module_id = list(target_module_id)[0]
                 module_id = target_module_id
                 uid_list.append(uid)
-                stem_list.append(stem_text)
+                stem_list.append(
+                    " ".join(
+                        [t for t in [top_stimulus_text, stem_text, stimulus_text] if t]
+                    )
+                )
                 answer_list.append(answer_text)
                 module_id_list.append(module_id)
         question_df = pd.DataFrame(
