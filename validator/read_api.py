@@ -40,7 +40,7 @@ def handle_invalid_usage(error):
 
 @bp.route("/datasets")
 def datasets_index():
-    return jsonify(["books", "questions","feature_weights"])
+    return jsonify(["books", "questions"])
 
 
 def _books_json(include_vocabs=True):
@@ -265,7 +265,7 @@ def status():
     data = {"version": _version.get_versions(), "started": start_time}
 
     if "vuid" in current_app.df["domain"].columns:
-        data["datasets"] = {"books": _books_json(include_vocabs=False)}
+        data["datasets"] = {"books": _books_json(include_vocabs=False),"feature_weights": list(current_app.df["feature_weights"].keys())}
 
     return jsonify(data)
 

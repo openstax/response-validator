@@ -1,8 +1,7 @@
 import time
 import pytest
 
-from validator import app, __version__ as app_version
-
+from validator import app, __version__ as app_version, default_settings
 
 myapp = app.create_app(DATA_DIR="tests/data")
 
@@ -76,7 +75,7 @@ def test_status(client):
 
     assert json_status["version"]["version"] == app_version
 
-    assert set(json_status["datasets"].keys()) == set(["books"])
+    assert set(json_status["datasets"].keys()) == set(["books","feature_weights"])
     assert set(json_status["datasets"]["books"][0].keys()) == set(
         ["name", "vuid"]
     )
@@ -84,6 +83,8 @@ def test_status(client):
     returned_book_names = set([b["name"] for b in json_status["datasets"]["books"]])
 
     assert EXPECTED_BOOK_NAMES == returned_book_names
+ # add code that checks fw
+    assert json_status["datasets"]["feature_weights"] == [default_settings.DEFAULT_FEATURE_WEIGHTS_KEY]
 
 
 def test_datasets(client):
