@@ -37,7 +37,7 @@ def validation_train():
         args = request.args
     train_feature_dict = {
         key: make_tristate(args.get(key, val), val)
-        for key, val in current_app.config["VALIDITY_FEATURE_DICT"].items()
+        for key, val in current_app.config["DEFAULT_FEATURE_WEIGHTS"].items()
     }
     features_to_consider = [
         k for k in train_feature_dict.keys() if train_feature_dict[k]
