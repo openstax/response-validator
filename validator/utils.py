@@ -75,19 +75,25 @@ def write_fixed_data(df_domain, df_innovation, df_questions, feature_weights, da
     df_questions.replace(set(), "").to_csv(
         os.path.join(data_dir, "df_questions.csv"), index=None
     )
-    with open('feature_weights.json', 'w') as f:
+    with open("feature_weights.json", "w") as f:
         json.dump(feature_weights, f)
+
 
 def get_fixed_data(data_dir):
     data_files = os.listdir(data_dir)
-    files_to_find = ["df_innovation.csv", "df_domain.csv", "df_questions.csv",'feature_weights.json']
+    files_to_find = [
+        "df_innovation.csv",
+        "df_domain.csv",
+        "df_questions.csv",
+        "feature_weights.json",
+    ]
     num_missing_files = len(set(files_to_find) - set(data_files))
     if num_missing_files == 0:
         print(f"Loading existing data from {data_dir}...")
         df_innovation = pd.read_csv(os.path.join(data_dir, files_to_find[0]))
         df_domain = pd.read_csv(os.path.join(data_dir, files_to_find[1]))
         df_questions = pd.read_csv(os.path.join(data_dir, files_to_find[2]))
-        with open(files_to_find[3]) as f:
+        with open(os.path.join(data_dir, files_to_find[3])) as f:
             feature_weights = json.load(f)
         # BBB Determine if these are "old" csv files, then rename columns and
         # other post-processing steps
@@ -197,6 +203,5 @@ def get_fixed_data(data_dir):
             ]
         )
         feature_weights = {}
-
 
     return df_innovation, df_domain, df_questions, feature_weights
