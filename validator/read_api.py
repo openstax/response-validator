@@ -40,7 +40,7 @@ def handle_invalid_usage(error):
 
 @bp.route("/datasets")
 def datasets_index():
-    return jsonify(["books", "questions"])  # FIXME , "feature_coefficients"])
+    return jsonify(["books", "questions","feature_weights"])
 
 
 def _books_json(include_vocabs=True):

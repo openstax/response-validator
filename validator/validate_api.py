@@ -24,7 +24,7 @@ CORPORA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 with open(f"{CORPORA_PATH}/bad.txt") as f:
     bad_vocab = set(f.read().split())
 
-VALIDITY_FEATURE_DICT = {}
+DEFAULT_FEATURE_WEIGHTS = {}
 PARSER_DEFAULTS = {}
 parser = None
 common_vocab = set()
@@ -34,13 +34,13 @@ bp = Blueprint("validate_api", __name__, url_prefix="/")
 
 @bp.record_once
 def setup_parse_and_data(setup_state):
-    global VALIDITY_FEATURE_DICT, PARSER_DEFAULTS, parser, common_vocab
+    global DEFAULT_FEATURE_WEIGHTS, PARSER_DEFAULTS, parser, common_vocab
 
     PARSER_DEFAULTS = setup_state.app.config["PARSER_DEFAULTS"]
     SPELLING_CORRECTION_DEFAULTS = setup_state.app.config[
         "SPELLING_CORRECTION_DEFAULTS"
     ]
-    VALIDITY_FEATURE_DICT = setup_state.app.config["VALIDITY_FEATURE_DICT"]
+    DEFAULT_FEATURE_WEIGHTS = setup_state.app.config["DEFAULT_FEATURE_WEIGHTS"]
 
     # Create the parser, initially assign default values
     # (these can be overwritten during calls to process_string)
@@ -297,10 +297,11 @@ def validation_api_entry():
         key: make_tristate(args.get(key, val), val)
         for key, val in PARSER_DEFAULTS.items()
     }
+
     feature_weight_dict = OrderedDict(
         {
             key: make_tristate(args.get(key, val), val)
-            for key, val in VALIDITY_FEATURE_DICT.items()
+            for key, val in DEFAULT_FEATURE_WEIGHTS.items()
         }
     )
 
@@ -308,6 +309,8 @@ def validation_api_entry():
     return_dictionary = validate_response(
         response, uid, feature_weight_dict, **parser_params
     )
+
+    return_dictionary["feature_weights"] = feature_weight_dict
 
     return_dictionary["computation_time"] = time.time() - start_time
 
