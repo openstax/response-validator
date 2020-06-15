@@ -40,7 +40,7 @@ def handle_invalid_usage(error):
 
 @bp.route("/datasets")
 def datasets_index():
-    return jsonify(["books", "questions","feature_weights"])
+    return jsonify(["books", "questions", "feature_weights"])
 
 
 def _books_json(include_vocabs=True):
@@ -60,21 +60,22 @@ def _validate_version(ver):
         raise InvalidUsage("Bad version")
 
 
+def _validate_uuid(t_uuid, t_uuid_type="feature weight"):
+    try:
+        _ = UUID(t_uuid)
+    except ValueError:
+        raise InvalidUsage(f"Not a valid uuid for {t_uuid_type}")
+
+
 def _validate_vuid(vuid, vuid_type="book"):
     try:
         v_uuid, ver = vuid.split("@")
     except ValueError:
         raise InvalidUsage("Need uuid and version")
 
-    try:
-        _ = UUID(v_uuid)
-    except ValueError:
-        raise InvalidUsage(f"Not a valid uuid for {vuid_type}")
-
     _validate_version(ver)
+    _validate_uuid(v_uuid, vuid_type)
 
-def _feature_weights_json():
-    return current_app.df["feature_weights"]
 
 @bp.route("/datasets/books")
 def books_index():
@@ -255,15 +256,23 @@ def fetch_question(uid):
     )
     return jsonify(json_data)
 
+
 @bp.route("/datasets/feature_weights")
 def feature_weights_index():
-    return jsonify(_feature_weights_json())
+    return jsonify(current_app.df["feature_weights"].keys())
+
 
 @bp.route("/datasets/feature_weights/<fw_id>")
 def fetch_feature_weights(fw_id):
+    _validate_uuid(fw_id)
     df = current_app.df
-    data = df["feature_weights"][fw_id]
+    try:
+        data = df["feature_weights"][fw_id]
+    except KeyError:
+        raise InvalidUsage("No such set of feature weights", status_code=404)
+
     return jsonify(data)
+
 
 @bp.route("/ping")
 def ping():
@@ -276,7 +285,10 @@ def status():
     data = {"version": _version.get_versions(), "started": start_time}
 
     if "vuid" in current_app.df["domain"].columns:
-        data["datasets"] = {"books": _books_json(include_vocabs=False),"feature_weights": list(current_app.df["feature_weights"].keys())}
+        data["datasets"] = {
+            "books": _books_json(include_vocabs=False),
+            "feature_weights": list(current_app.df["feature_weights"].keys()),
+        }
 
     return jsonify(data)
 
