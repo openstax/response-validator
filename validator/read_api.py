@@ -40,7 +40,7 @@ def handle_invalid_usage(error):
 
 @bp.route("/datasets")
 def datasets_index():
-    return jsonify(["books", "questions"])
+    return jsonify(["books", "questions","feature_weights"])
 
 
 def _books_json(include_vocabs=True):
@@ -73,6 +73,8 @@ def _validate_vuid(vuid, vuid_type="book"):
 
     _validate_version(ver)
 
+def _feature_weights_json():
+    return current_app.df["feature_weights"]
 
 @bp.route("/datasets/books")
 def books_index():
@@ -253,6 +255,15 @@ def fetch_question(uid):
     )
     return jsonify(json_data)
 
+@bp.route("/datasets/feature_weights")
+def feature_weights_index():
+    return jsonify(_feature_weights_json())
+
+@bp.route("/datasets/feature_weights/<fw_id>")
+def fetch_feature_weights(fw_id):
+    df = current_app.df
+    data = df["feature_weights"][fw_id]
+    return jsonify(data)
 
 @bp.route("/ping")
 def ping():

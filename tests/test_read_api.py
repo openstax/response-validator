@@ -1,7 +1,7 @@
 import time
 import pytest
 
-from validator import app, __version__ as app_version, default_settings
+from validator import app, __version__ as app_version
 
 myapp = app.create_app(DATA_DIR="tests/data")
 
@@ -47,6 +47,7 @@ EXPECTED_BOOK_NAMES = set(
 )
 
 EXPECTED_VOCABULARIES = ["domain", "innovation", "questions"]
+EXPECTED_FEATURE_WEIGHTS = {"d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {"stem_word_count": 0, "option_word_count": 0, "innovation_word_count": 2.2, "domain_word_count": 2.5, "bad_word_count": -3, "common_word_count": 0.7, "intercept": 0}}
 
 BOOK_VUID = '02040312-72c8-441e-a685-20e9333f3e1d@10.1'
 BOOK_NAME = "Introduction to Sociology 2e"
@@ -63,6 +64,9 @@ NUM_EXERCISE_STEM_WORDS = 6
 
 NOT_BOOK_VUID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6@1"
 
+DEFAULT_FEATURE_WEIGHT_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
+
+NOT_FEATURE_WEIGHT_ID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6@1"
 
 def test_status(client):
     """Status reports loaded books, version, and start time"""
@@ -84,14 +88,14 @@ def test_status(client):
 
     assert EXPECTED_BOOK_NAMES == returned_book_names
  # add code that checks fw
-    assert json_status["datasets"]["feature_weights"] == [default_settings.DEFAULT_FEATURE_WEIGHTS_KEY]
+    assert json_status["datasets"]["feature_weights"] == list(EXPECTED_FEATURE_WEIGHTS.keys())
 
 
 def test_datasets(client):
     """List of available datasets"""
 
     resp = client.get("/datasets")
-    assert resp.json == ["books", "questions"]
+    assert resp.json == ["books", "questions", "feature_weights"]
 
 
 def test_datasets_books(client):
@@ -292,3 +296,22 @@ def test_datasets_questions_uid(client):
     assert len(question['stem_words']) == NUM_EXERCISE_STEM_WORDS
     assert 'sociological' in question['stem_words']
     assert 'extroverts' in question['option_words']
+
+def test_feature_weights_bad_uuid(client):
+    resp = client.get('/datasets/feature_weights/nosuchfw@4')
+    assert resp.status_code == 400
+    assert resp.json["message"] == "Not a valid uuid for feature weights"
+
+def test_feature_weights_bad_not_found(client):
+    resp = client.get(f'/datasets/feature_weights/{NOT_FEATURE_WEIGHT_ID}')
+    assert resp.status_code == 404
+    assert resp.json["message"] == "No such set of feature weights"
+
+
+def test_dataset_feature_weights(client):
+    resp = client.get(f'/datasets/feature_weights/{DEFAULT_FEATURE_WEIGHT_ID}')
+    assert resp.status_code == 200
+    assert resp.json["feature_weights"] == EXPECTED_FEATURE_WEIGHTS
+
+
+
