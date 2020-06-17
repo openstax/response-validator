@@ -57,6 +57,7 @@ EXPECTED_BOOK_NAMES = set(
 )
 
 EXPECTED_VOCABULARIES = ["domain", "innovation", "questions"]
+EXPECTED_FEATURE_WEIGHTS = {"d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {"stem_word_count": 0, "option_word_count": 0, "innovation_word_count": 2.2, "domain_word_count": 2.5, "bad_word_count": -3, "common_word_count": 0.7, "intercept": 0}}
 
 BOOK_VUID = '02040312-72c8-441e-a685-20e9333f3e1d@10.1'
 BOOK_NAME = "Introduction to Sociology 2e"
@@ -73,6 +74,10 @@ NUM_EXERCISE_STEM_WORDS = 6
 
 NOT_BOOK_VUID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6@1"
 
+DEFAULT_FEATURE_WEIGHT_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
+
+NOT_FEATURE_WEIGHT_ID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6"
+
 
 def test_status(client, import_yaml):
     """Status reports loaded books, version, and start time"""
@@ -85,7 +90,7 @@ def test_status(client, import_yaml):
 
     assert json_status["version"]["version"] == app_version
 
-    assert set(json_status["datasets"].keys()) == set(["books"])
+    assert set(json_status["datasets"].keys()) == set(["books","feature_weights"])
     assert set(json_status["datasets"]["books"][0].keys()) == set(
         ["name", "vuid"]
     )
@@ -106,8 +111,9 @@ def test_datasets_books(client, import_yaml):
     assert EXPECTED_BOOK_NAMES == returned_book_names
 
     assert json_status[0]["vocabularies"] == EXPECTED_VOCABULARIES
+    assert json_status["datasets"]["feature_weights"] == list(EXPECTED_FEATURE_WEIGHTS.keys())
 
-
+# Why no test_books_bad_no_version(client), test_books_bad_not_found(client) and test_books_bad_vuid(client)?
 def test_books_book(client, import_yaml):
     resp = client.get(f'/datasets/books/{BOOK_VUID}')
     assert resp.status_code == 200
@@ -224,3 +230,19 @@ def test_datasets_questions_uid(client, import_yaml):
     assert len(question['stem_words']) == NUM_EXERCISE_STEM_WORDS
     assert 'sociological' in question['stem_words']
     assert 'extroverts' in question['option_words']
+
+def test_feature_weights_bad_uuid(client, import_yaml):
+    resp = client.get('/datasets/feature_weights/nosuchfw@4')
+    assert resp.status_code == 400
+    assert resp.json["message"] == "Not a valid uuid for feature weights"
+
+def test_feature_weights_bad_not_found(client, import_yaml):
+    resp = client.get(f'/datasets/feature_weights/{NOT_FEATURE_WEIGHT_ID}')
+    assert resp.status_code == 404
+    assert resp.json["message"] == "No such set of feature weights"
+
+
+def test_dataset_feature_weights(client, import_yaml):
+    resp = client.get(f'/datasets/feature_weights/{DEFAULT_FEATURE_WEIGHT_ID}')
+    assert resp.status_code == 200
+    assert resp.json["feature_weights"] == EXPECTED_FEATURE_WEIGHTS

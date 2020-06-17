@@ -3,13 +3,15 @@
 # This file implements the unsupervised garbage detection variants and simulates
 # accuracy/complexity tradeoffs
 
-from flask import jsonify, request, Blueprint, current_app
+from flask import jsonify, request, Blueprint, current_app, json
 from flask_cors import cross_origin
 
 import pkg_resources
+import uuid
 
 from .ecosystem_importer import EcosystemImporter
 from .utils import write_fixed_data
+from .read_api import InvalidUsage
 
 
 CORPORA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
@@ -61,6 +63,22 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
     write_fixed_data(df["domain"], df["innovation"], df["questions"], data_dir)
 
 
+def store_feature_weights(new_feature_weights):
+    # Allows removing duplicate sets in feature weights
+    # Sees if the incoming set matches with fw set
+
+    result_id= ''
+    for fw_id, existing_feature_weights in df["feature_weights"].items():
+
+        if existing_feature_weights == new_feature_weights:
+            result_id = fw_id
+            break
+        else:
+            result_id = uuid.uuid4()
+            df["feature_weights"][result_id] = new_feature_weights
+
+    return result_id
+
 @bp.route("/import", methods=["POST"])
 @cross_origin(supports_credentials=True)
 def import_ecosystem():
@@ -106,3 +124,17 @@ def import_ecosystem():
     update_fixed_data(df_domain_, df_innovation_, df_questions_)
 
     return jsonify({"msg": "Ecosystem successfully imported"})
+
+@bp.route('/datasets/feature_weights', methods=["POST"])
+def new_feature_weights_set():
+    try:
+        new_feature_weights = json.loads(request.files["file"].read())
+    except ValueError:
+        raise InvalidUsage(f"Unable to load feature weights as json file")
+    else:
+        try:
+            set(new_feature_weights.keys()) == set(current_app.df["feature_weights"].keys())
+        except KeyError:
+            raise InvalidUsage("No such set of feature weights", status_code=404)
+    store_feature_weights(new_feature_weights)
+    return jsonify({"msg": "Feature weights successfully imported"})
