@@ -60,7 +60,7 @@ def _validate_version(ver):
         raise InvalidUsage("Bad version")
 
 
-def _validate_uuid(t_uuid, t_uuid_type="feature weight"):
+def _validate_uuid(t_uuid, t_uuid_type="feature weights"):
     try:
         _ = UUID(t_uuid)
     except ValueError:

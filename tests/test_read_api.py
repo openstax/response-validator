@@ -322,7 +322,7 @@ def test_datasets_questions_uid(client):
 def test_feature_weights_bad_uuid(client):
     resp = client.get("/datasets/feature_weights/nosuchfw@4")
     assert resp.status_code == 400
-    assert resp.json["message"] == "Not a valid uuid for feature weight"
+    assert resp.json["message"] == "Not a valid uuid for feature weights"
 
 
 def test_feature_weights_bad_not_found(client):
