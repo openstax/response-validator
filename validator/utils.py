@@ -64,7 +64,7 @@ def split_to_words(df, text_column):
     )
 
 
-def write_fixed_data(df_domain, df_innovation, df_questions, feature_weights, data_dir):
+def write_fixed_data(df_domain, df_innovation, df_questions, data_dir):
     print(f"Writing data to: {data_dir}")
     df_domain.replace(set(), "").to_csv(
         os.path.join(data_dir, "df_domain.csv"), index=None
@@ -75,9 +75,11 @@ def write_fixed_data(df_domain, df_innovation, df_questions, feature_weights, da
     df_questions.replace(set(), "").to_csv(
         os.path.join(data_dir, "df_questions.csv"), index=None
     )
-    with open("feature_weights.json", "w") as f:
-        json.dump(feature_weights, f)
 
+def write_feature_weights(feature_weights, data_dir):
+    print(f"Writing data to: {data_dir}")
+    with open(os.path.join(data_dir, "feature_weights.json"), "w") as f:
+        json.dump(feature_weights, f)
 
 def get_fixed_data(data_dir):
     data_files = os.listdir(data_dir)

@@ -3,9 +3,10 @@
 # This file implements the unsupervised garbage detection variants and simulates
 # accuracy/complexity tradeoffs
 
-from flask import jsonify, request, Blueprint, current_app, json
+from flask import jsonify, request, Blueprint, current_app
 from flask_cors import cross_origin
 
+import json
 import pkg_resources
 import uuid
 
@@ -77,6 +78,7 @@ def store_feature_weights(new_feature_weights):
             result_id = uuid.uuid4()
             df["feature_weights"][result_id] = new_feature_weights
 
+
     return result_id
 
 @bp.route("/import", methods=["POST"])
@@ -135,6 +137,6 @@ def new_feature_weights_set():
         try:
             set(new_feature_weights.keys()) == set(current_app.df["feature_weights"].keys())
         except KeyError:
-            raise InvalidUsage("No such set of feature weights", status_code=404)
-    store_feature_weights(new_feature_weights)
-    return jsonify({"msg": "Feature weights successfully imported"})
+            raise InvalidUsage("No such set of feature weights", status_code=400)
+    feature_weight_id = store_feature_weights(new_feature_weights)
+    return jsonify({"msg": "Feature weights successfully imported:"},feature_weight_id)
