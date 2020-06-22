@@ -53,6 +53,8 @@ def import_yaml(test_app, client):
 EXPECTED_BOOK_NAMES = set(["Introduction to Sociology 2e"])
 
 EXPECTED_VOCABULARIES = ["domain", "innovation", "questions"]
+
+
 EXPECTED_FEATURE_WEIGHTS = {
     "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
         "stem_word_count": 0,
@@ -80,9 +82,40 @@ NUM_EXERCISE_STEM_WORDS = 6
 
 NOT_BOOK_VUID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6@1"
 
-DEFAULT_FEATURE_WEIGHT_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
+DEFAULT_FEATURE_WEIGHTS_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
 
-NOT_FEATURE_WEIGHT_ID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6"
+EMPTY_FEATURE_WEIGHTS = {}
+
+DEFAULT_FEATURE_WEIGHTS = {
+        "stem_word_count": 0,
+        "option_word_count": 0,
+        "innovation_word_count": 2.2,
+        "domain_word_count": 2.5,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+        "intercept": 0,
+    }
+
+
+INCOMPLETE_FEATURE_WEIGHTS = {
+        "innovation_word_count": 2.2,
+        "domain_word_count": 2.5,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+        "intercept": 0,
+    }
+
+
+EXTRA_FEATURE_WEIGHTS = {
+        "stem_word_count": 0,
+        "nonsense_count": 0,
+        "option_word_count": 0,
+        "innovation_word_count": 2.2,
+        "domain_word_count": 2.5,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+        "intercept": 0,
+    }
 
 
 def test_status(client, import_yaml):
@@ -245,19 +278,23 @@ def test_datasets_questions_uid(client, import_yaml):
     assert "extroverts" in question["option_words"]
 
 
-def test_feature_weights_bad_uuid(client, import_yaml):
-    resp = client.get("/datasets/feature_weights/nosuchfw@4")
+def test_empty_feature_weights(client):
+    resp = client.post("/datasets/feature_weights", data = EMPTY_FEATURE_WEIGHTS)
     assert resp.status_code == 400
-    assert resp.json["message"] == "Not a valid uuid for feature weights"
+    assert resp.json["message"] =="Incomplete or incorrect feature weight keys"
 
+def test_incomplete_feature_weights(client):
+    resp = client.post("/datasets/feature_weights", data = INCOMPLETE_FEATURE_WEIGHTS)
+    assert resp.status_code == 400
+    assert resp.json["message"] =="Incomplete or incorrect feature weight keys"
 
-def test_feature_weights_bad_not_found(client, import_yaml):
-    resp = client.get(f"/datasets/feature_weights/{NOT_FEATURE_WEIGHT_ID}")
-    assert resp.status_code == 404
-    assert resp.json["message"] == "No such set of feature weights"
+def test_extra_feature_weights(client):
+    resp = client.post("/datasets/feature_weights", data = EXTRA_FEATURE_WEIGHTS)
+    assert resp.status_code == 400
+    assert resp.json["message"] =="Incomplete or incorrect feature weight keys"
 
-
-def test_dataset_feature_weights(client, import_yaml):
-    resp = client.get(f"/datasets/feature_weights/{DEFAULT_FEATURE_WEIGHT_ID}")
+def test_default_feature_weights(client):
+    client.post("/datasets/feature_weights", data = DEFAULT_FEATURE_WEIGHTS)
+    resp = client.get("/datasets/feature_weights/{EXTRA_FEATURE_WEIGHTS_ID}")
     assert resp.status_code == 200
-    assert resp.json == EXPECTED_FEATURE_WEIGHTS[DEFAULT_FEATURE_WEIGHT_ID]
+    assert resp.json == {"msg": "Feature weights successfully imported.", "feature_weight_set_id": DEFAULT_FEATURE_WEIGHTS_ID}

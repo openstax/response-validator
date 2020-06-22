@@ -81,6 +81,7 @@ def store_feature_weights(new_feature_weights):
 
     return result_id
 
+#where does /import go?
 @bp.route("/import", methods=["POST"])
 @cross_origin(supports_credentials=True)
 def import_ecosystem():
@@ -137,6 +138,6 @@ def new_feature_weights_set():
         try:
             set(new_feature_weights.keys()) == set(current_app.df["feature_weights"].keys())
         except KeyError:
-            raise InvalidUsage("No such set of feature weights", status_code=400)
+            raise InvalidUsage("Incomplete or incorrect feature weight keys", status_code=400)
     feature_weight_id = store_feature_weights(new_feature_weights)
-    return jsonify({"msg": "Feature weights successfully imported:"},feature_weight_id)
+    return jsonify({"msg": "Feature weights successfully imported.", "feature_weight_set_id": feature_weight_id})
