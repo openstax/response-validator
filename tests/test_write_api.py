@@ -87,35 +87,35 @@ DEFAULT_FEATURE_WEIGHTS_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
 EMPTY_FEATURE_WEIGHTS = {}
 
 DEFAULT_FEATURE_WEIGHTS = {
-        "stem_word_count": 0,
-        "option_word_count": 0,
-        "innovation_word_count": 2.2,
-        "domain_word_count": 2.5,
-        "bad_word_count": -3,
-        "common_word_count": 0.7,
-        "intercept": 0,
-    }
+    "stem_word_count": 0,
+    "option_word_count": 0,
+    "innovation_word_count": 2.2,
+    "domain_word_count": 2.5,
+    "bad_word_count": -3,
+    "common_word_count": 0.7,
+    "intercept": 0,
+}
 
 
 INCOMPLETE_FEATURE_WEIGHTS = {
-        "innovation_word_count": 2.2,
-        "domain_word_count": 2.5,
-        "bad_word_count": -3,
-        "common_word_count": 0.7,
-        "intercept": 0,
-    }
+    "innovation_word_count": 2.2,
+    "domain_word_count": 2.5,
+    "bad_word_count": -3,
+    "common_word_count": 0.7,
+    "intercept": 0,
+}
 
 
 EXTRA_FEATURE_WEIGHTS = {
-        "stem_word_count": 0,
-        "nonsense_count": 0,
-        "option_word_count": 0,
-        "innovation_word_count": 2.2,
-        "domain_word_count": 2.5,
-        "bad_word_count": -3,
-        "common_word_count": 0.7,
-        "intercept": 0,
-    }
+    "stem_word_count": 0,
+    "nonsense_count": 0,
+    "option_word_count": 0,
+    "innovation_word_count": 2.2,
+    "domain_word_count": 2.5,
+    "bad_word_count": -3,
+    "common_word_count": 0.7,
+    "intercept": 0,
+}
 
 
 def test_status(client, import_yaml):
@@ -279,22 +279,29 @@ def test_datasets_questions_uid(client, import_yaml):
 
 
 def test_empty_feature_weights(client):
-    resp = client.post("/datasets/feature_weights", json = EMPTY_FEATURE_WEIGHTS)
+    resp = client.post("/datasets/feature_weights", json=EMPTY_FEATURE_WEIGHTS)
     assert resp.status_code == 400
-    assert resp.json["message"] =="Incomplete or incorrect feature weight keys"
+    assert resp.json["message"] == "Incomplete or incorrect feature weight keys"
+
 
 def test_incomplete_feature_weights(client):
-    resp = client.post("/datasets/feature_weights", json = INCOMPLETE_FEATURE_WEIGHTS)
+    resp = client.post("/datasets/feature_weights", json=INCOMPLETE_FEATURE_WEIGHTS)
     assert resp.status_code == 400
-    assert resp.json["message"] =="Incomplete or incorrect feature weight keys"
+    assert resp.json["message"] == "Incomplete or incorrect feature weight keys"
+
 
 def test_extra_feature_weights(client):
-    resp = client.post("/datasets/feature_weights", json = EXTRA_FEATURE_WEIGHTS)
+    resp = client.post("/datasets/feature_weights", json=EXTRA_FEATURE_WEIGHTS)
     assert resp.status_code == 400
-    assert resp.json["message"] =="Incomplete or incorrect feature weight keys"
+    assert resp.json["message"] == "Incomplete or incorrect feature weight keys"
+
 
 def test_default_feature_weights(client):
-    client.post("/datasets/feature_weights", json = DEFAULT_FEATURE_WEIGHTS)
-    resp = client.get("/datasets/feature_weights/{EXTRA_FEATURE_WEIGHTS_ID}")
+    resp = client.post("/datasets/feature_weights", json=DEFAULT_FEATURE_WEIGHTS)
     assert resp.status_code == 200
-    assert resp.json == {"msg": "Feature weights successfully imported.", "feature_weight_set_id": DEFAULT_FEATURE_WEIGHTS_ID}
+    assert resp.json == {
+        "msg": "Feature weights successfully imported.",
+        "feature_weight_set_id": DEFAULT_FEATURE_WEIGHTS_ID,
+    }
+    resp = client.get(f"/datasets/feature_weights/{DEFAULT_FEATURE_WEIGHTS_ID}")
+    assert resp.json == DEFAULT_FEATURE_WEIGHTS

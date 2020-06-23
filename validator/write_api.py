@@ -6,18 +6,20 @@
 from flask import jsonify, request, Blueprint, current_app
 from flask_cors import cross_origin
 
-import json
 import pkg_resources
 import uuid
 
 from .ecosystem_importer import EcosystemImporter
 from .utils import write_fixed_data
-from .read_api import InvalidUsage
+from .read_api import InvalidUsage, handle_invalid_usage
 
 
 CORPORA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 
 bp = Blueprint("write_api", __name__, url_prefix="/")
+
+bp.register_error_handler(InvalidUsage, handle_invalid_usage)
+
 
 # Instantiate the ecosystem importer that will be used by the import route
 ecosystem_importer = EcosystemImporter(
@@ -68,16 +70,15 @@ def store_feature_weights(new_feature_weights):
     # Allows removing duplicate sets in feature weights
     # Sees if the incoming set matches with fw set
 
-    result_id= ''
+    df = current_app.df
     for fw_id, existing_feature_weights in df["feature_weights"].items():
 
         if existing_feature_weights == new_feature_weights:
             result_id = fw_id
             break
-        else:
-            result_id = uuid.uuid4()
-            df["feature_weights"][result_id] = new_feature_weights
-
+    else:
+        result_id = uuid.uuid4()
+        df["feature_weights"][result_id] = new_feature_weights
 
     return result_id
 
@@ -128,17 +129,24 @@ def import_ecosystem():
 
     return jsonify({"msg": "Ecosystem successfully imported"})
 
-@bp.route('/datasets/feature_weights', methods=["POST"])
+
+@bp.route("/datasets/feature_weights", methods=["POST"])
 @cross_origin(supports_credentials=True)
 def new_feature_weights_set():
+    feature_weights_keys = set(current_app.config["DEFAULT_FEATURE_WEIGHTS"].keys())
     try:
         new_feature_weights = request.json
     except ValueError:
         raise InvalidUsage(f"Unable to load feature weights as json file")
     else:
-        try:
-            set(new_feature_weights.keys()) == set(current_app.df["feature_weights"].keys())
-        except KeyError:
-            raise InvalidUsage("Incomplete or incorrect feature weight keys", status_code=400)
+        if set(new_feature_weights.keys()) != feature_weights_keys:
+            raise InvalidUsage(
+                "Incomplete or incorrect feature weight keys", status_code=400
+            )
     feature_weight_id = store_feature_weights(new_feature_weights)
-    return jsonify({"msg": "Feature weights successfully imported.", "feature_weight_set_id": feature_weight_id})
+    return jsonify(
+        {
+            "msg": "Feature weights successfully imported.",
+            "feature_weight_set_id": feature_weight_id,
+        }
+    )
