@@ -81,7 +81,7 @@ def store_feature_weights(new_feature_weights):
 
     return result_id
 
-#where does /import go?
+
 @bp.route("/import", methods=["POST"])
 @cross_origin(supports_credentials=True)
 def import_ecosystem():
@@ -129,9 +129,10 @@ def import_ecosystem():
     return jsonify({"msg": "Ecosystem successfully imported"})
 
 @bp.route('/datasets/feature_weights', methods=["POST"])
+@cross_origin(supports_credentials=True)
 def new_feature_weights_set():
     try:
-        new_feature_weights = json.loads(request.files["file"].read())
+        new_feature_weights = request.json
     except ValueError:
         raise InvalidUsage(f"Unable to load feature weights as json file")
     else:

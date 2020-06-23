@@ -279,22 +279,22 @@ def test_datasets_questions_uid(client, import_yaml):
 
 
 def test_empty_feature_weights(client):
-    resp = client.post("/datasets/feature_weights", data = EMPTY_FEATURE_WEIGHTS)
+    resp = client.post("/datasets/feature_weights", json = EMPTY_FEATURE_WEIGHTS)
     assert resp.status_code == 400
     assert resp.json["message"] =="Incomplete or incorrect feature weight keys"
 
 def test_incomplete_feature_weights(client):
-    resp = client.post("/datasets/feature_weights", data = INCOMPLETE_FEATURE_WEIGHTS)
+    resp = client.post("/datasets/feature_weights", json = INCOMPLETE_FEATURE_WEIGHTS)
     assert resp.status_code == 400
     assert resp.json["message"] =="Incomplete or incorrect feature weight keys"
 
 def test_extra_feature_weights(client):
-    resp = client.post("/datasets/feature_weights", data = EXTRA_FEATURE_WEIGHTS)
+    resp = client.post("/datasets/feature_weights", json = EXTRA_FEATURE_WEIGHTS)
     assert resp.status_code == 400
     assert resp.json["message"] =="Incomplete or incorrect feature weight keys"
 
 def test_default_feature_weights(client):
-    client.post("/datasets/feature_weights", data = DEFAULT_FEATURE_WEIGHTS)
+    client.post("/datasets/feature_weights", json = DEFAULT_FEATURE_WEIGHTS)
     resp = client.get("/datasets/feature_weights/{EXTRA_FEATURE_WEIGHTS_ID}")
     assert resp.status_code == 200
     assert resp.json == {"msg": "Feature weights successfully imported.", "feature_weight_set_id": DEFAULT_FEATURE_WEIGHTS_ID}
