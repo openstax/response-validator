@@ -1,7 +1,9 @@
 import pytest
 import os
+import shutil
 import tempfile
 import time
+
 
 import vcr
 
@@ -15,8 +17,7 @@ def test_app():
     tmpdir = tempfile.mkdtemp()
     write_app = app.create_app(DATA_DIR=tmpdir)
     yield write_app
-
-    os.removedirs(tmpdir)
+    shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 @pytest.fixture(scope="module")
@@ -96,6 +97,15 @@ DEFAULT_FEATURE_WEIGHTS = {
     "intercept": 0,
 }
 
+NEW_FEATURE_WEIGHTS = {
+    "stem_word_count": 0.4,
+    "option_word_count": 0.1,
+    "innovation_word_count": 2.2,
+    "domain_word_count": 2.5,
+    "bad_word_count": -3,
+    "common_word_count": 0.7,
+    "intercept": 0,
+}
 
 INCOMPLETE_FEATURE_WEIGHTS = {
     "innovation_word_count": 2.2,
@@ -279,25 +289,25 @@ def test_datasets_questions_uid(client, import_yaml):
 
 
 def test_empty_feature_weights(client):
-    resp = client.post("/datasets/feature_weights", json=EMPTY_FEATURE_WEIGHTS)
+    resp = client.post("/datasets/feature_weights", json = EMPTY_FEATURE_WEIGHTS)
     assert resp.status_code == 400
     assert resp.json["message"] == "Incomplete or incorrect feature weight keys"
 
 
 def test_incomplete_feature_weights(client):
-    resp = client.post("/datasets/feature_weights", json=INCOMPLETE_FEATURE_WEIGHTS)
+    resp = client.post("/datasets/feature_weights", json = INCOMPLETE_FEATURE_WEIGHTS)
     assert resp.status_code == 400
     assert resp.json["message"] == "Incomplete or incorrect feature weight keys"
 
 
 def test_extra_feature_weights(client):
-    resp = client.post("/datasets/feature_weights", json=EXTRA_FEATURE_WEIGHTS)
+    resp = client.post("/datasets/feature_weights", json = EXTRA_FEATURE_WEIGHTS)
     assert resp.status_code == 400
     assert resp.json["message"] == "Incomplete or incorrect feature weight keys"
 
 
 def test_default_feature_weights(client):
-    resp = client.post("/datasets/feature_weights", json=DEFAULT_FEATURE_WEIGHTS)
+    resp = client.post("/datasets/feature_weights", json = DEFAULT_FEATURE_WEIGHTS)
     assert resp.status_code == 200
     assert resp.json == {
         "msg": "Feature weights successfully imported.",
@@ -305,3 +315,10 @@ def test_default_feature_weights(client):
     }
     resp = client.get(f"/datasets/feature_weights/{DEFAULT_FEATURE_WEIGHTS_ID}")
     assert resp.json == DEFAULT_FEATURE_WEIGHTS
+
+def test_new_feature_weights(client):
+    resp = client.post("/datasets/feature_weights", json = NEW_FEATURE_WEIGHTS)
+    assert resp.status_code == 200
+    assert resp.json["msg"] == "Feature weights successfully imported."
+    new_feature_weights_id = resp.json["feature_weight_set_id"]
+    assert (client.get(f"/datasets/feature_weights/{new_feature_weights_id}")).json == NEW_FEATURE_WEIGHTS

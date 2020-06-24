@@ -10,7 +10,7 @@ import pkg_resources
 import uuid
 
 from .ecosystem_importer import EcosystemImporter
-from .utils import write_fixed_data
+from .utils import write_fixed_data, write_feature_weights
 from .read_api import InvalidUsage, handle_invalid_usage
 
 
@@ -78,7 +78,9 @@ def store_feature_weights(new_feature_weights):
             break
     else:
         result_id = uuid.uuid4()
-        df["feature_weights"][result_id] = new_feature_weights
+        df["feature_weights"][str(result_id)] = new_feature_weights
+        data_dir = current_app.config["DATA_DIR"]
+        write_feature_weights(df["feature_weights"], data_dir)
 
     return result_id
 
