@@ -206,12 +206,14 @@ def get_fixed_data(data_dir):
             ]
         )
 
-    # Now load the feature_weights, if found.
+    # Now load the feature_weights and default feature_weight_id, if found.
     try:
         with open(os.path.join(data_dir, "feature_weights.json")) as f:
             feature_weights = json.load(f)
+            default_feature_weights_id = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
     except FileNotFoundError:
         print(f"No feature weights loaded, using defaults")
         feature_weights = {}
 
-    return df_innovation, df_domain, df_questions, feature_weights
+
+    return df_innovation, df_domain, df_questions, feature_weights, default_feature_weights_id

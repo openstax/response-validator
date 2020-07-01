@@ -40,7 +40,7 @@ def setup_parse_and_data(setup_state):
     SPELLING_CORRECTION_DEFAULTS = setup_state.app.config[
         "SPELLING_CORRECTION_DEFAULTS"
     ]
-    DEFAULT_FEATURE_WEIGHTS = setup_state.app.config["DEFAULT_FEATURE_WEIGHTS"]
+    # DEFAULT_FEATURE_WEIGHTS = setup_state.app.config["DEFAULT_FEATURE_WEIGHTS"]
 
     # Create the parser, initially assign default values
     # (these can be overwritten during calls to process_string)
@@ -128,13 +128,13 @@ def get_question_data(uid):
 
 def parse_and_classify(
     response,
-    feature_weight_dict,
     feature_vocab_dict,
     remove_stopwords,
     tag_numeric,
     spelling_correction,
     remove_nonwords,
     spell_correction_limit,
+    feature_weight_id,
 ):
 
     # Parse the students response into a word list
@@ -146,6 +146,9 @@ def parse_and_classify(
         kill_nonwords=remove_nonwords,
         spell_correction_max=spell_correction_limit,
     )
+
+    # Fetch feature weights by ID
+    feature_weight_dict = current_app.df["feature_weights"][feature_weight_id]
 
     # Initialize all feature counts to 0
     # Then move through the feature list in order and count iff applicable
@@ -183,13 +186,13 @@ def parse_and_classify(
 def validate_response(
     response,
     uid,
-    feature_weight_dict,
     remove_stopwords=None,
     tag_numeric=None,
     spelling_correction=None,
     remove_nonwords=None,
     spell_correction_max=None,
     lazy_math_mode=None,
+    feature_weights_id=None,
 ):
     """Function to estimate validity given response, uid, and parser parameters"""
 
@@ -205,6 +208,8 @@ def validate_response(
         spell_correction_max = PARSER_DEFAULTS["spell_correction_max"]
     if lazy_math_mode is None:
         lazy_math_mode = PARSER_DEFAULTS["lazy_math_mode"]
+    if feature_weights_id is None:
+        feature_weights_id = 'd3732be6-a759-43aa-9e1a-3e9bd94f8b6b'
 
     # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
     # domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab,
@@ -221,38 +226,38 @@ def validate_response(
     if spelling_correction != "auto":
         return_dictionary = parse_and_classify(
             response,
-            feature_weight_dict,
             vocab_dict,
             remove_stopwords,
             tag_numeric,
             spelling_correction,
             remove_nonwords,
             spell_correction_max,
+            feature_weights_id,
         )
     else:
         # Check for validity without spelling correction
         return_dictionary = parse_and_classify(
             response,
-            feature_weight_dict,
             vocab_dict,
             remove_stopwords,
             tag_numeric,
             False,
             remove_nonwords,
             spell_correction_max,
+            feature_weights_id,
         )
 
         # If that didn't pass, re-evaluate with spelling correction turned on
         if not return_dictionary["valid"]:
             return_dictionary = parse_and_classify(
                 response,
-                feature_weight_dict,
                 vocab_dict,
                 remove_stopwords,
                 tag_numeric,
                 True,
                 remove_nonwords,
                 spell_correction_max,
+                feature_weights_id,
             )
 
     return_dictionary["tag_numeric_input"] = tag_numeric_input
@@ -277,7 +282,7 @@ def validate_response(
 # credentials are needed so the SSO cookie can be read
 @bp.route("/validate", methods=("GET", "POST"))
 @cross_origin(supports_credentials=True)
-def validation_api_entry():
+def validation_api_entry(feature_weights_set_id):
     # TODO: waiting for https://github.com/openstax/accounts-rails/pull/77
     # TODO: Add the ability to parse the features provided (using defaults as backup)
     # cookie = request.COOKIES.get('ox', None)
@@ -293,21 +298,24 @@ def validation_api_entry():
 
     response = args.get("response", None)
     uid = args.get("uid", None)
+    feature_weights_set_id= args.get("feature_weights_set_id", 'd3732be6-a759-43aa-9e1a-3e9bd94f8b6b')
+
     parser_params = {
         key: make_tristate(args.get(key, val), val)
         for key, val in PARSER_DEFAULTS.items()
     }
 
+    feature_weights
     feature_weight_dict = OrderedDict(
         {
             key: make_tristate(args.get(key, val), val)
-            for key, val in DEFAULT_FEATURE_WEIGHTS.items()
+            for key, val in current_app.df[feature_weights][feature_weights_set_id].items()
         }
     )
 
     start_time = time.time()
     return_dictionary = validate_response(
-        response, uid, feature_weight_dict, **parser_params
+        response, uid, **parser_params
     )
 
     return_dictionary["feature_weights"] = feature_weight_dict

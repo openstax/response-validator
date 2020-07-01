@@ -273,7 +273,6 @@ def fetch_feature_weights(fw_id):
 
     return jsonify(data)
 
-
 @bp.route("/ping")
 def ping():
     return "pong"
@@ -292,6 +291,14 @@ def status():
 
     return jsonify(data)
 
+@bp.route("/status/defaults/feature_weights_id")
+def fetch_default_feature_weights_id():
+    return jsonify("d3732be6-a759-43aa-9e1a-3e9bd94f8b6b")
+
+
+@bp.route("/status/defaults")
+def fetch_default_feature_weights_set():
+    return jsonify(current_app.df["feature_weights"]["d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"])
 
 @bp.route("/version")
 @bp.route("/rev.txt")
