@@ -147,6 +147,7 @@ def parse_and_classify(
         spell_correction_max=spell_correction_limit,
     )
 
+
     # Fetch feature weights by ID
     feature_weight_dict = current_app.df["feature_weights"][feature_weight_id]
 
@@ -305,11 +306,10 @@ def validation_api_entry(feature_weights_set_id):
         for key, val in PARSER_DEFAULTS.items()
     }
 
-    feature_weights
     feature_weight_dict = OrderedDict(
         {
             key: make_tristate(args.get(key, val), val)
-            for key, val in current_app.df[feature_weights][feature_weights_set_id].items()
+            for key, val in current_app.df["feature_weights"][feature_weights_set_id].items()
         }
     )
 
