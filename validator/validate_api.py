@@ -147,7 +147,6 @@ def parse_and_classify(
         spell_correction_max=spell_correction_limit,
     )
 
-
     # Fetch feature weights by ID
     feature_weight_dict = current_app.df["feature_weights"][feature_weight_id]
 
@@ -283,7 +282,7 @@ def validate_response(
 # credentials are needed so the SSO cookie can be read
 @bp.route("/validate", methods=("GET", "POST"))
 @cross_origin(supports_credentials=True)
-def validation_api_entry(feature_weights_set_id):
+def validation_api_entry():
     # TODO: waiting for https://github.com/openstax/accounts-rails/pull/77
     # TODO: Add the ability to parse the features provided (using defaults as backup)
     # cookie = request.COOKIES.get('ox', None)
@@ -299,26 +298,19 @@ def validation_api_entry(feature_weights_set_id):
 
     response = args.get("response", None)
     uid = args.get("uid", None)
-    feature_weights_set_id= args.get("feature_weights_set_id", 'd3732be6-a759-43aa-9e1a-3e9bd94f8b6b')
+    feature_weights_set_id = args.get("feature_weights_set_id", 'd3732be6-a759-43aa-9e1a-3e9bd94f8b6b')
 
     parser_params = {
         key: make_tristate(args.get(key, val), val)
         for key, val in PARSER_DEFAULTS.items()
     }
 
-    feature_weight_dict = OrderedDict(
-        {
-            key: make_tristate(args.get(key, val), val)
-            for key, val in current_app.df["feature_weights"][feature_weights_set_id].items()
-        }
-    )
-
     start_time = time.time()
     return_dictionary = validate_response(
-        response, uid, **parser_params
+        response, uid, feature_weights_id=feature_weights_set_id, **parser_params
     )
 
-    return_dictionary["feature_weights"] = feature_weight_dict
+    return_dictionary["feature_weights"] = current_app.df["feature_weights"][feature_weights_set_id]
 
     return_dictionary["computation_time"] = time.time() - start_time
 

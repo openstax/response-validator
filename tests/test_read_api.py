@@ -55,19 +55,34 @@ EXPECTED_FEATURE_WEIGHTS = {
         "domain_word_count": 2.5,
         "bad_word_count": -3,
         "common_word_count": 0.7,
-        "intercept": 0,
-    }
-}
-
-DEFAULT_FEATURE_WEIGHTS_SET =  {
+    },
+    "cc2ed0ea-46cc-428f-b8e4-136df5b157db": {
         "stem_word_count": 0,
         "option_word_count": 0,
         "innovation_word_count": 2.2,
         "domain_word_count": 2.5,
         "bad_word_count": -3,
         "common_word_count": 0.7,
-        "intercept": 0,
-    }
+    },
+    "566ceadc-3835-4b08-9dea-ac6fcbb27c96": {
+        "stem_word_count": 1,
+        "option_word_count": 1,
+        "innovation_word_count": 0,
+        "domain_word_count": 0,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+    },
+    "f84e554a-c06c-11ea-a880-7f87cd92d175": {},
+}
+
+DEFAULT_FEATURE_WEIGHTS_SET = {
+    "stem_word_count": 0,
+    "option_word_count": 0,
+    "innovation_word_count": 2.2,
+    "domain_word_count": 2.5,
+    "bad_word_count": -3,
+    "common_word_count": 0.7,
+}
 
 
 BOOK_VUID = "02040312-72c8-441e-a685-20e9333f3e1d@10.1"
@@ -112,13 +127,16 @@ def test_status(client):
         EXPECTED_FEATURE_WEIGHTS.keys()
     )
 
+
 def test_fetch_default_feature_weights_id(client):
     resp = client.get("/status/defaults/feature_weights_id")
     assert resp.json == DEFAULT_FEATURE_WEIGHT_ID
 
+
 def test_fetch_default_feature_weights_set(client):
     resp = client.get("/status/defaults")
     assert resp.json == DEFAULT_FEATURE_WEIGHTS_SET
+
 
 def test_datasets(client):
     """List of available datasets"""
@@ -353,6 +371,3 @@ def test_dataset_feature_weights(client):
     resp = client.get(f"/datasets/feature_weights/{DEFAULT_FEATURE_WEIGHT_ID}")
     assert resp.status_code == 200
     assert resp.json == EXPECTED_FEATURE_WEIGHTS[DEFAULT_FEATURE_WEIGHT_ID]
-
-
-

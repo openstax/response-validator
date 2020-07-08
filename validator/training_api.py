@@ -39,6 +39,8 @@ def validation_train():
         key: make_tristate(args.get(key, val), val)
         for key, val in current_app.config["DEFAULT_FEATURE_WEIGHTS"].items()
     }
+    current_app.df["feature_weights"]["training"] = train_feature_dict
+
     features_to_consider = [
         k for k in train_feature_dict.keys() if train_feature_dict[k]
     ]
@@ -58,7 +60,7 @@ def validation_train():
     # Map the valid label of the input to the output
     output_df = response_df.apply(
         lambda x: validate_response(
-            x.free_response, x.uid, train_feature_dict, **parser_params
+            x.free_response, x.uid, feature_weights_id="training", **parser_params
         ),
         axis=1,
     )
