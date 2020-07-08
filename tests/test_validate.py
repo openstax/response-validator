@@ -65,8 +65,7 @@ def test_validate_response():
             feature_weights_id="f84e554a-c06c-11ea-a880-7f87cd92d175",
         )
 
-
-    assert res.items() >= expected.items()
+    assert res == expected
 
 
 def test_404(client):

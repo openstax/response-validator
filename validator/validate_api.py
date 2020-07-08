@@ -147,13 +147,13 @@ def parse_and_classify(
         spell_correction_max=spell_correction_limit,
     )
 
-
     # Fetch feature weights by ID
     feature_weight_dict = current_app.df["feature_weights"][feature_weight_id]
 
     # Initialize all feature counts to 0
+    # ORDER OF KEYS in feature_weight_dict is preserved, and matters!
     # Then move through the feature list in order and count iff applicable
-    feature_count_dict =  {"stem_word_count": 0, "option_word_count": 0, "innovation_word_count": 0, "domain_word_count": 0, "bad_word_count": 0, "common_word_count": 0, "intercept": 0}
+    feature_count_dict = OrderedDict.fromkeys(feature_weight_dict.keys(), 0)
     feature_count_dict["intercept"] = 1
 
     for word in response_words:
@@ -299,10 +299,11 @@ def validation_api_entry():
 
     response = args.get("response", None)
     uid = args.get("uid", None)
-    feature_weights_set_id= args.get("feature_weights_set_id", 'd3732be6-a759-43aa-9e1a-3e9bd94f8b6b')
+    feature_weights_set_id = args.get("feature_weights_set_id",
+                                      "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b")
 
     if feature_weights_set_id not in current_app.df['feature_weights']:
-        raise KeyError('non-alphanumeric character in input')
+        raise KeyError("feature_weights_set_id not found")
 
     parser_params = {
         key: make_tristate(args.get(key, val), val)
