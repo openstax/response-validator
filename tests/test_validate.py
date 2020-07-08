@@ -42,27 +42,31 @@ def test_validate_response():
     from validator.validate_api import validate_response
 
     expected = {
-        "inner_product": 0, #'inner_product': 1.4
+        "inner_product": 0,
         "intercept": 1,
         "lazy_math_evaluation": True,
         "num_spelling_correction": 0,
         "processed_response": "foo bar",
         "remove_nonwords": True,
-        "remove_stopwords": True, #'remove_stopwords': {}
+        "remove_stopwords": True,
         "response": "foo bar",
         "spelling_correction": "auto",
-        "spelling_correction_used": True, #'spelling_correction_used': False
+        "spelling_correction_used": True,
         "tag_numeric": False,
         "tag_numeric_input": "auto",
         "uid_found": True,
         "uid_used": "100@7",
-        "valid": False, #'valid': True
+        "valid": False,
     }
-# 'stem_word_count': 0, 'option_word_count': 0, 'innovation_word_count': 0, 'domain_word_count': 0, 'bad_word_count': 0, 'common_word_count': 2, 'intercept': 1, 'inner_product': 1.4
     with myapp.app_context():
-        res=validate_response("foo bar", "100@1", {})
+        res = validate_response(
+            "foo bar",
+            "100@1",
+            feature_weights_id="f84e554a-c06c-11ea-a880-7f87cd92d175",
+        )
 
-    assert res == expected
+
+    assert res.items() >= expected.items()
 
 
 def test_404(client):
@@ -138,7 +142,7 @@ def test_non_words(client):
     """Just well-known not-a-word"""
 
     params = {"response": "idk asdf lol n/a"}
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 3,
@@ -174,7 +178,7 @@ def test_simple_words(client):
     """Just well-known not-a-word"""
 
     params = {"response": "Here is my response"}
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -207,7 +211,7 @@ def test_domain_words(client):
     """Word in the domain of the exercise (the book)"""
 
     params = {"response": "echinacea chemiosmosis", "uid": "1340@1"}
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -247,7 +251,7 @@ def test_innovation_words(client):
     """A word in the innovation list of the exercise"""
 
     params = {"response": "1.0 echinacea cytosol", "uid": "290@1"}
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -287,7 +291,7 @@ def test_numeric_words(client):
     """Various numerics"""
 
     params = {"response": "0 23 -3 1.2 IV", "tag_numeric": True}
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -329,7 +333,7 @@ def test_no_spelling_correction(client):
     """Various numerics"""
 
     params = {"response": "This is my respones", "spelling_correction": False}
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 1,
@@ -365,7 +369,7 @@ def test_auto_spelling_correction_invalid(client):
     """Various numerics"""
 
     params = {"response": "This is my respones", "spelling_correction": "auto"}
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -401,7 +405,7 @@ def test_auto_spelling_correction_valid(client):
     """Various numerics"""
 
     params = {"response": "This is my response", "spelling_correction": "auto"}
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -441,7 +445,7 @@ def test_auto_spelling_correction_limit_3(client):
         "spelling_correction": "auto",
         "spell_correction_max": 3,
     }
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 7,
@@ -483,7 +487,7 @@ def test_auto_spelling_correction_limit_10(client):
         "spelling_correction": "auto",
         "spell_correction_max": 10,
     }
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -519,7 +523,7 @@ def test_spelling_correction_default(client):
     """Various numerics"""
 
     params = {"response": "This is my respones", "spelling_correction": "odd"}
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -555,7 +559,7 @@ def test_stem_option_words(client):
     """Word in the domain of the exercise (the book)"""
 
     params = {"response": "example leg", "uid": "9@6"}
-    params.update({'feature_weights_set_id': "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
+    params.update({"feature_weights_set_id": "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -595,7 +599,7 @@ def test_no_stem_option_words(client):
     """Word in the domain of the exercise (the book)"""
 
     params = {"response": "example leg", "uid": "9@6"}
-    params.update({'feature_weights_set_id': "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157db"})
     resp = client.get("/validate", query_string=urlencode(params))
     expected = {
         "bad_word_count": 0,
@@ -630,24 +634,27 @@ def test_no_stem_option_words(client):
     result["version"] = "testing"
     assert expected.items() <= result.items()
 
+
 def test_tag_numeric_no_question(client):
     """With no question supplied, tag_numeric should be True"""
 
     params = {"response": "1.0 5 10 some words"}
-    params.update({'feature_weights_set_id': "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
+    params.update({"feature_weights_set_id": "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
     resp = client.get("/validate", query_string=urlencode(params))
     result = resp.json
     assert result["tag_numeric"] == True
     assert result["valid"] == True
 
+
 def test_tag_numeric_auto_no_question(client):
     """With no question supplied, tag_numeric should be True"""
 
     params = {"response": "1.0 5 10 some words", "tag_numeric": "auto"}
-    params.update({'feature_weights_set_id': "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
+    params.update({"feature_weights_set_id": "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
     resp = client.get("/validate", query_string=urlencode(params))
     result = resp.json
     assert result["tag_numeric"] == True
+
 
 def test_tag_numeric_auto_numeric_question(client):
     """With no question supplied, tag_numeric should be True"""
@@ -663,17 +670,18 @@ def test_tag_numeric_auto_nonnumeric_question(client):
     """With no question supplied, tag_numeric should be True"""
 
     params = {"response": "1.0 5 10 some words", "tag_numeric": "auto", "uid": "100@1"}
-    params.update({'feature_weights_set_id': "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
+    params.update({"feature_weights_set_id": "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
     resp = client.get("/validate", query_string=urlencode(params))
     result = resp.json
     assert result["tag_numeric"] == False
     assert result["valid"] == False
 
+
 def test_tag_numeric_true_nonnumeric_question(client):
     """With no question supplied, tag_numeric should be True"""
 
     params = {"response": "1.0 5 10 some words", "tag_numeric": True, "uid": "100@1"}
-    params.update({'feature_weights_set_id': "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
+    params.update({"feature_weights_set_id": "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
     resp = client.get("/validate", query_string=urlencode(params))
     result = resp.json
     assert result["tag_numeric"] == True

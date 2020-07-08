@@ -153,7 +153,7 @@ def parse_and_classify(
 
     # Initialize all feature counts to 0
     # Then move through the feature list in order and count iff applicable
-    feature_count_dict = OrderedDict({key: 0 for key in feature_weight_dict.keys()})
+    feature_count_dict =  {"stem_word_count": 0, "option_word_count": 0, "innovation_word_count": 0, "domain_word_count": 0, "bad_word_count": 0, "common_word_count": 0, "intercept": 0}
     feature_count_dict["intercept"] = 1
 
     for word in response_words:
@@ -283,7 +283,7 @@ def validate_response(
 # credentials are needed so the SSO cookie can be read
 @bp.route("/validate", methods=("GET", "POST"))
 @cross_origin(supports_credentials=True)
-def validation_api_entry(feature_weights_set_id):
+def validation_api_entry():
     # TODO: waiting for https://github.com/openstax/accounts-rails/pull/77
     # TODO: Add the ability to parse the features provided (using defaults as backup)
     # cookie = request.COOKIES.get('ox', None)
@@ -301,24 +301,20 @@ def validation_api_entry(feature_weights_set_id):
     uid = args.get("uid", None)
     feature_weights_set_id= args.get("feature_weights_set_id", 'd3732be6-a759-43aa-9e1a-3e9bd94f8b6b')
 
+    if feature_weights_set_id not in current_app.df['feature_weights']:
+        raise KeyError('non-alphanumeric character in input')
+
     parser_params = {
         key: make_tristate(args.get(key, val), val)
         for key, val in PARSER_DEFAULTS.items()
     }
 
-    feature_weight_dict = OrderedDict(
-        {
-            key: make_tristate(args.get(key, val), val)
-            for key, val in current_app.df["feature_weights"][feature_weights_set_id].items()
-        }
-    )
-
     start_time = time.time()
     return_dictionary = validate_response(
-        response, uid, **parser_params
+        response, uid, feature_weights_id=feature_weights_set_id, **parser_params
     )
 
-    return_dictionary["feature_weights"] = feature_weight_dict
+    return_dictionary["feature_weights"] = current_app.df["feature_weights"][feature_weights_set_id]
 
     return_dictionary["computation_time"] = time.time() - start_time
 
