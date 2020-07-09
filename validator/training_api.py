@@ -6,6 +6,9 @@
 
 from flask import jsonify, request, Blueprint, current_app
 from flask_cors import cross_origin
+from uuid import uuid4
+
+from .write_api import store_feature_weights
 
 
 import pkg_resources
@@ -39,6 +42,7 @@ def validation_train():
         key: make_tristate(args.get(key, val), val)
         for key, val in current_app.config["DEFAULT_FEATURE_WEIGHTS"].items()
     }
+
     features_to_consider = [
         k for k in train_feature_dict.keys() if train_feature_dict[k]
     ]
@@ -56,14 +60,25 @@ def validation_train():
 
     # Parse the responses in response_df to get counts on the various word categories
     # Map the valid label of the input to the output
+    # Temp install of weights
+
+    temp_fw_id = f"training-{uuid4()}"
+    current_app.df["feature_weights"][temp_fw_id] = train_feature_dict
+
     output_df = response_df.apply(
         lambda x: validate_response(
-            x.free_response, x.uid, train_feature_dict, **parser_params
+            x.free_response,
+            x.uid,
+            feature_weights_id=temp_fw_id,
+            **parser_params
         ),
         axis=1,
     )
     output_df = pd.DataFrame(list(output_df))
     output_df["valid_label"] = response_df["valid_label"]
+
+    # remove temp weights
+    current_app.df["feature_weights"].pop(temp_fw_id)
 
     # Do an N-fold cross validation if cv > 1.
     # Then get coefficients/intercept for the entire dataset
@@ -86,6 +101,9 @@ def validation_train():
     # it's nice for debugging!
 
     return_dictionary = dict(zip(features_to_consider, coef[0].tolist()))
+
+    train_feature_dict.update(return_dictionary)
+    return_dictionary["feature_weight_set_id"] = store_feature_weights(train_feature_dict)
     return_dictionary["intercept"] = intercept
     return_dictionary["output_df"] = output_df.to_json()
     return_dictionary["cross_val_score"] = validation_score
