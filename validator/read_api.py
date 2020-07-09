@@ -273,6 +273,10 @@ def fetch_feature_weights(fw_id):
 
     return jsonify(data)
 
+@bp.route("/datasets/feature_weights/default")
+def fetch_default_feature_weights():
+    return jsonify(current_app.df["feature_weights"]["default_feature_weights_id"])
+
 @bp.route("/ping")
 def ping():
     return "pong"
@@ -293,12 +297,13 @@ def status():
 
 @bp.route("/status/defaults/feature_weights_id")
 def fetch_default_feature_weights_id():
-    return jsonify("d3732be6-a759-43aa-9e1a-3e9bd94f8b6b")
+    return jsonify(current_app.df["feature_weights"]["default_feature_weights_id"])
 
 
 @bp.route("/status/defaults")
 def fetch_default_feature_weights_set():
-    return jsonify(current_app.df["feature_weights"]["d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"])
+    default_feature_weights_id = current_app.df["feature_weights"]["default_feature_weights_id"]
+    return jsonify(current_app.df["feature_weights"][default_feature_weights_id])
 
 @bp.route("/version")
 @bp.route("/rev.txt")

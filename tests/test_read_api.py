@@ -1,6 +1,7 @@
 import time
 import pytest
 
+from flask import current_app
 from validator import app, __version__ as app_version
 
 myapp = app.create_app(DATA_DIR="tests/data")
@@ -48,32 +49,34 @@ EXPECTED_BOOK_NAMES = set(
 
 EXPECTED_VOCABULARIES = ["domain", "innovation", "questions"]
 EXPECTED_FEATURE_WEIGHTS = {
-    "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
-        "stem_word_count": 0,
-        "option_word_count": 0,
-        "innovation_word_count": 2.2,
-        "domain_word_count": 2.5,
-        "bad_word_count": -3,
-        "common_word_count": 0.7,
-    },
-    "cc2ed0ea-46cc-428f-b8e4-136df5b157db": {
-        "stem_word_count": 0,
-        "option_word_count": 0,
-        "innovation_word_count": 2.2,
-        "domain_word_count": 2.5,
-        "bad_word_count": -3,
-        "common_word_count": 0.7,
-    },
-    "566ceadc-3835-4b08-9dea-ac6fcbb27c96": {
-        "stem_word_count": 1,
-        "option_word_count": 1,
-        "innovation_word_count": 0,
-        "domain_word_count": 0,
-        "bad_word_count": -3,
-        "common_word_count": 0.7,
-    },
-    "f84e554a-c06c-11ea-a880-7f87cd92d175": {},
+  "default_feature_weight_id":"d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
+  "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
+    "stem_word_count": 0,
+    "option_word_count": 0,
+    "innovation_word_count": 2.2,
+    "domain_word_count": 2.5,
+    "bad_word_count": -3,
+    "common_word_count": 0.7
+  },
+  "cc2ed0ea-46cc-428f-b8e4-136df5b157db": {
+    "stem_word_count": 0,
+    "option_word_count": 0,
+    "innovation_word_count": 2.2,
+    "domain_word_count": 2.5,
+    "bad_word_count": -3,
+    "common_word_count": 0.7
+  },
+  "566ceadc-3835-4b08-9dea-ac6fcbb27c96": {
+    "stem_word_count": 1,
+    "option_word_count": 1,
+    "innovation_word_count": 0,
+    "domain_word_count": 0,
+    "bad_word_count": -3,
+    "common_word_count": 0.7
+  },
+  "f84e554a-c06c-11ea-a880-7f87cd92d175": {}
 }
+
 
 DEFAULT_FEATURE_WEIGHTS_SET = {
     "stem_word_count": 0,
@@ -371,3 +374,8 @@ def test_dataset_feature_weights(client):
     resp = client.get(f"/datasets/feature_weights/{DEFAULT_FEATURE_WEIGHT_ID}")
     assert resp.status_code == 200
     assert resp.json == EXPECTED_FEATURE_WEIGHTS[DEFAULT_FEATURE_WEIGHT_ID]
+
+def test_dataset_default_feature_weights(client):
+    resp = client.get(f"/datasets/feature_weights/default")
+    assert resp.status_code == 200
+    assert resp.json == current_app["feature_weights"]["default_feature_weights_id"]

@@ -134,7 +134,7 @@ def parse_and_classify(
     spelling_correction,
     remove_nonwords,
     spell_correction_limit,
-    feature_weight_id,
+    feature_weights_id,
 ):
 
     # Parse the students response into a word list
@@ -148,7 +148,7 @@ def parse_and_classify(
     )
 
     # Fetch feature weights by ID
-    feature_weight_dict = current_app.df["feature_weights"][feature_weight_id]
+    feature_weight_dict = current_app.df["feature_weights"][feature_weights_id]
 
     # Initialize all feature counts to 0
     # ORDER OF KEYS in feature_weight_dict is preserved, and matters!
@@ -210,7 +210,7 @@ def validate_response(
     if lazy_math_mode is None:
         lazy_math_mode = PARSER_DEFAULTS["lazy_math_mode"]
     if feature_weights_id is None:
-        feature_weights_id = 'd3732be6-a759-43aa-9e1a-3e9bd94f8b6b'
+        feature_weights_id = current_app.df["feature_weights"]["default_feature_weights_id"]
 
     # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
     # domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab,
@@ -300,7 +300,7 @@ def validation_api_entry():
     response = args.get("response", None)
     uid = args.get("uid", None)
     feature_weights_set_id = args.get("feature_weights_set_id",
-                                      "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b")
+                                      current_app.df["feature_weights"]["default_feature_weights_id"])
 
     if feature_weights_set_id not in current_app.df['feature_weights']:
         raise KeyError("feature_weights_set_id not found")

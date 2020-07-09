@@ -33,7 +33,7 @@ def create_app(**kwargs):
     except FileNotFoundError:
         raise FileNotFoundError("Bad or no DATA_DIR defined")
 
-    df_innovation_, df_domain_, df_questions_, feature_weights, default_feature_weight_id = get_fixed_data(data_dir)
+    df_innovation_, df_domain_, df_questions_, feature_weights = get_fixed_data(data_dir)
     feature_weights_key = app.config.get("DEFAULT_FEATURE_WEIGHTS_KEY")
     if feature_weights_key not in feature_weights:
         feature_weights[feature_weights_key] = app.config.get("DEFAULT_FEATURE_WEIGHTS")
@@ -43,7 +43,7 @@ def create_app(**kwargs):
     df["domain"] = df_domain_
     df["questions"] = df_questions_
     df["feature_weights"]= feature_weights
-    df["default_feature_weight_id"] = feature_weights_key
+    df["feature_weights"]["default_feature_weights_id"] = feature_weights_key
     app.df = df
 
     app.qids = {}
