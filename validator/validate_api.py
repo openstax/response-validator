@@ -210,7 +210,7 @@ def validate_response(
     if lazy_math_mode is None:
         lazy_math_mode = PARSER_DEFAULTS["lazy_math_mode"]
     if feature_weights_id is None:
-        feature_weights_id = current_app.df["feature_weights"]["default_feature_weights_id"]
+        feature_weights_id = current_app.df["feature_weights"]["default_id"]
 
     # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
     # domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab,
@@ -300,7 +300,7 @@ def validation_api_entry():
     response = args.get("response", None)
     uid = args.get("uid", None)
     feature_weights_set_id = args.get("feature_weights_set_id",
-                                      current_app.df["feature_weights"]["default_feature_weights_id"])
+                                      current_app.df["feature_weights"]["default_id"])
 
     if feature_weights_set_id not in current_app.df['feature_weights']:
         raise KeyError("feature_weights_set_id not found")

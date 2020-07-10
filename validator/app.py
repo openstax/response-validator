@@ -43,7 +43,7 @@ def create_app(**kwargs):
     df["domain"] = df_domain_
     df["questions"] = df_questions_
     df["feature_weights"]= feature_weights
-    df["feature_weights"]["default_feature_weights_id"] = feature_weights_key
+    df["feature_weights"]["default_id"] = feature_weights_key
     app.df = df
 
     app.qids = {}

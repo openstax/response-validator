@@ -85,6 +85,8 @@ NOT_BOOK_VUID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6@1"
 
 DEFAULT_FEATURE_WEIGHTS_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
 
+NEW_DEFAULT_ID = "cc2ed0ea-46cc-428f-b8e4-136df5b157db"
+
 EMPTY_FEATURE_WEIGHTS = {}
 
 DEFAULT_FEATURE_WEIGHTS = {
@@ -328,3 +330,15 @@ def test_new_feature_weights(client):
     second_app.config["TESTING"] = True
     second_client = second_app.test_client()
     assert (second_client.get(f"/datasets/feature_weights/{new_feature_weights_id}")).json == NEW_FEATURE_WEIGHTS
+
+
+def test_set_default_feature_weights(client):
+    resp = client.put("/datasets/feature_weights/default", json=NEW_DEFAULT_ID)
+    assert resp.status_code == 200
+    assert resp.json["msg"] == "Successfully set default feature weight id."
+    assert (client.get(f"/datasets/feature_weights/default")).json == NEW_DEFAULT_ID
+
+    second_app = app.create_app(DATA_DIR=client.application.config["DATA_DIR"])
+    second_app.config["TESTING"] = True
+    second_client = second_app.test_client()
+    assert (second_client.get(f"/datasets/feature_weights/default")).json == NEW_DEFAULT_ID

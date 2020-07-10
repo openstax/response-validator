@@ -85,6 +85,23 @@ def store_feature_weights(new_feature_weights):
     return result_id
 
 
+def write_default_feature_weights_id(new_default_id):
+    # Allows removing duplicate sets in feature weights
+    # Sees if the incoming set matches with fw set
+
+    df = current_app.df
+
+    if new_default_id == df["feature_weights"]["default_id"]:
+        return new_default_id
+
+    else:
+        df["feature_weights"]["default_id"] = new_default_id
+        data_dir = current_app.config["DATA_DIR"]
+        write_feature_weights(df["feature_weights"], data_dir)
+
+    return new_default_id
+
+
 @bp.route("/import", methods=["POST"])
 @cross_origin(supports_credentials=True)
 def import_ecosystem():
@@ -150,5 +167,26 @@ def new_feature_weights_set():
         {
             "msg": "Feature weights successfully imported.",
             "feature_weight_set_id": feature_weight_id,
+        }
+    )
+
+@bp.route("/datasets/feature_weights/default", methods=["PUT"])
+@cross_origin(supports_credentials=True)
+def set_default_feature_weights_id():
+    try:
+        new_default_id = request.json
+    except ValueError:
+        raise InvalidUsage(f"Unable to load new default id as json file")
+    else:
+        df = current_app.df
+        if new_default_id not in df["feature_weights"].keys():
+            raise InvalidUsage(
+                "Feature weight id not found", status_code=400
+            )
+    default_id = write_default_feature_weights_id(new_default_id)
+    return jsonify(
+        {
+            "msg": "Successfully set default feature weight id.",
+            "feature_weight_set_id": default_id,
         }
     )
