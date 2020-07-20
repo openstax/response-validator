@@ -26,7 +26,6 @@ DEFAULT_FEATURE_WEIGHTS = collections.OrderedDict(
         "domain_word_count": 2.5,
         "bad_word_count": -3,
         "common_word_count": 0.7,
-        "intercept": 0,
     }
 )
 

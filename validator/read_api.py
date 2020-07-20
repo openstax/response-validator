@@ -259,7 +259,9 @@ def fetch_question(uid):
 
 @bp.route("/datasets/feature_weights")
 def feature_weights_index():
-    return jsonify(current_app.df["feature_weights"].keys())
+    fw_ids = list(current_app.df["feature_weights"].keys())
+    fw_ids.remove("default_id")
+    return jsonify(fw_ids)
 
 
 @bp.route("/datasets/feature_weights/<fw_id>")
@@ -288,9 +290,11 @@ def status():
     data = {"version": _version.get_versions(), "started": start_time}
 
     if "vuid" in current_app.df["domain"].columns:
+        fw_ids = list(current_app.df["feature_weights"].keys())
+        fw_ids.remove("default_id")
         data["datasets"] = {
             "books": _books_json(include_vocabs=False),
-            "feature_weights": list(current_app.df["feature_weights"].keys()),
+            "feature_weights": fw_ids,
         }
 
     return jsonify(data)

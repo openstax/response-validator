@@ -42,6 +42,7 @@ def validation_train():
         key: make_tristate(args.get(key, val), val)
         for key, val in current_app.config["DEFAULT_FEATURE_WEIGHTS"].items()
     }
+    train_feature_dict["intercept"] = 0
 
     features_to_consider = [
         k for k in train_feature_dict.keys() if train_feature_dict[k]

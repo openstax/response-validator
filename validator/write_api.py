@@ -170,6 +170,7 @@ def new_feature_weights_set():
         }
     )
 
+
 @bp.route("/datasets/feature_weights/default", methods=["PUT"])
 @cross_origin(supports_credentials=True)
 def set_default_feature_weights_id():

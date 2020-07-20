@@ -126,9 +126,10 @@ def test_status(client):
 
     assert EXPECTED_BOOK_NAMES == returned_book_names
     # add code that checks fw
-    assert json_status["datasets"]["feature_weights"] == list(
-        EXPECTED_FEATURE_WEIGHTS.keys()
-    )
+
+    expected_fw_ids = list(EXPECTED_FEATURE_WEIGHTS.keys())
+    expected_fw_ids.remove("default_id")
+    assert json_status["datasets"]["feature_weights"] == expected_fw_ids
 
 
 def test_fetch_default_feature_weights_id(client):

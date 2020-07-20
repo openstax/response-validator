@@ -81,7 +81,7 @@ def write_fixed_data(df_domain, df_innovation, df_questions, data_dir):
 def write_feature_weights(feature_weights, data_dir):
     print(f"Writing data to: {data_dir}")
     with open(os.path.join(data_dir, "feature_weights.json"), "w") as f:
-        json.dump(feature_weights, f)
+        json.dump(feature_weights, f, indent=2)
 
 
 def get_fixed_data(data_dir):
@@ -214,6 +214,5 @@ def get_fixed_data(data_dir):
     except FileNotFoundError:
         print(f"No feature weights loaded, using defaults")
         feature_weights = OrderedDict()
-
 
     return df_innovation, df_domain, df_questions, feature_weights
