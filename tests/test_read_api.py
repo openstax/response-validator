@@ -49,7 +49,7 @@ EXPECTED_BOOK_NAMES = set(
 
 EXPECTED_VOCABULARIES = ["domain", "innovation", "questions"]
 EXPECTED_FEATURE_WEIGHTS = {
-  "default_feature_weight_id":"d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
+  "default_id":"d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
   "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
     "stem_word_count": 0,
     "option_word_count": 0,
