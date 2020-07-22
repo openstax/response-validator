@@ -1,5 +1,5 @@
 {
-  "default_id":"d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
+  "default_id": "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
   "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
     "stem_word_count": 0,
     "option_word_count": 0,
@@ -24,5 +24,68 @@
     "bad_word_count": -3,
     "common_word_count": 0.7
   },
-  "f84e554a-c06c-11ea-a880-7f87cd92d175": {}
+  "f84e554a-c06c-11ea-a880-7f87cd92d175": {},
+  "d198b2f6-2d86-4878-ad15-ebc9315a1266": {
+    "stem_word_count": 0.7010929931334493,
+    "option_word_count": 0.5957874824707889,
+    "innovation_word_count": false,
+    "domain_word_count": false,
+    "bad_word_count": -0.5780324914230481,
+    "common_word_count": 0.6132515985384506,
+    "intercept": 0
+  },
+  "ea552026-11b0-4c02-b8f3-51bda2a8a740": {
+    "stem_word_count": 0,
+    "option_word_count": 0,
+    "innovation_word_count": 0.7922462552422556,
+    "domain_word_count": 0.18225509395693398,
+    "bad_word_count": -0.720325752003474,
+    "common_word_count": 0.4782019352500781,
+    "intercept": 0
+  },
+  "9a01c877-78c6-4e9a-8c8d-3c1daef69012": {
+    "stem_word_count": 0.40882857891456703,
+    "option_word_count": 0.56859224014063,
+    "innovation_word_count": false,
+    "domain_word_count": false,
+    "bad_word_count": -0.5909153359274693,
+    "common_word_count": 0.6183523499665781,
+    "intercept": 0
+  },
+  "35713ee7-5d68-41b8-92de-071f661ae59c": {
+    "stem_word_count": 0,
+    "option_word_count": 0,
+    "innovation_word_count": 0.7331473565861609,
+    "domain_word_count": 0.37818585555841194,
+    "bad_word_count": -0.7625598149485243,
+    "common_word_count": 0.4018616085057393,
+    "intercept": 0
+  },
+  "f64389e5-03fb-42b3-828d-c1b65c746613": {
+    "stem_word_count": 0.43485673700476724,
+    "option_word_count": 0.4557934406809423,
+    "innovation_word_count": false,
+    "domain_word_count": false,
+    "bad_word_count": -0.6104085534583588,
+    "common_word_count": 0.5797583123322854,
+    "intercept": 0
+  },
+  "d3834414-503a-4440-bd6f-43c1090c86b2": {
+    "stem_word_count": 0.3424848448004813,
+    "option_word_count": 0.43419372516494503,
+    "innovation_word_count": false,
+    "domain_word_count": false,
+    "bad_word_count": -0.6196910727346838,
+    "common_word_count": 0.7313921871083329,
+    "intercept": 0
+  },
+  "5b393839-1c51-4913-ab2e-bf827b2f3b8f": {
+    "stem_word_count": 0.4943250618878776,
+    "option_word_count": 0.39814096974062396,
+    "innovation_word_count": false,
+    "domain_word_count": false,
+    "bad_word_count": -0.5485998380175615,
+    "common_word_count": 0.7594470735017383,
+    "intercept": 0
+  }
 }
