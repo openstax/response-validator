@@ -1,5 +1,7 @@
 import os
 import pytest
+import shutil
+import tempfile
 from urllib.parse import urlencode
 from collections import OrderedDict
 
@@ -7,10 +9,8 @@ import pandas as pd
 import numpy as np
 from validator import app
 
-os.environ["VALIDATOR_SETTINGS"] = '../tests/testing.cfg'
+os.environ["VALIDATOR_SETTINGS"] = "../tests/testing.cfg"
 
-
-from validator.validate_api import bad_vocab, common_vocab, get_question_data
 
 # A set of weights to use when testing things other than stem/option counts
 FEATURE_SET_1 = {
@@ -31,14 +31,20 @@ FEATURE_SET_2 = {
     "common_word_count": 1,
 }
 
+
 @pytest.fixture(scope="module")
 def myapp():
-    myapp = app.create_app()
-    myapp.config["TESTING"] = True
+    tmpdir = tempfile.mkdtemp()
+    for filename in os.listdir("tests/data"):
+        shutil.copy(os.path.join("tests/data", filename), tmpdir)
+    myapp = app.create_app(DATA_DIR=tmpdir)
     yield myapp
+    shutil.rmtree(tmpdir, ignore_errors=True)
+
 
 @pytest.fixture(scope="module")
 def data(myapp):
+    from validator.validate_api import bad_vocab, common_vocab, get_question_data
     df = myapp.df
     with myapp.app_context():
         question_data = df["questions"][df["questions"]["uid"] == "9@7"].iloc[0]
@@ -48,7 +54,15 @@ def data(myapp):
         domain_vocab = vocab_set["domain_word_count"]
         innovation_vocab = vocab_set["innovation_word_count"]
     vocab_dict = OrderedDict(
-        {"question_data": question_data,"stem": stem_vocab, "mc": mc_vocab, "bad": bad_vocab, "common": common_vocab, "domain": domain_vocab, "innovation": innovation_vocab}
+        {
+            "question_data": question_data,
+            "stem": stem_vocab,
+            "mc": mc_vocab,
+            "bad": bad_vocab,
+            "common": common_vocab,
+            "domain": domain_vocab,
+            "innovation": innovation_vocab,
+        }
     )
     yield vocab_dict
 
@@ -67,13 +81,13 @@ def test_train_stem_option(client, data):
     N_resp = 20
     N_words = 10
     weights = OrderedDict({"stem": 1, "mc": 2, "bad": -2, "common": 0})
-#    vocab_dict = OrderedDict(
-#        {"stem": stem_vocab, "mc": mc_vocab, "bad": bad_vocab, "common": common_vocab}
-#    )
+    #    vocab_dict = OrderedDict(
+    #        {"stem": stem_vocab, "mc": mc_vocab, "bad": bad_vocab, "common": common_vocab}
+    #    )
 
     weight_vect = np.array(list(weights.values()))
 
-    uid = data['question_data'].uid
+    uid = data["question_data"].uid
     response_validity = np.random.choice([True, False], N_resp)
     responses_type = []
     responses = []
@@ -87,7 +101,7 @@ def test_train_stem_option(client, data):
             " ".join([np.random.choice(list(data[k])) for k in word_types])
         )
     type_count = [
-        np.array([r.count(t) for t in list(data.keys())]) for r in responses_type
+        np.array([r.count(t) for t in list(weights.keys())]) for r in responses_type
     ]
     ip = [np.sum(weight_vect * t) for t in type_count]
     valid = [val > 0 for val in ip]
@@ -122,8 +136,6 @@ def test_train_stem_option(client, data):
     assert output_df["common_word_count"].sum() > 0
     assert output_df["common_word_count"].sum() > 0
 
-    import pdb;
-    pdb.set_trace()
     # Assert that there exists a valid feature_weight_set_id and that the values are correct
     resp = client.get(f"/datasets/feature_weights/default")
     assert resp.json == FEATURE_SET_1
@@ -146,7 +158,7 @@ def test_train_domain_innovation(client, data):
     # )
     weight_vect = np.array(list(weights.values()))
 
-    uid = data['question_data'].uid
+    uid = data["question_data"].uid
     response_validity = np.random.choice([True, False], N_resp)
     responses_type = []
     responses = []
@@ -162,7 +174,7 @@ def test_train_domain_innovation(client, data):
             " ".join([np.random.choice(list(data[k])) for k in word_types])
         )
     type_count = [
-        np.array([r.count(t) for t in list(data.keys())]) for r in responses_type
+        np.array([r.count(t) for t in list(weights.keys())]) for r in responses_type
     ]
     ip = [np.sum(weight_vect * t) for t in type_count]
     valid = [val > 0 for val in ip]
