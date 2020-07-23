@@ -84,7 +84,7 @@ def validation_train():
     # Do an N-fold cross validation if cv > 1.
     # Then get coefficients/intercept for the entire dataset
     lr = LogisticRegression(
-        solver="saga", max_iter=1000, fit_intercept=train_feature_dict["intercept"] != 0
+        random_state= 1000, solver="saga", max_iter=1000, fit_intercept=train_feature_dict["intercept"] != 0
     )
     X = output_df[features_to_consider].values
     y = output_df["valid_label"].values

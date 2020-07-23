@@ -44,6 +44,7 @@ def myapp():
 
 @pytest.fixture(scope="module")
 def data(myapp):
+    np.random.seed(1000)
     from validator.validate_api import bad_vocab, common_vocab, get_question_data
     df = myapp.df
     with myapp.app_context():
@@ -139,15 +140,19 @@ def test_train_stem_option(client, data):
     # Assert that there exists a valid feature_weight_set_id and that the values are correct
     assert type(out['feature_weight_set_id']) == str
     # for pbd & comparison between results
-    resp = client.get(f"/datasets/feature_weights/{out['feature_weight_set_id']}")
+    #resp = client.get(f"/datasets/feature_weights/{out['feature_weight_set_id']}")
+
     # import pdb;
     # pdb.set_trace()
-
+#     for key in resp.json.keys():
+#         results = resp.json[key]
+#         avg = standard_results[key]
+# #        TestCase.assertAlmostEqual(results, avg, delta=0.35)
+#         np.isclose(results, avg, rtol=1e-05, atol=1e-08, equal_nan=False)
 
 def test_train_domain_innovation(client, data):
     """Training with feature set 1"""
     """Make a fake dataframe with known weights. See if estimation is close(ish)"""
-    np.random.seed(1000)
     N_resp = 20
     N_words = 10
     weights = OrderedDict({"domain": 1, "innovation": 2, "bad": -2, "common": 0})
