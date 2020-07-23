@@ -14,7 +14,7 @@ from collections import OrderedDict
 
 
 def make_tristate(var, default=True):
-    if type(default) == int:
+    if type(default) in (int, float):
         try:
             return int(var)
         except ValueError:
