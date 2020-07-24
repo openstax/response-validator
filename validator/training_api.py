@@ -10,7 +10,7 @@ from uuid import uuid4
 
 from .write_api import store_feature_weights
 
-
+import json
 import pkg_resources
 
 import numpy as np
@@ -106,6 +106,6 @@ def validation_train():
     train_feature_dict.update(return_dictionary)
     return_dictionary["feature_weight_set_id"] = store_feature_weights(train_feature_dict)
     return_dictionary["intercept"] = intercept
-    return_dictionary["output_df"] = output_df.to_json()
+    return_dictionary["output_df"] = json.loads(output_df.to_json())
     return_dictionary["cross_val_score"] = validation_score
     return jsonify(return_dictionary)

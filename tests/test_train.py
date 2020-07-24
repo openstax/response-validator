@@ -118,7 +118,7 @@ def test_train_stem_option(client, data):
         "/train", query_string=urlencode(FEATURE_SET_1), json={"response_df": df_json}
     )
     out = r.json
-    output_df = pd.read_json(out["output_df"])
+    output_df = pd.DataFrame.from_dict(out["output_df"])
 
     # Assert that the return dataframe has N_resp rows
     assert len(output_df) == N_resp
@@ -137,18 +137,27 @@ def test_train_stem_option(client, data):
     assert output_df["common_word_count"].sum() > 0
     assert output_df["common_word_count"].sum() > 0
 
-    # Assert that there exists a valid feature_weight_set_id and that the values are correct
+    # Assert that there exists a valid feature_weight_set_id
     assert type(out['feature_weight_set_id']) == str
-    # for pbd & comparison between results
-    #resp = client.get(f"/datasets/feature_weights/{out['feature_weight_set_id']}")
 
-    # import pdb;
-    # pdb.set_trace()
+    # Verify that values returned from the call to train match the /datasets/feature_weights path
+    resp = client.get(f"/datasets/feature_weights/{out['feature_weight_set_id']}")
+    for key in resp.json.keys():
+        if resp.json[key] != 0:
+            assert resp.json[key] == out[key]
+        elif key == "intercept":
+            assert resp.json[key] == 0
+        else:
+            assert key not in out.keys()
+
+    # FIXME: Comparison between results: values are correct
+#     import pdb;
+#     pdb.set_trace()
 #     for key in resp.json.keys():
-#         results = resp.json[key]
-#         avg = standard_results[key]
+#         result = resp.json[key]
+#         expected = standard_results[key]
 # #        TestCase.assertAlmostEqual(results, avg, delta=0.35)
-#         np.isclose(results, avg, rtol=1e-05, atol=1e-08, equal_nan=False)
+#         assert abs(expected - result) <= 0.1
 
 def test_train_domain_innovation(client, data):
     """Training with feature set 1"""
@@ -198,7 +207,7 @@ def test_train_domain_innovation(client, data):
         "/train", query_string=urlencode(FEATURE_SET_2), json={"response_df": df_json}
     )
     out = r.json
-    output_df = pd.read_json(out["output_df"])
+    output_df = pd.DataFrame.from_dict(out["output_df"])
 
     # Assert that the return dataframe has N_resp rows
     assert len(output_df) == N_resp
@@ -215,3 +224,17 @@ def test_train_domain_innovation(client, data):
     assert output_df["innovation_word_count"].sum() > 0
     assert output_df["bad_word_count"].sum() > 0
     assert output_df["common_word_count"].sum() > 0
+
+    # Assert that there exists a valid feature_weight_set_id
+    assert type(out['feature_weight_set_id']) == str
+
+    # Verify that values returned from the call to train match the /datasets/feature_weights path
+    resp = client.get(f"/datasets/feature_weights/{out['feature_weight_set_id']}")
+    for key in resp.json.keys():
+        if resp.json[key] != 0:
+            assert resp.json[key] == out[key]
+        elif key == "intercept":
+            assert resp.json[key] == 0
+        else:
+            assert key not in out.keys()
+
