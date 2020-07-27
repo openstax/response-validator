@@ -214,7 +214,7 @@ def get_fixed_data(data_dir):
         with open(os.path.join(data_dir, "feature_weights.json")) as f:
             feature_weights = json.load(f, object_pairs_hook=OrderedDict)
     except FileNotFoundError:
-        print(f"No feature weights loaded, using defaults")
+        print("No feature weights loaded, using defaults")
         feature_weights = OrderedDict()
 
     return df_innovation, df_domain, df_questions, feature_weights

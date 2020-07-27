@@ -166,7 +166,7 @@ def new_feature_weights_set():
     try:
         new_feature_weights = request.json
     except ValueError:
-        raise InvalidUsage(f"Unable to load feature weights as json file")
+        raise InvalidUsage("Unable to load feature weights as json file")
     else:
         if set(new_feature_weights.keys()) != feature_weights_keys:
             raise InvalidUsage(
@@ -187,7 +187,7 @@ def set_default_feature_weights_id():
     try:
         new_default_id = request.json
     except ValueError:
-        raise InvalidUsage(f"Unable to load new default id as json file")
+        raise InvalidUsage("Unable to load new default id as json file")
     else:
         df = current_app.df
         if new_default_id not in df["feature_weights"].keys():
