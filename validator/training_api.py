@@ -47,7 +47,7 @@ def validation_train():
     features_to_consider = [
         k for k in train_feature_dict.keys() if train_feature_dict[k]
     ]
-    if ("intercept") in features_to_consider:
+    if "intercept" in features_to_consider:
         features_to_consider.remove("intercept")
     parser_params = {
         key: make_tristate(args.get(key, val), val)
@@ -68,10 +68,7 @@ def validation_train():
 
     output_df = response_df.apply(
         lambda x: validate_response(
-            x.free_response,
-            x.uid,
-            feature_weights_id=temp_fw_id,
-            **parser_params
+            x.free_response, x.uid, feature_weights_id=temp_fw_id, **parser_params
         ),
         axis=1,
     )
@@ -84,7 +81,10 @@ def validation_train():
     # Do an N-fold cross validation if cv > 1.
     # Then get coefficients/intercept for the entire dataset
     lr = LogisticRegression(
-        random_state= 1000, solver="saga", max_iter=1000, fit_intercept=train_feature_dict["intercept"] != 0
+        random_state=1000,
+        solver="saga",
+        max_iter=1000,
+        fit_intercept=train_feature_dict["intercept"] != 0,
     )
     X = output_df[features_to_consider].values
     y = output_df["valid_label"].values
@@ -104,7 +104,9 @@ def validation_train():
     return_dictionary = dict(zip(features_to_consider, coef[0].tolist()))
 
     train_feature_dict.update(return_dictionary)
-    return_dictionary["feature_weight_set_id"] = store_feature_weights(train_feature_dict)
+    return_dictionary["feature_weight_set_id"] = store_feature_weights(
+        train_feature_dict
+    )
     return_dictionary["intercept"] = intercept
     return_dictionary["output_df"] = json.loads(output_df.to_json())
     return_dictionary["cross_val_score"] = validation_score

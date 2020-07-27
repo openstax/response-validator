@@ -99,8 +99,8 @@ class EcosystemImporter(object):
         # For each question, grab the stem_html
         # Also, concatenate all the content_html in "answers"
         N_chunk = (
-            100
-        )  # Limit of the API server on how many exercises we can get at a time
+            100  # Limit of the API server on how many exercises we can get at a time
+        )
         question_list_chunks = [
             question_uid_list[x : x + N_chunk]
             for x in range(0, len(question_uid_list), N_chunk)

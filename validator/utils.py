@@ -190,8 +190,10 @@ def get_fixed_data(data_dir):
             write_fixed_data(df_domain, df_innovation, df_questions, data_dir)
 
     else:
-        print(f"""No vocab data loaded from {data_dir}:  missing {', '.join(missing_files)}"""
-              """\nrolling with empty datasets""")
+        print(
+            f"""No vocab data loaded from {data_dir}:  missing {', '.join(missing_files)}"""
+            """\nrolling with empty datasets"""
+        )
         df_innovation = pd.DataFrame(columns=["cvuid", "innovation_words", "book_name"])
         df_domain = pd.DataFrame(columns=["vuid", "domain_words", "book_name"])
         df_questions = pd.DataFrame(

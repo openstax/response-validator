@@ -111,9 +111,11 @@ def import_ecosystem():
 
     yaml_string = request.files["file"].read()
     if "file" in request.files:
-        df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_string(
-            yaml_string
-        )
+        (
+            df_domain_,
+            df_innovation_,
+            df_questions_,
+        ) = ecosystem_importer.parse_yaml_string(yaml_string)
 
     elif request.json is not None:
         yaml_filename = request.json.get("filename", None)
@@ -122,25 +124,33 @@ def import_ecosystem():
         exercise_list = request.json.get("question_list", None)
 
         if yaml_filename:
-            df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_file(
-                yaml_filename
-            )
+            (
+                df_domain_,
+                df_innovation_,
+                df_questions_,
+            ) = ecosystem_importer.parse_yaml_file(yaml_filename)
         elif yaml_string:
-            df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_yaml_string(
-                yaml_string
-            )
+            (
+                df_domain_,
+                df_innovation_,
+                df_questions_,
+            ) = ecosystem_importer.parse_yaml_string(yaml_string)
         elif book_id and exercise_list:
-            df_domain_, df_innovation_, df_questions_ = ecosystem_importer.parse_content(
-                book_id, exercise_list
-            )
+            (
+                df_domain_,
+                df_innovation_,
+                df_questions_,
+            ) = ecosystem_importer.parse_content(book_id, exercise_list)
 
         else:
             return jsonify(
                 {
-                    "msg": "Could not process input. Provide either"
-                    " a location of a YAML file,"
-                    " a string of YAML content,"
-                    " or a book_id and question_list"
+                    "msg": (
+                        "Could not process input. Provide either"
+                        " a location of a YAML file,"
+                        " a string of YAML content,"
+                        " or a book_id and question_list"
+                    )
                 }
             )
 
@@ -181,9 +191,7 @@ def set_default_feature_weights_id():
     else:
         df = current_app.df
         if new_default_id not in df["feature_weights"].keys():
-            raise InvalidUsage(
-                "Feature weight id not found", status_code=400
-            )
+            raise InvalidUsage("Feature weight id not found", status_code=400)
     default_id = write_default_feature_weights_id(new_default_id)
     return jsonify(
         {

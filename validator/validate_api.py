@@ -58,7 +58,9 @@ def setup_parse_and_data(setup_state):
             SPELLING_CORRECTION_DEFAULTS["spell_correction_max_edit_distance"],
             SPELLING_CORRECTION_DEFAULTS["spell_correction_min_word_length"],
         ),
-        symspell_dictionary_file=f"{CORPORA_PATH}/response_validator_spelling_dictionary.txt",
+        symspell_dictionary_file=(
+            f"{CORPORA_PATH}/response_validator_spelling_dictionary.txt"
+        ),
     )
 
     common_vocab = set(parser.all_words) | set(parser.reserved_tags)
@@ -221,8 +223,8 @@ def validate_response(
     # The conversion is thus: if auto, we will tag numeric if has_numeric is not False
     # This means that has_numeric = True and has_numeric is None (question not found) will be True
     tag_numeric_input = tag_numeric
-    if tag_numeric == 'auto':
-        tag_numeric = (has_numeric is not False)
+    if tag_numeric == "auto":
+        tag_numeric = has_numeric is not False
 
     if spelling_correction != "auto":
         return_dictionary = parse_and_classify(
@@ -299,10 +301,11 @@ def validation_api_entry():
 
     response = args.get("response", None)
     uid = args.get("uid", None)
-    feature_weights_set_id = args.get("feature_weights_set_id",
-                                      current_app.df["feature_weights"]["default_id"])
+    feature_weights_set_id = args.get(
+        "feature_weights_set_id", current_app.df["feature_weights"]["default_id"]
+    )
 
-    if feature_weights_set_id not in current_app.df['feature_weights']:
+    if feature_weights_set_id not in current_app.df["feature_weights"]:
         raise KeyError("feature_weights_set_id not found")
 
     parser_params = {
@@ -315,7 +318,9 @@ def validation_api_entry():
         response, uid, feature_weights_id=feature_weights_set_id, **parser_params
     )
 
-    return_dictionary["feature_weights"] = current_app.df["feature_weights"][feature_weights_set_id]
+    return_dictionary["feature_weights"] = current_app.df["feature_weights"][
+        feature_weights_set_id
+    ]
 
     return_dictionary["computation_time"] = time.time() - start_time
 
