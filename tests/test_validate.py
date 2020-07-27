@@ -64,7 +64,35 @@ def test_validate_response():
             "100@1",
             feature_weights_id="f84e554a-c06c-11ea-a880-7f87cd92d175",
         )
+    assert res == expected
 
+
+def test_validate_response_with_default_id():
+    from validator.validate_api import validate_response
+
+    expected = {
+        "inner_product": 1.4,
+        "intercept": 1,
+        "lazy_math_evaluation": True,
+        "num_spelling_correction": 0,
+        "processed_response": "foo bar",
+        "remove_nonwords": True,
+        "remove_stopwords": True,
+        "response": "foo bar",
+        "spelling_correction": "auto",
+        "spelling_correction_used": False,
+        "tag_numeric": False,
+        "tag_numeric_input": "auto",
+        "uid_found": True,
+        "uid_used": "100@7",
+        "valid": True,
+    }
+    with myapp.app_context():
+        res = validate_response(
+            "foo bar",
+            "100@1",
+            feature_weights_id="d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
+        )
     assert res == expected
 
 
@@ -135,6 +163,18 @@ def test_empty_post(client):
     expected["computation_time"] = result["computation_time"]
     result = {k: result[k] for k in expected.keys()}
     assert result == expected
+
+
+def test_invalid_feature_weights_set_id(client):
+    """Just well-known not-a-word"""
+
+    params = {"response": "idk asdf lol n/a"}
+    params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157dbp"})
+    resp = client.get("/validate", query_string=urlencode(params))
+    result = resp.json
+    import pdb;
+    pdb.set_trace()
+    assert result["computation_time"] != 0
 
 
 def test_non_words(client):

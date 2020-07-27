@@ -184,12 +184,11 @@ def new_feature_weights_set():
 @bp.route("/datasets/feature_weights/default", methods=["PUT"])
 @cross_origin(supports_credentials=True)
 def set_default_feature_weights_id():
-    try:
-        new_default_id = request.json
-    except ValueError:
-        raise InvalidUsage("Unable to load new default id as json file")
+    df = current_app.df
+    if not request.is_json:
+        new_default_id = df["feature_weights"]["default_id"]
     else:
-        df = current_app.df
+        new_default_id = request.json
         if new_default_id not in df["feature_weights"].keys():
             raise InvalidUsage("Feature weight id not found", status_code=400)
     default_id = write_default_feature_weights_id(new_default_id)
