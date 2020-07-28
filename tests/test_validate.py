@@ -71,28 +71,30 @@ def test_validate_response_with_default_id():
     from validator.validate_api import validate_response
 
     expected = {
-        "inner_product": 1.4,
-        "intercept": 1,
-        "lazy_math_evaluation": True,
-        "num_spelling_correction": 0,
-        "processed_response": "foo bar",
-        "remove_nonwords": True,
-        "remove_stopwords": True,
         "response": "foo bar",
-        "spelling_correction": "auto",
-        "spelling_correction_used": False,
+        "remove_stopwords": True,
         "tag_numeric": False,
-        "tag_numeric_input": "auto",
-        "uid_found": True,
-        "uid_used": "100@7",
+        "spelling_correction_used": False,
+        "num_spelling_correction": 0,
+        "remove_nonwords": True,
+        "processed_response": "foo bar",
+        "stem_word_count": 0,
+        "option_word_count": 0,
+        "innovation_word_count": 0,
+        "domain_word_count": 0,
+        "bad_word_count": 0,
+        "common_word_count": 2,
+        "intercept": 1,
+        "inner_product": 1.4,
         "valid": True,
+        "tag_numeric_input": "auto",
+        "spelling_correction": "auto",
+        "uid_used": "100@7",
+        "uid_found": True,
+        "lazy_math_evaluation": True,
     }
     with myapp.app_context():
-        res = validate_response(
-            "foo bar",
-            "100@1",
-            feature_weights_id="d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
-        )
+        res = validate_response("foo bar", "100@1",)
     assert res == expected
 
 
@@ -171,10 +173,9 @@ def test_invalid_feature_weights_set_id(client):
     params = {"response": "idk asdf lol n/a"}
     params.update({"feature_weights_set_id": "cc2ed0ea-46cc-428f-b8e4-136df5b157dbp"})
     resp = client.get("/validate", query_string=urlencode(params))
+    assert resp.status_code == 404
     result = resp.json
-    import pdb;
-    pdb.set_trace()
-    assert result["computation_time"] != 0
+    assert result["message"] == "feature_weights_set_id not found"
 
 
 def test_non_words(client):
@@ -681,8 +682,8 @@ def test_tag_numeric_no_question(client):
     params.update({"feature_weights_set_id": "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
     resp = client.get("/validate", query_string=urlencode(params))
     result = resp.json
-    assert result["tag_numeric"] == True
-    assert result["valid"] == True
+    assert result["tag_numeric"] is True
+    assert result["valid"] is True
 
 
 def test_tag_numeric_auto_no_question(client):
@@ -692,18 +693,19 @@ def test_tag_numeric_auto_no_question(client):
     params.update({"feature_weights_set_id": "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
     resp = client.get("/validate", query_string=urlencode(params))
     result = resp.json
-    assert result["tag_numeric"] == True
+    assert result["tag_numeric"] is True
 
 
 def test_tag_numeric_auto_numeric_question(client):
     """With no question supplied, tag_numeric should be True"""
 
     params = {"response": "1.0 5 some words", "tag_numeric": "auto", "uid": "9@6"}
-    params.update({'feature_weights_set_id': "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
+    params.update({"feature_weights_set_id": "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
     resp = client.get("/validate", query_string=urlencode(params))
     result = resp.json
-    assert result["tag_numeric"] == True
-    assert result["valid"] == True
+    assert result["tag_numeric"] is True
+    assert result["valid"] is True
+
 
 def test_tag_numeric_auto_nonnumeric_question(client):
     """With no question supplied, tag_numeric should be True"""
@@ -712,8 +714,8 @@ def test_tag_numeric_auto_nonnumeric_question(client):
     params.update({"feature_weights_set_id": "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
     resp = client.get("/validate", query_string=urlencode(params))
     result = resp.json
-    assert result["tag_numeric"] == False
-    assert result["valid"] == False
+    assert result["tag_numeric"] is False
+    assert result["valid"] is False
 
 
 def test_tag_numeric_true_nonnumeric_question(client):
@@ -723,5 +725,5 @@ def test_tag_numeric_true_nonnumeric_question(client):
     params.update({"feature_weights_set_id": "566ceadc-3835-4b08-9dea-ac6fcbb27c96"})
     resp = client.get("/validate", query_string=urlencode(params))
     result = resp.json
-    assert result["tag_numeric"] == True
-    assert result["valid"] == True
+    assert result["tag_numeric"] is True
+    assert result["valid"] is True

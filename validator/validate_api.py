@@ -6,8 +6,10 @@
 from flask import jsonify, request, Blueprint, current_app
 from flask_cors import cross_origin
 
+from .read_api import InvalidUsage, handle_invalid_usage
 from .utils import make_tristate
 from .ml.stax_string_proc import StaxStringProc
+
 
 import pkg_resources
 
@@ -30,6 +32,7 @@ parser = None
 common_vocab = set()
 
 bp = Blueprint("validate_api", __name__, url_prefix="/")
+bp.register_error_handler(InvalidUsage, handle_invalid_usage)
 
 
 @bp.record_once
@@ -306,7 +309,7 @@ def validation_api_entry():
     )
 
     if feature_weights_set_id not in current_app.df["feature_weights"]:
-        raise KeyError("feature_weights_set_id not found")
+        raise InvalidUsage("feature_weights_set_id not found", status_code=404)
 
     parser_params = {
         key: make_tristate(args.get(key, val), val)
