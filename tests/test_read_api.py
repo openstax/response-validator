@@ -49,7 +49,7 @@ EXPECTED_BOOK_NAMES = set(
 
 EXPECTED_VOCABULARIES = ["domain", "innovation", "questions"]
 EXPECTED_FEATURE_WEIGHTS = {
-  "default_id":"d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
+  "default_id": "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
   "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
     "stem_word_count": 0,
     "option_word_count": 0,
@@ -76,6 +76,9 @@ EXPECTED_FEATURE_WEIGHTS = {
   },
   "f84e554a-c06c-11ea-a880-7f87cd92d175": {}
 }
+
+expected_fw_ids = list(EXPECTED_FEATURE_WEIGHTS.keys())
+expected_fw_ids.remove("default_id")
 
 
 DEFAULT_FEATURE_WEIGHTS_SET = {
@@ -127,9 +130,12 @@ def test_status(client):
     assert EXPECTED_BOOK_NAMES == returned_book_names
     # add code that checks fw
 
-    expected_fw_ids = list(EXPECTED_FEATURE_WEIGHTS.keys())
-    expected_fw_ids.remove("default_id")
     assert json_status["datasets"]["feature_weights"] == expected_fw_ids
+
+
+def test_fetch_feature_weights_ids(client):
+    resp = client.get("/datasets/feature_weights")
+    assert resp.json == expected_fw_ids
 
 
 def test_fetch_default_feature_weights_id(client):
@@ -376,7 +382,8 @@ def test_dataset_feature_weights(client):
     assert resp.status_code == 200
     assert resp.json == EXPECTED_FEATURE_WEIGHTS[DEFAULT_FEATURE_WEIGHT_ID]
 
+
 def test_dataset_default_feature_weights(client):
-    resp = client.get(f"/datasets/feature_weights/default")
+    resp = client.get("/datasets/feature_weights/default")
     assert resp.status_code == 200
     assert resp.json == client.application.df["feature_weights"]["default_id"]
