@@ -40,7 +40,7 @@ def handle_invalid_usage(error):
 
 @bp.route("/datasets")
 def datasets_index():
-    return jsonify(["books", "questions"])  # FIXME , "feature_coefficients"])
+    return jsonify(["books", "questions", "feature_weights"])
 
 
 def _books_json(include_vocabs=True):
@@ -60,18 +60,21 @@ def _validate_version(ver):
         raise InvalidUsage("Bad version")
 
 
+def _validate_uuid(t_uuid, t_uuid_type="feature weights"):
+    try:
+        _ = UUID(t_uuid)
+    except ValueError:
+        raise InvalidUsage(f"Not a valid uuid for {t_uuid_type}")
+
+
 def _validate_vuid(vuid, vuid_type="book"):
     try:
         v_uuid, ver = vuid.split("@")
     except ValueError:
         raise InvalidUsage("Need uuid and version")
 
-    try:
-        _ = UUID(v_uuid)
-    except ValueError:
-        raise InvalidUsage(f"Not a valid uuid for {vuid_type}")
-
     _validate_version(ver)
+    _validate_uuid(v_uuid, vuid_type)
 
 
 @bp.route("/datasets/books")
@@ -254,6 +257,30 @@ def fetch_question(uid):
     return jsonify(json_data)
 
 
+@bp.route("/datasets/feature_weights")
+def feature_weights_index():
+    fw_ids = list(current_app.df["feature_weights"].keys())
+    fw_ids.remove("default_id")
+    return jsonify(fw_ids)
+
+
+@bp.route("/datasets/feature_weights/<fw_id>")
+def fetch_feature_weights(fw_id):
+    _validate_uuid(fw_id)
+    df = current_app.df
+    try:
+        data = df["feature_weights"][fw_id]
+    except KeyError:
+        raise InvalidUsage("No such set of feature weights", status_code=404)
+
+    return jsonify(data)
+
+
+@bp.route("/datasets/feature_weights/default")
+def fetch_default_feature_weights():
+    return jsonify(current_app.df["feature_weights"]["default_id"])
+
+
 @bp.route("/ping")
 def ping():
     return "pong"
@@ -265,9 +292,25 @@ def status():
     data = {"version": _version.get_versions(), "started": start_time}
 
     if "vuid" in current_app.df["domain"].columns:
-        data["datasets"] = {"books": _books_json(include_vocabs=False)}
+        fw_ids = list(current_app.df["feature_weights"].keys())
+        fw_ids.remove("default_id")
+        data["datasets"] = {
+            "books": _books_json(include_vocabs=False),
+            "feature_weights": fw_ids,
+        }
 
     return jsonify(data)
+
+
+@bp.route("/status/defaults/feature_weights_id")
+def fetch_default_feature_weights_id():
+    return jsonify(current_app.df["feature_weights"]["default_id"])
+
+
+@bp.route("/status/defaults")
+def fetch_default_feature_weights_set():
+    default_id = current_app.df["feature_weights"]["default_id"]
+    return jsonify(current_app.df["feature_weights"][default_id])
 
 
 @bp.route("/version")

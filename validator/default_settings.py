@@ -18,7 +18,7 @@ SPELLING_CORRECTION_DEFAULTS = {
 
 # If number, feature is used and has the corresponding weight.
 # A value of 0 indicates that the feature won't be computed
-VALIDITY_FEATURE_DICT = collections.OrderedDict(
+DEFAULT_FEATURE_WEIGHTS = collections.OrderedDict(
     {
         "stem_word_count": 0,
         "option_word_count": 0,
@@ -26,6 +26,7 @@ VALIDITY_FEATURE_DICT = collections.OrderedDict(
         "domain_word_count": 2.5,
         "bad_word_count": -3,
         "common_word_count": 0.7,
-        "intercept": 0,
     }
 )
+
+DEFAULT_FEATURE_WEIGHTS_KEY = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"

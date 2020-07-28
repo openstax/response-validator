@@ -28,8 +28,7 @@ class StaxStringProc(object):
             "./openform/ml/corpora/question_text.txt",
         ],
         parse_args=(True, False, True, True, 5, 3, 5),
-        symspell_dictionary_file="./openform/ml/corpora/"
-        "response_validator_spelling_dictionary.txt",
+        symspell_dictionary_file="./openform/ml/corpora/response_validator_spelling_dictionary.txt",
     ):
 
         # Set the parsing arguments

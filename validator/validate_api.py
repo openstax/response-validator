@@ -6,8 +6,10 @@
 from flask import jsonify, request, Blueprint, current_app
 from flask_cors import cross_origin
 
+from .read_api import InvalidUsage, handle_invalid_usage
 from .utils import make_tristate
 from .ml.stax_string_proc import StaxStringProc
+
 
 import pkg_resources
 
@@ -24,23 +26,24 @@ CORPORA_PATH = pkg_resources.resource_filename("validator", "ml/corpora")
 with open(f"{CORPORA_PATH}/bad.txt") as f:
     bad_vocab = set(f.read().split())
 
-VALIDITY_FEATURE_DICT = {}
+DEFAULT_FEATURE_WEIGHTS = {}
 PARSER_DEFAULTS = {}
 parser = None
 common_vocab = set()
 
 bp = Blueprint("validate_api", __name__, url_prefix="/")
+bp.register_error_handler(InvalidUsage, handle_invalid_usage)
 
 
 @bp.record_once
 def setup_parse_and_data(setup_state):
-    global VALIDITY_FEATURE_DICT, PARSER_DEFAULTS, parser, common_vocab
+    global DEFAULT_FEATURE_WEIGHTS, PARSER_DEFAULTS, parser, common_vocab
 
     PARSER_DEFAULTS = setup_state.app.config["PARSER_DEFAULTS"]
     SPELLING_CORRECTION_DEFAULTS = setup_state.app.config[
         "SPELLING_CORRECTION_DEFAULTS"
     ]
-    VALIDITY_FEATURE_DICT = setup_state.app.config["VALIDITY_FEATURE_DICT"]
+    # DEFAULT_FEATURE_WEIGHTS = setup_state.app.config["DEFAULT_FEATURE_WEIGHTS"]
 
     # Create the parser, initially assign default values
     # (these can be overwritten during calls to process_string)
@@ -58,7 +61,9 @@ def setup_parse_and_data(setup_state):
             SPELLING_CORRECTION_DEFAULTS["spell_correction_max_edit_distance"],
             SPELLING_CORRECTION_DEFAULTS["spell_correction_min_word_length"],
         ),
-        symspell_dictionary_file=f"{CORPORA_PATH}/response_validator_spelling_dictionary.txt",
+        symspell_dictionary_file=(
+            f"{CORPORA_PATH}/response_validator_spelling_dictionary.txt"
+        ),
     )
 
     common_vocab = set(parser.all_words) | set(parser.reserved_tags)
@@ -128,13 +133,13 @@ def get_question_data(uid):
 
 def parse_and_classify(
     response,
-    feature_weight_dict,
     feature_vocab_dict,
     remove_stopwords,
     tag_numeric,
     spelling_correction,
     remove_nonwords,
     spell_correction_limit,
+    feature_weights_id,
 ):
 
     # Parse the students response into a word list
@@ -147,9 +152,13 @@ def parse_and_classify(
         spell_correction_max=spell_correction_limit,
     )
 
+    # Fetch feature weights by ID
+    feature_weight_dict = current_app.df["feature_weights"][feature_weights_id]
+
     # Initialize all feature counts to 0
+    # ORDER OF KEYS in feature_weight_dict is preserved, and matters!
     # Then move through the feature list in order and count iff applicable
-    feature_count_dict = OrderedDict({key: 0 for key in feature_weight_dict.keys()})
+    feature_count_dict = OrderedDict.fromkeys(feature_weight_dict.keys(), 0)
     feature_count_dict["intercept"] = 1
 
     for word in response_words:
@@ -183,13 +192,13 @@ def parse_and_classify(
 def validate_response(
     response,
     uid,
-    feature_weight_dict,
     remove_stopwords=None,
     tag_numeric=None,
     spelling_correction=None,
     remove_nonwords=None,
     spell_correction_max=None,
     lazy_math_mode=None,
+    feature_weights_id=None,
 ):
     """Function to estimate validity given response, uid, and parser parameters"""
 
@@ -205,6 +214,8 @@ def validate_response(
         spell_correction_max = PARSER_DEFAULTS["spell_correction_max"]
     if lazy_math_mode is None:
         lazy_math_mode = PARSER_DEFAULTS["lazy_math_mode"]
+    if feature_weights_id is None:
+        feature_weights_id = current_app.df["feature_weights"]["default_id"]
 
     # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
     # domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab,
@@ -215,44 +226,44 @@ def validate_response(
     # The conversion is thus: if auto, we will tag numeric if has_numeric is not False
     # This means that has_numeric = True and has_numeric is None (question not found) will be True
     tag_numeric_input = tag_numeric
-    if tag_numeric == 'auto':
-        tag_numeric = (has_numeric is not False)
+    if tag_numeric == "auto":
+        tag_numeric = has_numeric is not False
 
     if spelling_correction != "auto":
         return_dictionary = parse_and_classify(
             response,
-            feature_weight_dict,
             vocab_dict,
             remove_stopwords,
             tag_numeric,
             spelling_correction,
             remove_nonwords,
             spell_correction_max,
+            feature_weights_id,
         )
     else:
         # Check for validity without spelling correction
         return_dictionary = parse_and_classify(
             response,
-            feature_weight_dict,
             vocab_dict,
             remove_stopwords,
             tag_numeric,
             False,
             remove_nonwords,
             spell_correction_max,
+            feature_weights_id,
         )
 
         # If that didn't pass, re-evaluate with spelling correction turned on
         if not return_dictionary["valid"]:
             return_dictionary = parse_and_classify(
                 response,
-                feature_weight_dict,
                 vocab_dict,
                 remove_stopwords,
                 tag_numeric,
                 True,
                 remove_nonwords,
                 spell_correction_max,
+                feature_weights_id,
             )
 
     return_dictionary["tag_numeric_input"] = tag_numeric_input
@@ -293,21 +304,26 @@ def validation_api_entry():
 
     response = args.get("response", None)
     uid = args.get("uid", None)
+    feature_weights_set_id = args.get(
+        "feature_weights_set_id", current_app.df["feature_weights"]["default_id"]
+    )
+
+    if feature_weights_set_id not in current_app.df["feature_weights"]:
+        raise InvalidUsage("feature_weights_set_id not found", status_code=404)
+
     parser_params = {
         key: make_tristate(args.get(key, val), val)
         for key, val in PARSER_DEFAULTS.items()
     }
-    feature_weight_dict = OrderedDict(
-        {
-            key: make_tristate(args.get(key, val), val)
-            for key, val in VALIDITY_FEATURE_DICT.items()
-        }
-    )
 
     start_time = time.time()
     return_dictionary = validate_response(
-        response, uid, feature_weight_dict, **parser_params
+        response, uid, feature_weights_id=feature_weights_set_id, **parser_params
     )
+
+    return_dictionary["feature_weights"] = current_app.df["feature_weights"][
+        feature_weights_set_id
+    ]
 
     return_dictionary["computation_time"] = time.time() - start_time
 

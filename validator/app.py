@@ -33,13 +33,22 @@ def create_app(**kwargs):
     except FileNotFoundError:
         raise FileNotFoundError("Bad or no DATA_DIR defined")
 
-    df_innovation_, df_domain_, df_questions_ = get_fixed_data(data_dir)
+    df_innovation_, df_domain_, df_questions_, feature_weights = get_fixed_data(
+        data_dir
+    )
+    if "default_id" not in feature_weights:
+        feature_weights_key = app.config.get("DEFAULT_FEATURE_WEIGHTS_KEY")
+        if feature_weights_key not in feature_weights:
+            feature_weights[feature_weights_key] = app.config.get(
+                "DEFAULT_FEATURE_WEIGHTS"
+            )
+            feature_weights["default_id"] = feature_weights_key
 
     df = {}
     df["innovation"] = df_innovation_
     df["domain"] = df_domain_
     df["questions"] = df_questions_
-
+    df["feature_weights"] = feature_weights
     app.df = df
 
     app.qids = {}
@@ -55,5 +64,5 @@ def create_app(**kwargs):
 
 
 if __name__ == "__main__":
-    app = create_app(**dict([a.split('=') for a in sys.argv[1:]]))
+    app = create_app(**dict([a.split("=") for a in sys.argv[1:]]))
     app.run()

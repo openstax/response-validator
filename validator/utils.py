@@ -3,16 +3,18 @@
 # Load up the relevant book and question data and transform into the
 # simplified data frames we need for garbage detection
 
-import pandas as pd
+import json
 import re
 import os
 import string
 
-# from nltk.corpus import words
+
+import pandas as pd
+from collections import OrderedDict
 
 
 def make_tristate(var, default=True):
-    if type(default) == int:
+    if type(default) in (int, float):
         try:
             return int(var)
         except ValueError:
@@ -76,10 +78,21 @@ def write_fixed_data(df_domain, df_innovation, df_questions, data_dir):
     )
 
 
+def write_feature_weights(feature_weights, data_dir):
+    print(f"Writing data to: {data_dir}")
+    with open(os.path.join(data_dir, "feature_weights.json"), "w") as f:
+        json.dump(feature_weights, f, indent=2)
+
+
 def get_fixed_data(data_dir):
     data_files = os.listdir(data_dir)
-    files_to_find = ["df_innovation.csv", "df_domain.csv", "df_questions.csv"]
-    num_missing_files = len(set(files_to_find) - set(data_files))
+    files_to_find = [
+        "df_innovation.csv",
+        "df_domain.csv",
+        "df_questions.csv",
+    ]
+    missing_files = set(files_to_find) - set(data_files)
+    num_missing_files = len(missing_files)
     if num_missing_files == 0:
         print(f"Loading existing data from {data_dir}...")
         df_innovation = pd.read_csv(os.path.join(data_dir, files_to_find[0]))
@@ -177,7 +190,10 @@ def get_fixed_data(data_dir):
             write_fixed_data(df_domain, df_innovation, df_questions, data_dir)
 
     else:
-        print(f"No data loaded from {data_dir}: rolling with empty datasets")
+        print(
+            f"""No vocab data loaded from {data_dir}:  missing {', '.join(missing_files)}"""
+            """\nrolling with empty datasets"""
+        )
         df_innovation = pd.DataFrame(columns=["cvuid", "innovation_words", "book_name"])
         df_domain = pd.DataFrame(columns=["vuid", "domain_words", "book_name"])
         df_questions = pd.DataFrame(
@@ -193,4 +209,12 @@ def get_fixed_data(data_dir):
             ]
         )
 
-    return df_innovation, df_domain, df_questions
+    # Now load the feature_weights and default feature_weight_id, if found.
+    try:
+        with open(os.path.join(data_dir, "feature_weights.json")) as f:
+            feature_weights = json.load(f, object_pairs_hook=OrderedDict)
+    except FileNotFoundError:
+        print("No feature weights loaded, using defaults")
+        feature_weights = OrderedDict()
+
+    return df_innovation, df_domain, df_questions, feature_weights
