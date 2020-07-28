@@ -99,6 +99,8 @@ NOT_BOOK_VUID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6@1"
 
 DEFAULT_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
 
+INCORRECT_DEFAULT_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6bcd"
+
 NEW_DEFAULT_ID = "cc2ed0ea-46cc-428f-b8e4-136df5b157db"
 
 EMPTY_FEATURE_WEIGHTS = {}
@@ -324,10 +326,16 @@ def test_default_feature_weights(client_with_data):
     assert resp.status_code == 200
     assert resp.json == {
         "msg": "Feature weights successfully imported.",
-        "feature_weight_set_id": DEFAULT_FEATURE_WEIGHTS_ID,
+        "feature_weight_set_id": DEFAULT_ID,
     }
-    resp = client_with_data.get(f"/datasets/feature_weights/{DEFAULT_FEATURE_WEIGHTS_ID}")
+    resp = client_with_data.get(f"/datasets/feature_weights/{DEFAULT_ID}")
     assert resp.json == DEFAULT_FEATURE_WEIGHTS
+
+
+def test_invalid_new_feature_weights(client_with_data):
+    resp = client_with_data.post("/datasets/feature_weights", data="{")
+    assert resp.status_code == 404
+    assert resp.json["message"] == "Unable to load feature weights as json file."
 
 
 def test_new_feature_weights(client_with_data):
@@ -344,10 +352,14 @@ def test_new_feature_weights(client_with_data):
 
 def test_invalid_default_feature_weights(client_with_data):
     resp = client_with_data.put("/datasets/feature_weights/default", data="{")
-    import pdb;
-    pdb.set_trace()
-    assert resp.status_code == 400
+    assert resp.status_code == 404
     assert resp.json["message"] == "Unable to load new default id as json file."
+
+
+def test_set_incorrect_default_feature_weights(client_with_data):
+    resp = client_with_data.put("/datasets/feature_weights/default", json=INCORRECT_DEFAULT_ID)
+    assert resp.status_code == 400
+    assert resp.json["message"] == "Feature weight id not found."
 
 
 def test_set_default_feature_weights(client_with_data):
@@ -372,3 +384,4 @@ def test_set_new_default_feature_weights(client_with_data):
     second_app.config["TESTING"] = True
     second_client = second_app.test_client()
     assert (second_client.get("/datasets/feature_weights/default")).json == NEW_DEFAULT_ID
+

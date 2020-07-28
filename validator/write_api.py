@@ -163,11 +163,12 @@ def import_ecosystem():
 @cross_origin(supports_credentials=True)
 def new_feature_weights_set():
     feature_weights_keys = set(current_app.config["DEFAULT_FEATURE_WEIGHTS"].keys())
-    try:
-        new_feature_weights = request.json
-    except ValueError:
-        raise InvalidUsage("Unable to load feature weights as json file")
+    if not request.is_json:
+        raise InvalidUsage(
+            "Unable to load feature weights as json file.", status_code=404
+        )
     else:
+        new_feature_weights = request.json
         if set(new_feature_weights.keys()) != feature_weights_keys:
             raise InvalidUsage(
                 "Incomplete or incorrect feature weight keys", status_code=400
@@ -186,11 +187,13 @@ def new_feature_weights_set():
 def set_default_feature_weights_id():
     df = current_app.df
     if not request.is_json:
-        new_default_id = df["feature_weights"]["default_id"]
+        raise InvalidUsage(
+            "Unable to load new default id as json file.", status_code=404
+        )
     else:
         new_default_id = request.json
         if new_default_id not in df["feature_weights"].keys():
-            raise InvalidUsage("Feature weight id not found", status_code=400)
+            raise InvalidUsage("Feature weight id not found.", status_code=400)
     default_id = write_default_feature_weights_id(new_default_id)
     return jsonify(
         {
