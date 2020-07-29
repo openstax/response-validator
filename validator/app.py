@@ -44,16 +44,16 @@ def create_app(**kwargs):
             )
             feature_weights["default_id"] = feature_weights_key
 
-    df = {}
-    df["innovation"] = df_innovation_
-    df["domain"] = df_domain_
-    df["questions"] = df_questions_
-    df["feature_weights"] = feature_weights
-    app.df = df
+    datasets = {}
+    datasets["innovation"] = df_innovation_
+    datasets["domain"] = df_domain_
+    datasets["questions"] = df_questions_
+    datasets["feature_weights"] = feature_weights
+    app.datasets = datasets
 
     app.qids = {}
     for idcol in ("uid", "qid"):
-        app.qids[idcol] = set(df["questions"][idcol].values.tolist())
+        app.qids[idcol] = set(datasets["questions"][idcol].values.tolist())
 
     app.register_blueprint(read_api.bp)
     app.register_blueprint(write_api.bp)

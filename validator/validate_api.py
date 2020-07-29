@@ -70,21 +70,21 @@ def setup_parse_and_data(setup_state):
 
 
 def get_question_data_by_key(key, val):
-    df = current_app.df
+    datasets = current_app.datasets
     # FIXME - should use all the questions and combine associated pages
     # FIXME - last_q works better because of some dirty data getting through
     # that has innovation pages but not the exact book those pages are from
-    last_q = df["questions"][df["questions"][key] == val].iloc[-1]
+    last_q = datasets["questions"][datasets["questions"][key] == val].iloc[-1]
     module_id = last_q.cvuid
     uid = last_q.uid
     has_numeric = bool(last_q.contains_number)
     innovation_vocab = (
-        df["innovation"][df["innovation"]["cvuid"] == module_id]
+        datasets["innovation"][datasets["innovation"]["cvuid"] == module_id]
         .iloc[0]
         .innovation_words
     )
     vuid = module_id.split(":")[0]
-    domain_vocab_df = df["domain"][df["domain"]["vuid"] == vuid]
+    domain_vocab_df = datasets["domain"][datasets["domain"]["vuid"] == vuid]
     if domain_vocab_df.empty:
         domain_vocab = set()
     else:
@@ -153,7 +153,7 @@ def parse_and_classify(
     )
 
     # Fetch feature weights by ID
-    feature_weight_dict = current_app.df["feature_weights"][feature_weights_id]
+    feature_weight_dict = current_app.datasets["feature_weights"][feature_weights_id]
 
     # Initialize all feature counts to 0
     # ORDER OF KEYS in feature_weight_dict is preserved, and matters!
@@ -215,7 +215,7 @@ def validate_response(
     if lazy_math_mode is None:
         lazy_math_mode = PARSER_DEFAULTS["lazy_math_mode"]
     if feature_weights_id is None:
-        feature_weights_id = current_app.df["feature_weights"]["default_id"]
+        feature_weights_id = current_app.datasets["feature_weights"]["default_id"]
 
     # Try to get questions-specific vocab via uid (if not found, vocab will be empty)
     # domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab,
@@ -305,10 +305,10 @@ def validation_api_entry():
     response = args.get("response", None)
     uid = args.get("uid", None)
     feature_weights_set_id = args.get(
-        "feature_weights_set_id", current_app.df["feature_weights"]["default_id"]
+        "feature_weights_set_id", current_app.datasets["feature_weights"]["default_id"]
     )
 
-    if feature_weights_set_id not in current_app.df["feature_weights"]:
+    if feature_weights_set_id not in current_app.datasets["feature_weights"]:
         raise InvalidUsage("feature_weights_set_id not found", status_code=404)
 
     parser_params = {
@@ -321,7 +321,7 @@ def validation_api_entry():
         response, uid, feature_weights_id=feature_weights_set_id, **parser_params
     )
 
-    return_dictionary["feature_weights"] = current_app.df["feature_weights"][
+    return_dictionary["feature_weights"] = current_app.datasets["feature_weights"][
         feature_weights_set_id
     ]
 

@@ -32,55 +32,55 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
     # AEW: I feel like I am sinning against nature here . . .
     # Do we need to store these in a Redis cache or db???
     # This was all well and good before we ever tried to modify things
-    df = current_app.df
+    datasets = current_app.datasets
 
     # Remove any entries from the domain, innovation, and question dataframes
     # that are duplicated by the new data
     book_id = df_domain_.iloc[0]["vuid"]
-    if "vuid" in df["domain"].columns:
-        df["domain"] = df["domain"][df["domain"]["vuid"] != book_id]
-    if "cvuid" in df["domain"].columns:
-        df["innovation"] = df["innovation"][
-            ~(df["innovation"]["cvuid"].star.startswith(book_id))
+    if "vuid" in datasets["domain"].columns:
+        datasets["domain"] = datasets["domain"][datasets["domain"]["vuid"] != book_id]
+    if "cvuid" in datasets["domain"].columns:
+        datasets["innovation"] = datasets["innovation"][
+            ~(datasets["innovation"]["cvuid"].star.startswith(book_id))
         ]
     uids = df_questions_["uid"].unique()
-    if "uid" in df["questions"].columns:
-        df["questions"] = df["questions"][
+    if "uid" in datasets["questions"].columns:
+        datasets["questions"] = datasets["questions"][
             ~(
-                df["questions"]["uid"].isin(uids)
-                & df["questions"]["cvuid"].str.startswith(book_id)
+                datasets["questions"]["uid"].isin(uids)
+                & datasets["questions"]["cvuid"].str.startswith(book_id)
             )
         ]
 
     # Now append the new dataframes to the in-memory ones
-    df["domain"] = df["domain"].append(df_domain_, sort=False)
-    df["innovation"] = df["innovation"].append(df_innovation_, sort=False)
-    df["questions"] = df["questions"].append(df_questions_, sort=False)
+    datasets["domain"] = datasets["domain"].append(df_domain_, sort=False)
+    datasets["innovation"] = datasets["innovation"].append(df_innovation_, sort=False)
+    datasets["questions"] = datasets["questions"].append(df_questions_, sort=False)
 
     # Update qid sets - for shortcutting question lookup
     for idcol in ("uid", "qid"):
-        current_app.qids[idcol] = set(df["questions"][idcol].values.tolist())
+        current_app.qids[idcol] = set(datasets["questions"][idcol].values.tolist())
 
     # Finally, write the updated dataframes to disk and declare victory
     data_dir = current_app.config["DATA_DIR"]
-    write_fixed_data(df["domain"], df["innovation"], df["questions"], data_dir)
+    write_fixed_data(datasets["domain"], datasets["innovation"], datasets["questions"], data_dir)
 
 
 def store_feature_weights(new_feature_weights):
     # Allows removing duplicate sets in feature weights
     # Sees if the incoming set matches with fw set
 
-    df = current_app.df
-    for fw_id, existing_feature_weights in df["feature_weights"].items():
+    datasets = current_app.datasets
+    for fw_id, existing_feature_weights in datasets["feature_weights"].items():
 
         if existing_feature_weights == new_feature_weights:
             result_id = fw_id
             break
     else:
         result_id = uuid.uuid4()
-        df["feature_weights"][str(result_id)] = new_feature_weights
+        datasets["feature_weights"][str(result_id)] = new_feature_weights
         data_dir = current_app.config["DATA_DIR"]
-        write_feature_weights(df["feature_weights"], data_dir)
+        write_feature_weights(datasets["feature_weights"], data_dir)
 
     return result_id
 
@@ -89,15 +89,15 @@ def write_default_feature_weights_id(new_default_id):
     # Allows removing duplicate sets in feature weights
     # Sees if the incoming set matches with fw set
 
-    df = current_app.df
+    datasets = current_app.datasets
 
-    if new_default_id == df["feature_weights"]["default_id"]:
+    if new_default_id == datasets["feature_weights"]["default_id"]:
         return new_default_id
 
     else:
-        df["feature_weights"]["default_id"] = new_default_id
+        datasets["feature_weights"]["default_id"] = new_default_id
         data_dir = current_app.config["DATA_DIR"]
-        write_feature_weights(df["feature_weights"], data_dir)
+        write_feature_weights(datasets["feature_weights"], data_dir)
 
     return new_default_id
 
@@ -185,14 +185,14 @@ def new_feature_weights_set():
 @bp.route("/datasets/feature_weights/default", methods=["PUT"])
 @cross_origin(supports_credentials=True)
 def set_default_feature_weights_id():
-    df = current_app.df
+    datasets = current_app.datasets
     if not request.is_json:
         raise InvalidUsage(
             "Unable to load new default id as json file.", status_code=404
         )
     else:
         new_default_id = request.json
-        if new_default_id not in df["feature_weights"].keys():
+        if new_default_id not in datasets["feature_weights"].keys():
             raise InvalidUsage("Feature weight id not found.", status_code=400)
     default_id = write_default_feature_weights_id(new_default_id)
     return jsonify(

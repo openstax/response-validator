@@ -386,4 +386,4 @@ def test_dataset_feature_weights(client):
 def test_dataset_default_feature_weights(client):
     resp = client.get("/datasets/feature_weights/default")
     assert resp.status_code == 200
-    assert resp.json == client.application.df["feature_weights"]["default_id"]
+    assert resp.json == client.application.datasets["feature_weights"]["default_id"]
