@@ -46,9 +46,9 @@ def myapp():
 def data(myapp):
     np.random.seed(1000)
     from validator.validate_api import bad_vocab, common_vocab, get_question_data
-    df = myapp.df
+    datasets = myapp.datasets
     with myapp.app_context():
-        question_data = df["questions"][df["questions"]["uid"] == "9@7"].iloc[0]
+        question_data = datasets["questions"][datasets["questions"]["uid"] == "9@7"].iloc[0]
         stem_vocab = question_data["stem_words"]
         mc_vocab = question_data["mc_words"]
         vocab_set = get_question_data(question_data.uid)[0]

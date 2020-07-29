@@ -64,7 +64,7 @@ def validation_train():
     # Temp install of weights
 
     temp_fw_id = f"training-{uuid4()}"
-    current_app.df["feature_weights"][temp_fw_id] = train_feature_dict
+    current_app.datasets["feature_weights"][temp_fw_id] = train_feature_dict
 
     output_df = response_df.apply(
         lambda x: validate_response(
@@ -76,7 +76,7 @@ def validation_train():
     output_df["valid_label"] = response_df["valid_label"]
 
     # remove temp weights
-    current_app.df["feature_weights"].pop(temp_fw_id)
+    current_app.datasets["feature_weights"].pop(temp_fw_id)
 
     # Do an N-fold cross validation if cv > 1.
     # Then get coefficients/intercept for the entire dataset

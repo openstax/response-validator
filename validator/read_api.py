@@ -44,7 +44,7 @@ def datasets_index():
 
 
 def _books_json(include_vocabs=True):
-    data = current_app.df["domain"][["book_name", "vuid"]].rename(
+    data = current_app.datasets["domain"][["book_name", "vuid"]].rename(
         {"book_name": "name"}, axis=1
     )
     if include_vocabs:
@@ -84,7 +84,7 @@ def books_index():
 
 @bp.route("/datasets/books/<vuid>")
 def fetch_book(vuid):
-    df = current_app.df
+    df = current_app.datasets
     data = df["domain"][df["domain"]["vuid"] == vuid][["book_name", "vuid"]].rename(
         {"book_name": "name"}, axis=1
     )
@@ -105,7 +105,7 @@ def fetch_book(vuid):
 
 @bp.route("/datasets/books/<vuid>/pages")
 def fetch_page_list(vuid):
-    df = current_app.df
+    df = current_app.datasets
     book = df["innovation"][df["innovation"]["cvuid"].str.startswith(vuid)]
     if book.empty:
         _validate_vuid(vuid)
@@ -117,7 +117,7 @@ def fetch_page_list(vuid):
 
 @bp.route("/datasets/books/<vuid>/pages/<pvuid>")
 def fetch_page(vuid, pvuid):
-    df = current_app.df
+    df = current_app.datasets
     innovation = df["innovation"][df["innovation"]["cvuid"] == ":".join((vuid, pvuid))][
         "innovation_words"
     ]
@@ -151,7 +151,7 @@ def fetch_vocabs(vuid):
 
 @bp.route("/datasets/books/<vuid>/vocabularies/domain")
 def fetch_domain(vuid):
-    df = current_app.df
+    df = current_app.datasets
     data = df["domain"][df["domain"]["vuid"] == vuid]["domain_words"]
     if data.empty:
         _validate_vuid(vuid)
@@ -162,7 +162,7 @@ def fetch_domain(vuid):
 
 @bp.route("/datasets/books/<vuid>/vocabularies/innovation")
 def fetch_innovation(vuid):
-    df = current_app.df
+    df = current_app.datasets
     data = df["innovation"][df["innovation"]["cvuid"].str.startswith(vuid)][
         ["cvuid", "innovation_words"]
     ]
@@ -177,7 +177,7 @@ def fetch_innovation(vuid):
 
 @bp.route("/datasets/books/<vuid>/vocabularies/innovation/<pvuid>")
 def fetch_page_innovation(vuid, pvuid):
-    df = current_app.df
+    df = current_app.datasets
     data = df["innovation"][df["innovation"]["cvuid"] == ":".join((vuid, pvuid))][
         "innovation_words"
     ]
@@ -191,7 +191,7 @@ def fetch_page_innovation(vuid, pvuid):
 
 @bp.route("/datasets/books/<vuid>/vocabularies/questions")
 def fetch_questions(vuid):
-    df = current_app.df
+    df = current_app.datasets
     data = df["questions"][df["questions"]["cvuid"].str.startswith(vuid)].rename(
         {"uid": "exercise_uid", "mc_words": "option_words"}, axis=1
     )
@@ -217,7 +217,7 @@ def fetch_questions(vuid):
 
 @bp.route("/datasets/books/<vuid>/vocabularies/questions/<pvuid>")
 def fetch_page_questions(vuid, pvuid):
-    df = current_app.df
+    df = current_app.datasets
     data = df["questions"][df["questions"]["cvuid"] == ":".join((vuid, pvuid))].rename(
         {"uid": "exercise_uid", "mc_words": "option_words"}, axis=1
     )
@@ -241,12 +241,12 @@ def fetch_page_questions(vuid, pvuid):
 
 @bp.route("/datasets/questions")
 def questions_index():
-    return jsonify(current_app.df["questions"].uid.tolist())
+    return jsonify(current_app.datasets["questions"].uid.tolist())
 
 
 @bp.route("/datasets/questions/<uid>")
 def fetch_question(uid):
-    df = current_app.df
+    df = current_app.datasets
     data = df["questions"][df["questions"]["uid"] == uid].rename(
         {"uid": "exercise_uid", "mc_words": "option_words"}, axis=1
     )
@@ -259,7 +259,7 @@ def fetch_question(uid):
 
 @bp.route("/datasets/feature_weights")
 def feature_weights_index():
-    fw_ids = list(current_app.df["feature_weights"].keys())
+    fw_ids = list(current_app.datasets["feature_weights"].keys())
     fw_ids.remove("default_id")
     return jsonify(fw_ids)
 
@@ -267,7 +267,7 @@ def feature_weights_index():
 @bp.route("/datasets/feature_weights/<fw_id>")
 def fetch_feature_weights(fw_id):
     _validate_uuid(fw_id)
-    df = current_app.df
+    df = current_app.datasets
     try:
         data = df["feature_weights"][fw_id]
     except KeyError:
@@ -278,7 +278,7 @@ def fetch_feature_weights(fw_id):
 
 @bp.route("/datasets/feature_weights/default")
 def fetch_default_feature_weights():
-    return jsonify(current_app.df["feature_weights"]["default_id"])
+    return jsonify(current_app.datasets["feature_weights"]["default_id"])
 
 
 @bp.route("/ping")
@@ -290,9 +290,8 @@ def ping():
 def status():
     global start_time
     data = {"version": _version.get_versions(), "started": start_time}
-
-    if "vuid" in current_app.df["domain"].columns:
-        fw_ids = list(current_app.df["feature_weights"].keys())
+    if "vuid" in current_app.datasets["domain"].columns:
+        fw_ids = list(current_app.datasets["feature_weights"].keys())
         fw_ids.remove("default_id")
         data["datasets"] = {
             "books": _books_json(include_vocabs=False),
@@ -304,13 +303,13 @@ def status():
 
 @bp.route("/status/defaults/feature_weights_id")
 def fetch_default_feature_weights_id():
-    return jsonify(current_app.df["feature_weights"]["default_id"])
+    return jsonify(current_app.datasets["feature_weights"]["default_id"])
 
 
 @bp.route("/status/defaults")
 def fetch_default_feature_weights_set():
-    default_id = current_app.df["feature_weights"]["default_id"]
-    return jsonify(current_app.df["feature_weights"][default_id])
+    default_id = current_app.datasets["feature_weights"]["default_id"]
+    return jsonify(current_app.datasets["feature_weights"][default_id])
 
 
 @bp.route("/version")
