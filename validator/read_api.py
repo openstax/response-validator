@@ -44,7 +44,7 @@ def datasets_index():
 
 
 def _books_json(include_vocabs=True):
-    data = current_app.datasets["domain"][["book_name", "vuid"]].rename(
+    data = current_app.datasets["domain"][["book_name", "vuid", "feature_weights_id"]].rename(
         {"book_name": "name"}, axis=1
     )
     if include_vocabs:
@@ -85,7 +85,7 @@ def books_index():
 @bp.route("/datasets/books/<vuid>")
 def fetch_book(vuid):
     df = current_app.datasets
-    data = df["domain"][df["domain"]["vuid"] == vuid][["book_name", "vuid"]].rename(
+    data = df["domain"][df["domain"]["vuid"] == vuid][["book_name", "vuid", "feature_weights_id"]].rename(
         {"book_name": "name"}, axis=1
     )
     if data.empty:

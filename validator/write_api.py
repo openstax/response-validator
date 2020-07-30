@@ -37,20 +37,17 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
     # Remove any entries from the domain, innovation, and question dataframes
     # that are duplicated by the new data
     book_id = df_domain_.iloc[0]["vuid"]
-    if "vuid" in datasets["domain"].columns:
-        datasets["domain"] = datasets["domain"][datasets["domain"]["vuid"] != book_id]
-    if "cvuid" in datasets["domain"].columns:
-        datasets["innovation"] = datasets["innovation"][
-            ~(datasets["innovation"]["cvuid"].star.startswith(book_id))
-        ]
+    datasets["domain"] = datasets["domain"][datasets["domain"]["vuid"] != book_id]
+    datasets["innovation"] = datasets["innovation"][
+        ~(datasets["innovation"]["cvuid"].str.startswith(book_id))
+    ]
     uids = df_questions_["uid"].unique()
-    if "uid" in datasets["questions"].columns:
-        datasets["questions"] = datasets["questions"][
-            ~(
-                datasets["questions"]["uid"].isin(uids)
-                & datasets["questions"]["cvuid"].str.startswith(book_id)
-            )
-        ]
+    datasets["questions"] = datasets["questions"][
+        ~(
+            datasets["questions"]["uid"].isin(uids)
+            & datasets["questions"]["cvuid"].str.startswith(book_id)
+        )
+    ]
 
     # Now append the new dataframes to the in-memory ones
     datasets["domain"] = datasets["domain"].append(df_domain_, sort=False)
@@ -109,50 +106,17 @@ def import_ecosystem():
     # Extract arguments for the ecosystem to import
     # Either be a file location, YAML-as-string, or book_id and list of question uids
 
-    yaml_string = request.files["file"].read()
     if "file" in request.files:
+        yaml_string = request.files["file"].read()
         (
             df_domain_,
             df_innovation_,
             df_questions_,
         ) = ecosystem_importer.parse_yaml_string(yaml_string)
 
-    elif request.json is not None:
-        yaml_filename = request.json.get("filename", None)
-        yaml_string = request.json.get("yaml_string", None)
-        book_id = request.json.get("book_id", None)
-        exercise_list = request.json.get("question_list", None)
 
-        if yaml_filename:
-            (
-                df_domain_,
-                df_innovation_,
-                df_questions_,
-            ) = ecosystem_importer.parse_yaml_file(yaml_filename)
-        elif yaml_string:
-            (
-                df_domain_,
-                df_innovation_,
-                df_questions_,
-            ) = ecosystem_importer.parse_yaml_string(yaml_string)
-        elif book_id and exercise_list:
-            (
-                df_domain_,
-                df_innovation_,
-                df_questions_,
-            ) = ecosystem_importer.parse_content(book_id, exercise_list)
-
-        else:
-            return jsonify(
-                {
-                    "msg": (
-                        "Could not process input. Provide either"
-                        " a location of a YAML file,"
-                        " a string of YAML content,"
-                        " or a book_id and question_list"
-                    )
-                }
-            )
+    else:
+        raise InvalidUsage("Provide an ecosystem YAML file.", status_code=400)
 
     update_fixed_data(df_domain_, df_innovation_, df_questions_)
 

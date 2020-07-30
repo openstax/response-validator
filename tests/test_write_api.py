@@ -155,7 +155,7 @@ def test_status(client, import_yaml):
 
     assert set(json_status["datasets"].keys()) == set(["books", "feature_weights"])
 
-    assert set(json_status["datasets"]["books"][0].keys()) == set(["name", "vuid"])
+    assert set(json_status["datasets"]["books"][0].keys()) == set(["name", "vuid", "feature_weights_id"])
 
     returned_book_names = set([b["name"] for b in json_status["datasets"]["books"]])
 

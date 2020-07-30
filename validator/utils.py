@@ -102,71 +102,16 @@ def get_fixed_data(data_dir):
         # other post-processing steps
 
         needs_rewrite = False
-        if "CNX Book Name" in df_domain.columns:
-            needs_rewrite = True
-            # Get map of book names to newest vuid for that book
-            book_ids_by_name = dict(
-                sorted(
-                    set(
-                        df_innovation[df_innovation["module_id"].str.contains(":")][
-                            ["subject_name", "module_id"]
-                        ]
-                        .apply(
-                            lambda x: (x.subject_name, x.module_id.split(":")[0]),
-                            axis=1,
-                        )
-                        .tolist()
-                    ),
-                    key=(lambda x: x[1].split("@")[1].split(".")[0]),
-                )
-            )
-            # Fix up innovation dataframe:
-            df_innovation = df_innovation[
-                ["subject_name", "module_id", "innovation_words"]
-            ].rename(columns={"subject_name": "book_name", "module_id": "cvuid"})
-
-            # Use map to fix up domain words df
-            df_domain = df_domain.apply(
-                lambda x: (book_ids_by_name[x["CNX Book Name"]], x[0], x[1]),
-                axis="columns",
-                result_type="expand",
-            ).rename(columns={0: "vuid", 1: "book_name", 2: "domain_words"})
-
-            # Fix up questions - this is all done at ecosystem import, now
-
-            df_questions["qid"] = df_questions["uid"].apply(lambda x: x.split("@")[0])
-            df_questions["stem_words"] = (
-                df_questions["stem_text"]
-                .fillna("")
-                .apply(lambda x: str(set(x.lower().translate(translator).split())))
-            )
-            df_questions["mc_words"] = (
-                df_questions["option_text"]
-                .fillna("")
-                .apply(lambda x: str(set(x.lower().translate(translator).split())))
-            )
-            df_questions["contains_number"] = df_questions.apply(
-                lambda x: contains_number(x), axis=1
-            )
-
-            df_questions = df_questions[
-                [
-                    "qid",
-                    "uid",
-                    "module_id",
-                    "contains_number",
-                    "mc_words",
-                    "option_text",
-                    "stem_words",
-                    "stem_text",
-                ]
-            ].rename(columns={"module_id": "cvuid"})
 
         # Convert domain and innovation words from comma-separated strings to set
         # This works in memory just fine but won't persist in file
         df_domain = df_domain.fillna("")
         df_innovation = df_innovation.fillna("")
         df_questions = df_questions.fillna("")
+
+        # Tests for feature weight id column and adds it to domain if it's not in there yet
+        if "feature_weights_id" not in df_domain.columns:
+            df_domain["feature_weights_id"] = None
 
         df_domain["domain_words"] = df_domain["domain_words"].apply(
             lambda x: set([w[1:-1] for w in x[1:-1].split(", ")])
@@ -195,7 +140,7 @@ def get_fixed_data(data_dir):
             """\nrolling with empty datasets"""
         )
         df_innovation = pd.DataFrame(columns=["cvuid", "innovation_words", "book_name"])
-        df_domain = pd.DataFrame(columns=["vuid", "domain_words", "book_name"])
+        df_domain = pd.DataFrame(columns=["vuid", "domain_words", "book_name", "feature_weights_id"])
         df_questions = pd.DataFrame(
             columns=[
                 "contains_number",

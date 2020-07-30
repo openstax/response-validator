@@ -123,7 +123,7 @@ def test_status(client):
     assert json_status["version"]["version"] == app_version
 
     assert set(json_status["datasets"].keys()) == set(["books", "feature_weights"])
-    assert set(json_status["datasets"]["books"][0].keys()) == set(["name", "vuid"])
+    assert set(json_status["datasets"]["books"][0].keys()) == set(["feature_weights_id", "name", "vuid"])
 
     returned_book_names = set([b["name"] for b in json_status["datasets"]["books"]])
 
@@ -198,6 +198,7 @@ def test_books_book(client):
     assert resp.status_code == 200
     assert resp.json["name"] == BOOK_NAME
     assert resp.json["vuid"] == BOOK_VUID
+    assert resp.json["feature_weights_id"] == None
     assert len(resp.json["pages"]) == NUM_PAGES
     assert resp.json["vocabularies"] == EXPECTED_VOCABULARIES
 
