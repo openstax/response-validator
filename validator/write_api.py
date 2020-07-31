@@ -98,6 +98,25 @@ def write_default_feature_weights_id(new_default_id):
 
     return new_default_id
 
+def write_book_default_feature_weights_id(vuid, new_default_id):
+    # Allows removing duplicate sets in feature weights
+    # Sees if the incoming set matches with fw set
+
+    datasets = current_app.datasets
+    domain_vocab_df = datasets["domain"][datasets["domain"]["vuid"] == vuid]
+    if domain_vocab_df.empty:
+        raise InvalidUsage(
+            "Incomplete or incorrect book vuid", status_code=400
+        )
+    else:
+        if new_default_id == domain_vocab_df.iloc[0][“feature_weights_id”]:
+            return new_default_id
+
+        else:
+            datasets["domain"].loc[datasets["domain"].vuid == vuid, "feature_weights_id"]= new_default_id
+            data_dir = current_app.config["DATA_DIR"]
+            write_fixed_data(datasets["domain"], data_dir)
+    return new_default_id
 
 @bp.route("/import", methods=["POST"])
 @cross_origin(supports_credentials=True)
@@ -165,3 +184,29 @@ def set_default_feature_weights_id():
             "feature_weight_set_id": default_id,
         }
     )
+
+
+@bp.route("/datasets/books/<vuid>/feature_weights_id", methods=["PUT"])
+@cross_origin(supports_credentials=True)
+def set_book_default_feature_weights_id(vuid):
+    datasets = current_app.datasets
+    if vuid not in datasets["domain"]["vuid"]:
+        raise InvalidUsage(
+            "Invalid book vuid.", status_code=400
+        )
+    else:
+        if not request.is_json:
+            raise InvalidUsage(
+                "Unable to load new default id as json file.", status_code=404
+            )
+        else:
+            new_default_id = request.json
+            if new_default_id not in datasets["feature_weights"].keys():
+                raise InvalidUsage("Feature weight id not found.", status_code=400)
+        default_id = write_book_default_feature_weights_id(new_default_id)
+        return jsonify(
+            {
+                "msg": "Successfully set the book's default feature weight id.",
+                "feature_weight_set_id": default_id,
+            }
+        )
