@@ -109,13 +109,13 @@ def write_book_default_feature_weights_id(vuid, new_default_id):
             "Incomplete or incorrect book vuid", status_code=400
         )
     else:
-        if new_default_id == domain_vocab_df.iloc[0][“feature_weights_id”]:
+        if new_default_id == domain_vocab_df.iloc[0]["feature_weights_id"]:
             return new_default_id
 
         else:
             datasets["domain"].loc[datasets["domain"].vuid == vuid, "feature_weights_id"]= new_default_id
             data_dir = current_app.config["DATA_DIR"]
-            write_fixed_data(datasets["domain"], data_dir)
+            write_fixed_data(datasets["domain"], None, None, data_dir)
     return new_default_id
 
 @bp.route("/import", methods=["POST"])

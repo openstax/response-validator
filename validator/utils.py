@@ -67,15 +67,18 @@ def split_to_words(df, text_column):
 
 def write_fixed_data(df_domain, df_innovation, df_questions, data_dir):
     print(f"Writing data to: {data_dir}")
-    df_domain.replace(set(), "").to_csv(
-        os.path.join(data_dir, "df_domain.csv"), index=None
-    )
-    df_innovation.replace(set(), "").to_csv(
-        os.path.join(data_dir, "df_innovation.csv"), index=None
-    )
-    df_questions.replace(set(), "").to_csv(
-        os.path.join(data_dir, "df_questions.csv"), index=None
-    )
+    if df_domain is not None:
+        df_domain.replace(set(), "").to_csv(
+            os.path.join(data_dir, "df_domain.csv"), index=None
+        )
+    if df_innovation is not None:
+        df_innovation.replace(set(), "").to_csv(
+            os.path.join(data_dir, "df_innovation.csv"), index=None
+        )
+    if df_questions is not None:
+        df_questions.replace(set(), "").to_csv(
+            os.path.join(data_dir, "df_questions.csv"), index=None
+        )
 
 
 def write_feature_weights(feature_weights, data_dir):
