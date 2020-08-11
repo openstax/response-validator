@@ -190,23 +190,23 @@ def set_default_feature_weights_id():
 @cross_origin(supports_credentials=True)
 def set_book_default_feature_weights_id(vuid):
     datasets = current_app.datasets
-    if vuid not in datasets["domain"]["vuid"]:
+    if not request.is_json:
         raise InvalidUsage(
-            "Invalid book vuid.", status_code=400
+            "Unable to load new default id as json file.", status_code=404
         )
     else:
-        if not request.is_json:
+        if vuid not in datasets["domain"]["vuid"].tolist():
             raise InvalidUsage(
-                "Unable to load new default id as json file.", status_code=404
+                "Invalid book vuid.", status_code=400
             )
         else:
             new_default_id = request.json
-            if new_default_id not in datasets["feature_weights"].keys():
+            if new_default_id  not in datasets["feature_weights"].keys():
                 raise InvalidUsage("Feature weight id not found.", status_code=400)
-        default_id = write_book_default_feature_weights_id(new_default_id)
-        return jsonify(
-            {
-                "msg": "Successfully set the book's default feature weight id.",
-                "feature_weight_set_id": default_id,
-            }
-        )
+    default_id = write_book_default_feature_weights_id(new_default_id)
+    return jsonify(
+        {
+            "msg": "Successfully set the book's default feature weight id.",
+            "feature_weight_set_id": default_id,
+        }
+    )

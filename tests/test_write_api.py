@@ -388,27 +388,27 @@ def test_set_new_default_feature_weights(client_with_data):
 
 
 def test_invalid_book_default_feature_weights(client_with_data):
-    resp = client_with_data.put("/datasets/feature_weights/default", data="{")
+    resp = client_with_data.put("/datasets/books/{BOOK_VUID}/feature_weights_id", data="{")
     assert resp.status_code == 404
     assert resp.json["message"] == "Unable to load new default id as json file."
 
 
 def test_set_incorrect_book_default_feature_weights(client_with_data):
-    resp = client_with_data.put("/datasets/feature_weights/default", json=INCORRECT_DEFAULT_ID)
+    resp = client_with_data.put("/datasets/books/{BOOK_VUID}/feature_weights_id", json=INCORRECT_DEFAULT_ID)
     assert resp.status_code == 400
-    assert resp.json["message"] == "Feature weight id not found."
+    assert resp.json["message"] == "Invalid book vuid."
 
 
 def test_set_book_default_feature_weights(client_with_data):
-    resp = client_with_data.put("/datasets/feature_weights/default", json=DEFAULT_ID)
+    resp = client_with_data.put("/datasets/books/02040312-72c8-441e-a685-20e9333f3e1d@10.1/feature_weights_id", json=DEFAULT_ID)
     assert resp.status_code == 200
-    assert resp.json["msg"] == "Successfully set default feature weight id."
-    assert (client_with_data.get("/datasets/feature_weights/default")).json == DEFAULT_ID
+    assert resp.json["msg"] == "Successfully set the book's default feature weight id."
+    assert (client_with_data.get("/datasets/books/02040312-72c8-441e-a685-20e9333f3e1d@10.1/feature_weights_id")).json == DEFAULT_ID
 
     second_app = app.create_app(DATA_DIR=client_with_data.application.config["DATA_DIR"])
     second_app.config["TESTING"] = True
     second_client = second_app.test_client()
-    assert (second_client.get("/datasets/feature_weights/default")).json == DEFAULT_ID
+    assert (second_client.get("/datasets/books/02040312-72c8-441e-a685-20e9333f3e1d@10.1/feature_weights_id")).json == DEFAULT_ID
 
 
 def test_set_book_new_default_feature_weights(client_with_data):
