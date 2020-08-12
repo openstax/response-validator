@@ -116,6 +116,7 @@ def write_book_default_feature_weights_id(vuid, new_default_id):
             datasets["domain"].loc[datasets["domain"].vuid == vuid, "feature_weights_id"]= new_default_id
             data_dir = current_app.config["DATA_DIR"]
             write_fixed_data(datasets["domain"], None, None, data_dir)
+
     return new_default_id
 
 @bp.route("/import", methods=["POST"])
@@ -203,7 +204,8 @@ def set_book_default_feature_weights_id(vuid):
             new_default_id = request.json
             if new_default_id  not in datasets["feature_weights"].keys():
                 raise InvalidUsage("Feature weight id not found.", status_code=400)
-    default_id = write_book_default_feature_weights_id(new_default_id)
+    default_id = write_book_default_feature_weights_id(vuid, new_default_id)
+
     return jsonify(
         {
             "msg": "Successfully set the book's default feature weight id.",
