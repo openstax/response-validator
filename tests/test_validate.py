@@ -42,26 +42,8 @@ def client():
 def test_validate_response():
     from validator.validate_api import validate_response
 
-    # expected = {
-    #     "inner_product": 0,
-    #     "intercept": 1,
-    #     "lazy_math_evaluation": True,
-    #     "num_spelling_correction": 0,
-    #     "processed_response": "foo bar",
-    #     "remove_nonwords": True,
-    #     "remove_stopwords": True,
-    #     "response": "foo bar",
-    #     "spelling_correction": "auto",
-    #     "spelling_correction_used": True,
-    #     "tag_numeric": False,
-    #     "tag_numeric_input": "auto",
-    #     "uid_found": True,
-    #     "uid_used": "100@7",
-    #     "valid": False,
-    # }
-
     expected = {
-        "inner_product": 1.4,
+        "inner_product": 0,
         "intercept": 1,
         "lazy_math_evaluation": True,
         "num_spelling_correction": 0,
@@ -69,30 +51,48 @@ def test_validate_response():
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "foo bar",
-        "stem_word_count": 0,
-        "option_word_count": 0,
-        "innovation_word_count": 0,
-        "domain_word_count": 0,
-        "bad_word_count": 0,
-        "common_word_count": 2,
-        "intercept": 1,
-        "inner_product": 1.4,
         "spelling_correction": "auto",
-        "spelling_correction_used": False,
+        "spelling_correction_used": True,
         "tag_numeric": False,
         "tag_numeric_input": "auto",
         "uid_found": True,
         "uid_used": "100@7",
-        "valid": True,
-        "feature_weights": collections.OrderedDict(
-            [('stem_word_count', 0), ('option_word_count', 0), ('innovation_word_count', 2.2),
-             ('domain_word_count', 2.5), ('bad_word_count', -3), ('common_word_count', 0.7)])
+        "valid": False,
     }
+
+    # expected = {
+    #     "inner_product": 1.4,
+    #     "intercept": 1,
+    #     "lazy_math_evaluation": True,
+    #     "num_spelling_correction": 0,
+    #     "processed_response": "foo bar",
+    #     "remove_nonwords": True,
+    #     "remove_stopwords": True,
+    #     "response": "foo bar",
+    #     "stem_word_count": 0,
+    #     "option_word_count": 0,
+    #     "innovation_word_count": 0,
+    #     "domain_word_count": 0,
+    #     "bad_word_count": 0,
+    #     "common_word_count": 2,
+    #     "intercept": 1,
+    #     "inner_product": 1.4,
+    #     "spelling_correction": "auto",
+    #     "spelling_correction_used": False,
+    #     "tag_numeric": False,
+    #     "tag_numeric_input": "auto",
+    #     "uid_found": True,
+    #     "uid_used": "100@7",
+    #     "valid": True,
+    #     "feature_weights": collections.OrderedDict(
+    #         [('stem_word_count', 0), ('option_word_count', 0), ('innovation_word_count', 2.2),
+    #          ('domain_word_count', 2.5), ('bad_word_count', -3), ('common_word_count', 0.7)])
+    # }
     with myapp.app_context():
         res = validate_response(
             "foo bar",
             "100@1",
-#            feature_weights_id="f84e554a-c06c-11ea-a880-7f87cd92d175",
+            feature_weights_id="f84e554a-c06c-11ea-a880-7f87cd92d175",
         )
     assert res == expected
 
@@ -122,13 +122,9 @@ def test_validate_response_with_default_id():
         "uid_used": "100@7",
         "uid_found": True,
         "lazy_math_evaluation": True,
-        "feature_weights": collections.OrderedDict(
-            [('stem_word_count', 0), ('option_word_count', 0), ('innovation_word_count', 2.2),
-             ('domain_word_count', 2.5), ('bad_word_count', -3), ('common_word_count', 0.7)])
-
     }
     with myapp.app_context():
-        res = validate_response("foo bar", "100@1")
+        res = validate_response("foo bar", "100@1",)
     assert res == expected
 
 

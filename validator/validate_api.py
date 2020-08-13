@@ -84,6 +84,7 @@ def get_question_data_by_key(key, val):
         .innovation_words
     )
     vuid = module_id.split(":")[0]
+
     domain_vocab_df = datasets["domain"][datasets["domain"]["vuid"] == vuid]
     if domain_vocab_df.empty:
         domain_vocab = set()
@@ -198,7 +199,7 @@ def validate_response(
     remove_nonwords=None,
     spell_correction_max=None,
     lazy_math_mode=None,
-#    feature_weights_id=None,
+    feature_weights_id=None,
 ):
     """Function to estimate validity given response, uid, and parser parameters"""
 
@@ -219,15 +220,19 @@ def validate_response(
     # domain_vocab, innovation_vocab, has_numeric, uid_used, question_vocab,
     #  mc_vocab = get_question_data(uid)
     vocab_dict, uid_used, has_numeric, vuid = get_question_data(uid)
+    if vuid is None:
+        feature_weights_id = current_app.datasets["feature_weights"]["default_id"]
 
+    # When there's no feature_weights id passed from user API
     # Test if feature_weights id exists for the book
     # If so, fetch from datasets["domain"]
     # Otherwise use system default
-    datasets = current_app.datasets
-    domain_vocab_df = datasets["domain"][datasets["domain"]["vuid"] == vuid]
-    feature_weights_id = domain_vocab_df.iloc[0]["feature_weights_id"]
     if feature_weights_id is None:
-        feature_weights_id = current_app.datasets["feature_weights"]["default_id"]
+        datasets = current_app.datasets
+        domain_vocab_df = datasets["domain"][datasets["domain"]["vuid"] == vuid]
+        feature_weights_id = domain_vocab_df.iloc[0]["feature_weights_id"]
+        if feature_weights_id == "":
+            feature_weights_id = current_app.datasets["feature_weights"]["default_id"]
 
     # Record the input of tag_numeric and then convert in the case of "auto"
     # The conversion is thus: if auto, we will tag numeric if has_numeric is not False
@@ -278,9 +283,6 @@ def validate_response(
     return_dictionary["uid_used"] = uid_used
     return_dictionary["uid_found"] = uid_used in current_app.qids["uid"]
     return_dictionary["lazy_math_evaluation"] = lazy_math_mode
-    return_dictionary["feature_weights"] = current_app.datasets["feature_weights"][
-        feature_weights_id
-    ]
 
     # If lazy_math_mode, do a lazy math check and update valid accordingly
     if lazy_math_mode and response is not None:
@@ -315,12 +317,13 @@ def validation_api_entry():
     response = args.get("response", None)
     uid = args.get("uid", None)
 
-    # feature_weights_set_id = args.get(
-    #     "feature_weights_set_id", current_app.datasets["feature_weights"]["default_id"]
-    # )
-    #
-    # if feature_weights_set_id not in current_app.datasets["feature_weights"]:
-    #     raise InvalidUsage("feature_weights_set_id not found", status_code=404)
+    # What is the second arg for?
+    feature_weights_set_id = args.get(
+        "feature_weights_set_id", current_app.datasets["feature_weights"]["default_id"]
+    )
+
+    if feature_weights_set_id not in current_app.datasets["feature_weights"]:
+        raise InvalidUsage("feature_weights_set_id not found", status_code=404)
 
     parser_params = {
         key: make_tristate(args.get(key, val), val)
@@ -329,8 +332,12 @@ def validation_api_entry():
 
     start_time = time.time()
     return_dictionary = validate_response(
-        response, uid, **parser_params
+        response, uid, feature_weights_id=feature_weights_set_id,  **parser_params
     )
+
+    return_dictionary["feature_weights"] = current_app.datasets["feature_weights"][
+        feature_weights_set_id
+    ]
 
     return_dictionary["computation_time"] = time.time() - start_time
 

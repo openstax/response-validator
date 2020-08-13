@@ -198,7 +198,7 @@ def test_books_book(client):
     assert resp.status_code == 200
     assert resp.json["name"] == BOOK_NAME
     assert resp.json["vuid"] == BOOK_VUID
-    assert resp.json["feature_weights_id"] == None
+    assert resp.json["feature_weights_id"] == ''
     assert len(resp.json["pages"]) == NUM_PAGES
     assert resp.json["vocabularies"] == EXPECTED_VOCABULARIES
 
