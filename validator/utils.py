@@ -143,7 +143,9 @@ def get_fixed_data(data_dir):
             """\nrolling with empty datasets"""
         )
         df_innovation = pd.DataFrame(columns=["cvuid", "innovation_words", "book_name"])
-        df_domain = pd.DataFrame(columns=["vuid", "domain_words", "book_name", "feature_weights_id"])
+        df_domain = pd.DataFrame(
+            columns=["vuid", "domain_words", "book_name", "feature_weights_id"]
+        )
         df_questions = pd.DataFrame(
             columns=[
                 "contains_number",

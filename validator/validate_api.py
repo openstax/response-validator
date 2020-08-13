@@ -128,7 +128,7 @@ def get_question_data(uid):
             "intercept": set(),
         }
     )
-    #What should vuid be when there's no vuid?
+
     return default_vocab_dict, uid, None, None
 
 
@@ -332,7 +332,7 @@ def validation_api_entry():
 
     start_time = time.time()
     return_dictionary = validate_response(
-        response, uid, feature_weights_id=feature_weights_set_id,  **parser_params
+        response, uid, feature_weights_id=feature_weights_set_id, **parser_params
     )
 
     return_dictionary["feature_weights"] = current_app.datasets["feature_weights"][

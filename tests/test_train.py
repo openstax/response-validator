@@ -46,9 +46,12 @@ def myapp():
 def data(myapp):
     np.random.seed(1000)
     from validator.validate_api import bad_vocab, common_vocab, get_question_data
+
     datasets = myapp.datasets
     with myapp.app_context():
-        question_data = datasets["questions"][datasets["questions"]["uid"] == "9@7"].iloc[0]
+        question_data = datasets["questions"][
+            datasets["questions"]["uid"] == "9@7"
+        ].iloc[0]
         stem_vocab = question_data["stem_words"]
         mc_vocab = question_data["mc_words"]
         vocab_set = get_question_data(question_data.uid)[0]
@@ -138,7 +141,7 @@ def test_train_stem_option(client, data):
     assert output_df["common_word_count"].sum() > 0
 
     # Assert that there exists a valid feature_weight_set_id
-    assert type(out['feature_weight_set_id']) == str
+    assert type(out["feature_weight_set_id"]) == str
 
     # Verify that values returned from the call to train match the /datasets/feature_weights path
     resp = client.get(f"/datasets/feature_weights/{out['feature_weight_set_id']}")
@@ -151,6 +154,8 @@ def test_train_stem_option(client, data):
             assert key not in out.keys()
 
     # FIXME: Comparison between results: values are correct
+
+
 #     import pdb;
 #     pdb.set_trace()
 #     for key in resp.json.keys():
@@ -158,6 +163,7 @@ def test_train_stem_option(client, data):
 #         expected = standard_results[key]
 # #        TestCase.assertAlmostEqual(results, avg, delta=0.35)
 #         assert abs(expected - result) <= 0.1
+
 
 def test_train_domain_innovation(client, data):
     """Training with feature set 1"""
@@ -226,7 +232,7 @@ def test_train_domain_innovation(client, data):
     assert output_df["common_word_count"].sum() > 0
 
     # Assert that there exists a valid feature_weight_set_id
-    assert type(out['feature_weight_set_id']) == str
+    assert type(out["feature_weight_set_id"]) == str
 
     # Verify that values returned from the call to train match the /datasets/feature_weights path
     resp = client.get(f"/datasets/feature_weights/{out['feature_weight_set_id']}")
@@ -237,4 +243,3 @@ def test_train_domain_innovation(client, data):
             assert resp.json[key] == 0
         else:
             assert key not in out.keys()
-

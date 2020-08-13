@@ -1,4 +1,3 @@
-import collections
 import os
 import pytest
 from urllib.parse import urlencode
@@ -60,34 +59,6 @@ def test_validate_response():
         "valid": False,
     }
 
-    # expected = {
-    #     "inner_product": 1.4,
-    #     "intercept": 1,
-    #     "lazy_math_evaluation": True,
-    #     "num_spelling_correction": 0,
-    #     "processed_response": "foo bar",
-    #     "remove_nonwords": True,
-    #     "remove_stopwords": True,
-    #     "response": "foo bar",
-    #     "stem_word_count": 0,
-    #     "option_word_count": 0,
-    #     "innovation_word_count": 0,
-    #     "domain_word_count": 0,
-    #     "bad_word_count": 0,
-    #     "common_word_count": 2,
-    #     "intercept": 1,
-    #     "inner_product": 1.4,
-    #     "spelling_correction": "auto",
-    #     "spelling_correction_used": False,
-    #     "tag_numeric": False,
-    #     "tag_numeric_input": "auto",
-    #     "uid_found": True,
-    #     "uid_used": "100@7",
-    #     "valid": True,
-    #     "feature_weights": collections.OrderedDict(
-    #         [('stem_word_count', 0), ('option_word_count', 0), ('innovation_word_count', 2.2),
-    #          ('domain_word_count', 2.5), ('bad_word_count', -3), ('common_word_count', 0.7)])
-    # }
     with myapp.app_context():
         res = validate_response(
             "foo bar",
@@ -374,8 +345,10 @@ def test_numeric_words(client):
         "lazy_math_evaluation": True,
         "num_spelling_correction": 0,
         "option_word_count": 0,
-        "processed_response": "numeric_type_0 numeric_type_int "
-        "numeric_type_int numeric_type_float numeric_type_roman",
+        "processed_response": (
+            "numeric_type_0 numeric_type_int "
+            "numeric_type_int numeric_type_float numeric_type_roman"
+        ),
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "0 23 -3 1.2 IV",

@@ -60,7 +60,9 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
 
     # Finally, write the updated dataframes to disk and declare victory
     data_dir = current_app.config["DATA_DIR"]
-    write_fixed_data(datasets["domain"], datasets["innovation"], datasets["questions"], data_dir)
+    write_fixed_data(
+        datasets["domain"], datasets["innovation"], datasets["questions"], data_dir
+    )
 
 
 def store_feature_weights(new_feature_weights):
@@ -98,6 +100,7 @@ def write_default_feature_weights_id(new_default_id):
 
     return new_default_id
 
+
 def write_book_default_feature_weights_id(vuid, new_default_id):
     # Allows removing duplicate sets in feature weights
     # Sees if the incoming set matches with fw set
@@ -105,19 +108,20 @@ def write_book_default_feature_weights_id(vuid, new_default_id):
     datasets = current_app.datasets
     domain_vocab_df = datasets["domain"][datasets["domain"]["vuid"] == vuid]
     if domain_vocab_df.empty:
-        raise InvalidUsage(
-            "Incomplete or incorrect book vuid", status_code=400
-        )
+        raise InvalidUsage("Incomplete or incorrect book vuid", status_code=400)
     else:
         if new_default_id == domain_vocab_df.iloc[0]["feature_weights_id"]:
             return new_default_id
 
         else:
-            datasets["domain"].loc[datasets["domain"].vuid == vuid, "feature_weights_id"]= new_default_id
+            datasets["domain"].loc[
+                datasets["domain"].vuid == vuid, "feature_weights_id"
+            ] = new_default_id
             data_dir = current_app.config["DATA_DIR"]
             write_fixed_data(datasets["domain"], None, None, data_dir)
 
     return new_default_id
+
 
 @bp.route("/import", methods=["POST"])
 @cross_origin(supports_credentials=True)
@@ -133,7 +137,6 @@ def import_ecosystem():
             df_innovation_,
             df_questions_,
         ) = ecosystem_importer.parse_yaml_string(yaml_string)
-
 
     else:
         raise InvalidUsage("Provide an ecosystem YAML file.", status_code=400)
@@ -197,12 +200,10 @@ def set_book_default_feature_weights_id(vuid):
         )
     else:
         if vuid not in datasets["domain"]["vuid"].tolist():
-            raise InvalidUsage(
-                "Invalid book vuid.", status_code=400
-            )
+            raise InvalidUsage("Invalid book vuid.", status_code=400)
         else:
             new_default_id = request.json
-            if new_default_id  not in datasets["feature_weights"].keys():
+            if new_default_id not in datasets["feature_weights"].keys():
                 raise InvalidUsage("Feature weight id not found.", status_code=400)
     default_id = write_book_default_feature_weights_id(vuid, new_default_id)
 

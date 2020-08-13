@@ -49,32 +49,32 @@ EXPECTED_BOOK_NAMES = set(
 
 EXPECTED_VOCABULARIES = ["domain", "innovation", "questions"]
 EXPECTED_FEATURE_WEIGHTS = {
-  "default_id": "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
-  "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
-    "stem_word_count": 0,
-    "option_word_count": 0,
-    "innovation_word_count": 2.2,
-    "domain_word_count": 2.5,
-    "bad_word_count": -3,
-    "common_word_count": 0.7
-  },
-  "cc2ed0ea-46cc-428f-b8e4-136df5b157db": {
-    "stem_word_count": 0,
-    "option_word_count": 0,
-    "innovation_word_count": 2.2,
-    "domain_word_count": 2.5,
-    "bad_word_count": -3,
-    "common_word_count": 0.7
-  },
-  "566ceadc-3835-4b08-9dea-ac6fcbb27c96": {
-    "stem_word_count": 1,
-    "option_word_count": 1,
-    "innovation_word_count": 0,
-    "domain_word_count": 0,
-    "bad_word_count": -3,
-    "common_word_count": 0.7
-  },
-  "f84e554a-c06c-11ea-a880-7f87cd92d175": {}
+    "default_id": "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
+    "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
+        "stem_word_count": 0,
+        "option_word_count": 0,
+        "innovation_word_count": 2.2,
+        "domain_word_count": 2.5,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+    },
+    "cc2ed0ea-46cc-428f-b8e4-136df5b157db": {
+        "stem_word_count": 0,
+        "option_word_count": 0,
+        "innovation_word_count": 2.2,
+        "domain_word_count": 2.5,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+    },
+    "566ceadc-3835-4b08-9dea-ac6fcbb27c96": {
+        "stem_word_count": 1,
+        "option_word_count": 1,
+        "innovation_word_count": 0,
+        "domain_word_count": 0,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+    },
+    "f84e554a-c06c-11ea-a880-7f87cd92d175": {},
 }
 
 expected_fw_ids = list(EXPECTED_FEATURE_WEIGHTS.keys())
@@ -123,7 +123,9 @@ def test_status(client):
     assert json_status["version"]["version"] == app_version
 
     assert set(json_status["datasets"].keys()) == set(["books", "feature_weights"])
-    assert set(json_status["datasets"]["books"][0].keys()) == set(["feature_weights_id", "name", "vuid"])
+    assert set(json_status["datasets"]["books"][0].keys()) == set(
+        ["feature_weights_id", "name", "vuid"]
+    )
 
     returned_book_names = set([b["name"] for b in json_status["datasets"]["books"]])
 
@@ -198,7 +200,7 @@ def test_books_book(client):
     assert resp.status_code == 200
     assert resp.json["name"] == BOOK_NAME
     assert resp.json["vuid"] == BOOK_VUID
-    assert resp.json["feature_weights_id"] == ''
+    assert resp.json["feature_weights_id"] == ""
     assert len(resp.json["pages"]) == NUM_PAGES
     assert resp.json["vocabularies"] == EXPECTED_VOCABULARIES
 
