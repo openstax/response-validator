@@ -315,9 +315,8 @@ def validation_api_entry():
         args = request.args
 
     response = args.get("response", None)
-    uid = args.get("uid", None)
+    uid = args.get("uid")
 
-    # What is the second arg for?
     feature_weights_set_id = args.get(
         "feature_weights_set_id", current_app.datasets["feature_weights"]["default_id"]
     )

@@ -92,6 +92,7 @@ DEFAULT_FEATURE_WEIGHTS_SET = {
 
 
 BOOK_VUID = "02040312-72c8-441e-a685-20e9333f3e1d@10.1"
+BOOK_WITH_FEATURE_WEIGHTS = "8d50a0af-948b-4204-a71d-4826cba765b8@15.45"
 BOOK_NAME = "Introduction to Sociology 2e"
 NUM_PAGES = 96
 NUM_DOMAIN_WORDS = 7592
@@ -107,6 +108,8 @@ NUM_EXERCISE_STEM_WORDS = 6
 NOT_BOOK_VUID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6@1"
 
 DEFAULT_FEATURE_WEIGHT_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
+
+FEATURE_WEIGHTS_PER_BOOK = "f84e554a-c06c-11ea-a880-7f87cd92d175"
 
 NOT_FEATURE_WEIGHT_ID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6"
 
@@ -344,6 +347,18 @@ def test_book_page_no_book(client):
     resp = client.get(f"/datasets/books/{NOT_BOOK_VUID}/pages/{INNOVATION_PAGE_VUID}")
     assert resp.status_code == 404
     assert resp.json["message"] == "No such book or page"
+
+
+def test_book_feature_weights_id(client):
+    resp = client.get(f"/datasets/books/{BOOK_WITH_FEATURE_WEIGHTS}/feature_weights_id")
+    assert resp.status_code == 200
+    assert resp.json == FEATURE_WEIGHTS_PER_BOOK
+
+
+def test_book_feature_weights_id_not_found(client):
+    resp = client.get(f"/datasets/books/{NOT_BOOK_VUID}/feature_weights_id")
+    assert resp.status_code == 404
+    assert resp.json["message"] == "No such book"
 
 
 NUM_QUESTIONS = 23218

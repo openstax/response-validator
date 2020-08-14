@@ -239,6 +239,17 @@ def fetch_page_questions(vuid, pvuid):
     return jsonify(json_data)
 
 
+@bp.route("/datasets/books/<vuid>/feature_weights_id")
+def fetch_feature_weights_id(vuid):
+    df = current_app.datasets
+    book = df["domain"][df["domain"]["vuid"] == vuid]
+    if book.empty:
+        _validate_vuid(vuid)
+        raise InvalidUsage("No such book", status_code=404)
+    data = book.iloc[0]["feature_weights_id"]
+    return jsonify(data)
+
+
 @bp.route("/datasets/questions")
 def questions_index():
     return jsonify(current_app.datasets["questions"].uid.tolist())
