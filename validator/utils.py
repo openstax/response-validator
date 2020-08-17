@@ -101,10 +101,6 @@ def get_fixed_data(data_dir):
         df_innovation = pd.read_csv(os.path.join(data_dir, files_to_find[0]))
         df_domain = pd.read_csv(os.path.join(data_dir, files_to_find[1]))
         df_questions = pd.read_csv(os.path.join(data_dir, files_to_find[2]))
-        # BBB Determine if these are "old" csv files, then rename columns and
-        # other post-processing steps
-
-        needs_rewrite = False
 
         # Convert domain and innovation words from comma-separated strings to set
         # This works in memory just fine but won't persist in file
@@ -132,10 +128,6 @@ def get_fixed_data(data_dir):
         )
         # Question qids are imported as ints - let's convert that to strings for comparison
         df_questions["qid"] = df_questions["qid"].apply(str)
-
-        if needs_rewrite:
-            print("old CVS files detected:")
-            write_fixed_data(df_domain, df_innovation, df_questions, data_dir)
 
     else:
         print(
