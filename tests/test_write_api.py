@@ -439,6 +439,15 @@ def test_set_book_default_feature_weights(client_with_data):
     )
     assert resp.status_code == 200
     assert resp.json["msg"] == "Successfully set the book's default feature weight id."
+    #    assert (client_with_data.get(f"/datasets/books/{BOOK_VUID}/feature_weights_id")).json == DEFAULT_ID
+    assert resp.json["feature_weight_set_id"] == DEFAULT_ID
+
+    second_app = app.create_app(
+        DATA_DIR=client_with_data.application.config["DATA_DIR"]
+    )
+    second_app.config["TESTING"] = True
+    second_client = second_app.test_client()
+    #    assert (second_client.get(f"/datasets/books/{BOOK_VUID}/feature_weights_id")).json == DEFAULT_ID
     assert resp.json["feature_weight_set_id"] == DEFAULT_ID
 
 
@@ -448,4 +457,13 @@ def test_set_book_new_default_feature_weights(client_with_data):
     )
     assert resp.status_code == 200
     assert resp.json["msg"] == "Successfully set the book's default feature weight id."
+    #    assert (client_with_data.get(f"/datasets/books/{BOOK_VUID}/feature_weights_id")).json == DEFAULT_ID
+    assert resp.json["feature_weight_set_id"] == NEW_DEFAULT_ID
+
+    second_app = app.create_app(
+        DATA_DIR=client_with_data.application.config["DATA_DIR"]
+    )
+    second_app.config["TESTING"] = True
+    second_client = second_app.test_client()
+    #    assert (second_client.get(f"/datasets/books/{BOOK_VUID}/feature_weights_id")).json == DEFAULT_ID
     assert resp.json["feature_weight_set_id"] == NEW_DEFAULT_ID
