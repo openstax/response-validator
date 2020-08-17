@@ -28,6 +28,14 @@ def client(test_app):
 
 
 @pytest.fixture(scope="module")
+def test_app2():
+    tmpdir = tempfile.mkdtemp()
+    write_app = app.create_app(DATA_DIR=tmpdir)
+    yield write_app
+    shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+@pytest.fixture(scope="module")
 def test_app_with_data():
     tmpdir = tempfile.mkdtemp()
     for filename in os.listdir("tests/data"):
@@ -142,8 +150,11 @@ EXTRA_FEATURE_WEIGHTS = {
 }
 
 
-def test_import_yaml_string(test_app, client):
-    data_dir = test_app.config["DATA_DIR"]
+def test_import_yaml_string(test_app2, client):
+    test_app2.config["TESTING"] = True
+    data_dir = test_app2.config["DATA_DIR"]
+    client = test_app2.test_client()
+
     if os.listdir(data_dir) != []:
         raise LookupError(f"Error! pointing at existing data files at {data_dir}")
     with vcr.use_cassette("tests/cassettes/import.yaml"):
