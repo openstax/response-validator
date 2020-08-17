@@ -142,6 +142,31 @@ EXTRA_FEATURE_WEIGHTS = {
 }
 
 
+def test_import_yaml_string(test_app, client):
+    data_dir = test_app.config["DATA_DIR"]
+    if os.listdir(data_dir) != []:
+        raise LookupError(f"Error! pointing at existing data files at {data_dir}")
+    with vcr.use_cassette("tests/cassettes/import.yaml"):
+        with open("tutor_manifests/"
+                  "Introduction_to_Sociology_2e_02040312-72c8-441e-a685-20e9333f3e1d_10.1.yml") as f:
+            yaml = f.read()
+            resp = client.post(
+                "/import",
+                data=yaml,
+                headers={"content-type": "application/yaml; charset=utf-8"}
+            )
+    assert resp.status_code == 200
+
+
+def test_import_bad_yaml(client):
+    """Bad YAML string"""
+    resp = client.post(
+        "/import", data={}
+    )
+
+    assert resp.status_code == 400
+
+
 def test_status(client, import_yaml):
     """Status reports loaded books, version, and start time"""
 

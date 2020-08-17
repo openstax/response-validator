@@ -127,19 +127,20 @@ def write_book_default_feature_weights_id(vuid, new_default_id):
 @cross_origin(supports_credentials=True)
 def import_ecosystem():
 
-    # Extract arguments for the ecosystem to import
-    # Either be a file location, YAML-as-string, or book_id and list of question uids
+    # Extract arguments for the ecosystem to import from an ecosystem YAML
 
-    if "file" in request.files:
+    if "yaml" in request.mimetype:
+        yaml_string = request.data.decode(request.charset)
+
+    elif "file" in request.files:
         yaml_string = request.files["file"].read()
-        (
-            df_domain_,
-            df_innovation_,
-            df_questions_,
-        ) = ecosystem_importer.parse_yaml_string(yaml_string)
 
     else:
-        raise InvalidUsage("Provide an ecosystem YAML file.", status_code=400)
+        raise InvalidUsage("Provide an ecosystem YAML", status_code=400)
+
+    (df_domain_, df_innovation_, df_questions_,) = ecosystem_importer.parse_yaml_string(
+        yaml_string
+    )
 
     update_fixed_data(df_domain_, df_innovation_, df_questions_)
 
