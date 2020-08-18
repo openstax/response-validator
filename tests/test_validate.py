@@ -58,6 +58,7 @@ def test_validate_response():
         "uid_used": "100@7",
         "valid": False,
     }
+
     with myapp.app_context():
         res = validate_response(
             "foo bar",
@@ -344,8 +345,10 @@ def test_numeric_words(client):
         "lazy_math_evaluation": True,
         "num_spelling_correction": 0,
         "option_word_count": 0,
-        "processed_response": "numeric_type_0 numeric_type_int "
-        "numeric_type_int numeric_type_float numeric_type_roman",
+        "processed_response": (
+            "numeric_type_0 numeric_type_int "
+            "numeric_type_int numeric_type_float numeric_type_roman"
+        ),
         "remove_nonwords": True,
         "remove_stopwords": True,
         "response": "0 23 -3 1.2 IV",

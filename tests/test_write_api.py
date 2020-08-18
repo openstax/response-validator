@@ -28,10 +28,18 @@ def client(test_app):
 
 
 @pytest.fixture(scope="module")
+def test_app2():
+    tmpdir = tempfile.mkdtemp()
+    write_app = app.create_app(DATA_DIR=tmpdir)
+    yield write_app
+    shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+@pytest.fixture(scope="module")
 def test_app_with_data():
     tmpdir = tempfile.mkdtemp()
-    for filename in os.listdir('tests/data'):
-        shutil.copy(os.path.join('tests/data', filename), tmpdir)
+    for filename in os.listdir("tests/data"):
+        shutil.copy(os.path.join("tests/data", filename), tmpdir)
     write_app = app.create_app(DATA_DIR=tmpdir)
     yield write_app
     shutil.rmtree(tmpdir, ignore_errors=True)
@@ -68,15 +76,15 @@ EXPECTED_BOOK_NAMES = set(["Introduction to Sociology 2e"])
 EXPECTED_VOCABULARIES = ["domain", "innovation", "questions"]
 
 EXPECTED_FEATURE_WEIGHTS = {
-  "default_id": "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
-  "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
-    "stem_word_count": 0,
-    "option_word_count": 0,
-    "innovation_word_count": 2.2,
-    "domain_word_count": 2.5,
-    "bad_word_count": -3,
-    "common_word_count": 0.7
-  },
+    "default_id": "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
+    "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
+        "stem_word_count": 0,
+        "option_word_count": 0,
+        "innovation_word_count": 2.2,
+        "domain_word_count": 2.5,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+    },
 }
 
 EXPECTED_FEATURE_WEIGHTS_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
@@ -142,6 +150,34 @@ EXTRA_FEATURE_WEIGHTS = {
 }
 
 
+def test_import_yaml_string(test_app2, client):
+    test_app2.config["TESTING"] = True
+    data_dir = test_app2.config["DATA_DIR"]
+    client = test_app2.test_client()
+
+    if os.listdir(data_dir) != []:
+        raise LookupError(f"Error! pointing at existing data files at {data_dir}")
+    with vcr.use_cassette("tests/cassettes/import.yaml"):
+        with open("tutor_manifests/"
+                  "Introduction_to_Sociology_2e_02040312-72c8-441e-a685-20e9333f3e1d_10.1.yml") as f:
+            yaml = f.read()
+            resp = client.post(
+                "/import",
+                data=yaml,
+                headers={"content-type": "application/yaml; charset=utf-8"}
+            )
+    assert resp.status_code == 200
+
+
+def test_import_bad_yaml(client):
+    """Bad YAML string"""
+    resp = client.post(
+        "/import", data={}
+    )
+
+    assert resp.status_code == 400
+
+
 def test_status(client, import_yaml):
     """Status reports loaded books, version, and start time"""
 
@@ -155,7 +191,9 @@ def test_status(client, import_yaml):
 
     assert set(json_status["datasets"].keys()) == set(["books", "feature_weights"])
 
-    assert set(json_status["datasets"]["books"][0].keys()) == set(["name", "vuid"])
+    assert set(json_status["datasets"]["books"][0].keys()) == set(
+        ["name", "vuid", "feature_weights_id"]
+    )
 
     returned_book_names = set([b["name"] for b in json_status["datasets"]["books"]])
 
@@ -304,25 +342,33 @@ def test_datasets_questions_uid(client, import_yaml):
 
 
 def test_empty_feature_weights(client_with_data):
-    resp = client_with_data.post("/datasets/feature_weights", json=EMPTY_FEATURE_WEIGHTS)
+    resp = client_with_data.post(
+        "/datasets/feature_weights", json=EMPTY_FEATURE_WEIGHTS
+    )
     assert resp.status_code == 400
     assert resp.json["message"] == "Incomplete or incorrect feature weight keys"
 
 
 def test_incomplete_feature_weights(client_with_data):
-    resp = client_with_data.post("/datasets/feature_weights", json=INCOMPLETE_FEATURE_WEIGHTS)
+    resp = client_with_data.post(
+        "/datasets/feature_weights", json=INCOMPLETE_FEATURE_WEIGHTS
+    )
     assert resp.status_code == 400
     assert resp.json["message"] == "Incomplete or incorrect feature weight keys"
 
 
 def test_extra_feature_weights(client_with_data):
-    resp = client_with_data.post("/datasets/feature_weights", json=EXTRA_FEATURE_WEIGHTS)
+    resp = client_with_data.post(
+        "/datasets/feature_weights", json=EXTRA_FEATURE_WEIGHTS
+    )
     assert resp.status_code == 400
     assert resp.json["message"] == "Incomplete or incorrect feature weight keys"
 
 
 def test_default_feature_weights(client_with_data):
-    resp = client_with_data.post("/datasets/feature_weights", json=DEFAULT_FEATURE_WEIGHTS)
+    resp = client_with_data.post(
+        "/datasets/feature_weights", json=DEFAULT_FEATURE_WEIGHTS
+    )
     assert resp.status_code == 200
     assert resp.json == {
         "msg": "Feature weights successfully imported.",
@@ -343,12 +389,19 @@ def test_new_feature_weights(client_with_data):
     assert resp.status_code == 200
     assert resp.json["msg"] == "Feature weights successfully imported."
     new_feature_weights_id = resp.json["feature_weight_set_id"]
-    assert (client_with_data.get(f"/datasets/feature_weights/{new_feature_weights_id}")).json == NEW_FEATURE_WEIGHTS
+    assert (
+        client_with_data.get(f"/datasets/feature_weights/{new_feature_weights_id}")
+    ).json == NEW_FEATURE_WEIGHTS
 
-    second_app = app.create_app(DATA_DIR=client_with_data.application.config["DATA_DIR"])
+    second_app = app.create_app(
+        DATA_DIR=client_with_data.application.config["DATA_DIR"]
+    )
     second_app.config["TESTING"] = True
     second_client = second_app.test_client()
-    assert (second_client.get(f"/datasets/feature_weights/{new_feature_weights_id}")).json == NEW_FEATURE_WEIGHTS
+    assert (
+        second_client.get(f"/datasets/feature_weights/{new_feature_weights_id}")
+    ).json == NEW_FEATURE_WEIGHTS
+
 
 def test_invalid_default_feature_weights(client_with_data):
     resp = client_with_data.put("/datasets/feature_weights/default", data="{")
@@ -357,7 +410,9 @@ def test_invalid_default_feature_weights(client_with_data):
 
 
 def test_set_incorrect_default_feature_weights(client_with_data):
-    resp = client_with_data.put("/datasets/feature_weights/default", json=INCORRECT_DEFAULT_ID)
+    resp = client_with_data.put(
+        "/datasets/feature_weights/default", json=INCORRECT_DEFAULT_ID
+    )
     assert resp.status_code == 400
     assert resp.json["message"] == "Feature weight id not found."
 
@@ -366,22 +421,85 @@ def test_set_default_feature_weights(client_with_data):
     resp = client_with_data.put("/datasets/feature_weights/default", json=DEFAULT_ID)
     assert resp.status_code == 200
     assert resp.json["msg"] == "Successfully set default feature weight id."
-    assert (client_with_data.get("/datasets/feature_weights/default")).json == DEFAULT_ID
+    assert (
+        client_with_data.get("/datasets/feature_weights/default")
+    ).json == DEFAULT_ID
 
-    second_app = app.create_app(DATA_DIR=client_with_data.application.config["DATA_DIR"])
+    second_app = app.create_app(
+        DATA_DIR=client_with_data.application.config["DATA_DIR"]
+    )
     second_app.config["TESTING"] = True
     second_client = second_app.test_client()
     assert (second_client.get("/datasets/feature_weights/default")).json == DEFAULT_ID
 
 
 def test_set_new_default_feature_weights(client_with_data):
-    resp = client_with_data.put("/datasets/feature_weights/default", json=NEW_DEFAULT_ID)
+    resp = client_with_data.put(
+        "/datasets/feature_weights/default", json=NEW_DEFAULT_ID
+    )
     assert resp.status_code == 200
     assert resp.json["msg"] == "Successfully set default feature weight id."
-    assert (client_with_data.get("/datasets/feature_weights/default")).json == NEW_DEFAULT_ID
+    assert (
+        client_with_data.get("/datasets/feature_weights/default")
+    ).json == NEW_DEFAULT_ID
 
-    second_app = app.create_app(DATA_DIR=client_with_data.application.config["DATA_DIR"])
+    second_app = app.create_app(
+        DATA_DIR=client_with_data.application.config["DATA_DIR"]
+    )
     second_app.config["TESTING"] = True
     second_client = second_app.test_client()
-    assert (second_client.get("/datasets/feature_weights/default")).json == NEW_DEFAULT_ID
+    assert (
+        second_client.get("/datasets/feature_weights/default")
+    ).json == NEW_DEFAULT_ID
 
+
+def test_invalid_book_default_feature_weights(client_with_data):
+    resp = client_with_data.put(
+        "/datasets/books/{BOOK_VUID}/feature_weights_id", data="{"
+    )
+    assert resp.status_code == 404
+    assert resp.json["message"] == "Unable to load new default id as json file."
+
+
+def test_set_incorrect_book_default_feature_weights(client_with_data):
+    resp = client_with_data.put(
+        "/datasets/books/{BOOK_VUID}/feature_weights_id", json=INCORRECT_DEFAULT_ID
+    )
+    assert resp.status_code == 400
+    assert resp.json["message"] == "Invalid book vuid."
+
+
+def test_set_book_default_feature_weights(client_with_data):
+    resp = client_with_data.put(
+        f"/datasets/books/{BOOK_VUID}/feature_weights_id", json=DEFAULT_ID
+    )
+    assert resp.status_code == 200
+    assert resp.json["msg"] == "Successfully set the book's default feature weight id."
+    #    assert (client_with_data.get(f"/datasets/books/{BOOK_VUID}/feature_weights_id")).json == DEFAULT_ID
+    assert resp.json["feature_weight_set_id"] == DEFAULT_ID
+
+    second_app = app.create_app(
+        DATA_DIR=client_with_data.application.config["DATA_DIR"]
+    )
+    second_app.config["TESTING"] = True
+    second_client = second_app.test_client()
+    #    assert (second_client.get(f"/datasets/books/{BOOK_VUID}/feature_weights_id")).json == DEFAULT_ID
+    assert resp.json["feature_weight_set_id"] == DEFAULT_ID
+
+
+def test_set_book_new_default_feature_weights(client_with_data):
+    resp = client_with_data.put(
+        f"/datasets/books/{BOOK_VUID}/feature_weights_id", json=NEW_DEFAULT_ID
+    )
+    assert resp.status_code == 200
+    assert resp.json["msg"] == "Successfully set the book's default feature weight id."
+    #    assert (client_with_data.get(f"/datasets/books/{BOOK_VUID}/feature_weights_id")).json == DEFAULT_ID
+    assert resp.json["feature_weight_set_id"] == NEW_DEFAULT_ID
+
+    second_app = app.create_app(
+        DATA_DIR=client_with_data.application.config["DATA_DIR"]
+    )
+    second_app.config["TESTING"] = True
+    second_client = second_app.test_client()
+    #    assert (second_client.get(f"/datasets/books/{BOOK_VUID}/feature_weights_id")).json == DEFAULT_ID
+    assert resp.json["feature_weight_set_id"] == NEW_DEFAULT_ID

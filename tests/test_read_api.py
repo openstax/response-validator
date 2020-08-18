@@ -49,32 +49,32 @@ EXPECTED_BOOK_NAMES = set(
 
 EXPECTED_VOCABULARIES = ["domain", "innovation", "questions"]
 EXPECTED_FEATURE_WEIGHTS = {
-  "default_id": "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
-  "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
-    "stem_word_count": 0,
-    "option_word_count": 0,
-    "innovation_word_count": 2.2,
-    "domain_word_count": 2.5,
-    "bad_word_count": -3,
-    "common_word_count": 0.7
-  },
-  "cc2ed0ea-46cc-428f-b8e4-136df5b157db": {
-    "stem_word_count": 0,
-    "option_word_count": 0,
-    "innovation_word_count": 2.2,
-    "domain_word_count": 2.5,
-    "bad_word_count": -3,
-    "common_word_count": 0.7
-  },
-  "566ceadc-3835-4b08-9dea-ac6fcbb27c96": {
-    "stem_word_count": 1,
-    "option_word_count": 1,
-    "innovation_word_count": 0,
-    "domain_word_count": 0,
-    "bad_word_count": -3,
-    "common_word_count": 0.7
-  },
-  "f84e554a-c06c-11ea-a880-7f87cd92d175": {}
+    "default_id": "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b",
+    "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b": {
+        "stem_word_count": 0,
+        "option_word_count": 0,
+        "innovation_word_count": 2.2,
+        "domain_word_count": 2.5,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+    },
+    "cc2ed0ea-46cc-428f-b8e4-136df5b157db": {
+        "stem_word_count": 0,
+        "option_word_count": 0,
+        "innovation_word_count": 2.2,
+        "domain_word_count": 2.5,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+    },
+    "566ceadc-3835-4b08-9dea-ac6fcbb27c96": {
+        "stem_word_count": 1,
+        "option_word_count": 1,
+        "innovation_word_count": 0,
+        "domain_word_count": 0,
+        "bad_word_count": -3,
+        "common_word_count": 0.7,
+    },
+    "f84e554a-c06c-11ea-a880-7f87cd92d175": {},
 }
 
 expected_fw_ids = list(EXPECTED_FEATURE_WEIGHTS.keys())
@@ -92,6 +92,7 @@ DEFAULT_FEATURE_WEIGHTS_SET = {
 
 
 BOOK_VUID = "02040312-72c8-441e-a685-20e9333f3e1d@10.1"
+BOOK_WITH_FEATURE_WEIGHTS = "8d50a0af-948b-4204-a71d-4826cba765b8@15.45"
 BOOK_NAME = "Introduction to Sociology 2e"
 NUM_PAGES = 96
 NUM_DOMAIN_WORDS = 7592
@@ -108,6 +109,8 @@ NOT_BOOK_VUID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6@1"
 
 DEFAULT_FEATURE_WEIGHT_ID = "d3732be6-a759-43aa-9e1a-3e9bd94f8b6b"
 
+FEATURE_WEIGHTS_PER_BOOK = "f84e554a-c06c-11ea-a880-7f87cd92d175"
+
 NOT_FEATURE_WEIGHT_ID = "67be4044-bf7f-4b50-8798-bcd8a88ca5b6"
 
 
@@ -123,7 +126,9 @@ def test_status(client):
     assert json_status["version"]["version"] == app_version
 
     assert set(json_status["datasets"].keys()) == set(["books", "feature_weights"])
-    assert set(json_status["datasets"]["books"][0].keys()) == set(["name", "vuid"])
+    assert set(json_status["datasets"]["books"][0].keys()) == set(
+        ["feature_weights_id", "name", "vuid"]
+    )
 
     returned_book_names = set([b["name"] for b in json_status["datasets"]["books"]])
 
@@ -198,6 +203,7 @@ def test_books_book(client):
     assert resp.status_code == 200
     assert resp.json["name"] == BOOK_NAME
     assert resp.json["vuid"] == BOOK_VUID
+    assert resp.json["feature_weights_id"] == ""
     assert len(resp.json["pages"]) == NUM_PAGES
     assert resp.json["vocabularies"] == EXPECTED_VOCABULARIES
 
@@ -341,6 +347,18 @@ def test_book_page_no_book(client):
     resp = client.get(f"/datasets/books/{NOT_BOOK_VUID}/pages/{INNOVATION_PAGE_VUID}")
     assert resp.status_code == 404
     assert resp.json["message"] == "No such book or page"
+
+
+def test_book_feature_weights_id(client):
+    resp = client.get(f"/datasets/books/{BOOK_WITH_FEATURE_WEIGHTS}/feature_weights_id")
+    assert resp.status_code == 200
+    assert resp.json == FEATURE_WEIGHTS_PER_BOOK
+
+
+def test_book_feature_weights_id_not_found(client):
+    resp = client.get(f"/datasets/books/{NOT_BOOK_VUID}/feature_weights_id")
+    assert resp.status_code == 404
+    assert resp.json["message"] == "No such book"
 
 
 NUM_QUESTIONS = 23218

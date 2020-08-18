@@ -37,20 +37,17 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
     # Remove any entries from the domain, innovation, and question dataframes
     # that are duplicated by the new data
     book_id = df_domain_.iloc[0]["vuid"]
-    if "vuid" in datasets["domain"].columns:
-        datasets["domain"] = datasets["domain"][datasets["domain"]["vuid"] != book_id]
-    if "cvuid" in datasets["domain"].columns:
-        datasets["innovation"] = datasets["innovation"][
-            ~(datasets["innovation"]["cvuid"].star.startswith(book_id))
-        ]
+    datasets["domain"] = datasets["domain"][datasets["domain"]["vuid"] != book_id]
+    datasets["innovation"] = datasets["innovation"][
+        ~(datasets["innovation"]["cvuid"].str.startswith(book_id))
+    ]
     uids = df_questions_["uid"].unique()
-    if "uid" in datasets["questions"].columns:
-        datasets["questions"] = datasets["questions"][
-            ~(
-                datasets["questions"]["uid"].isin(uids)
-                & datasets["questions"]["cvuid"].str.startswith(book_id)
-            )
-        ]
+    datasets["questions"] = datasets["questions"][
+        ~(
+            datasets["questions"]["uid"].isin(uids)
+            & datasets["questions"]["cvuid"].str.startswith(book_id)
+        )
+    ]
 
     # Now append the new dataframes to the in-memory ones
     datasets["domain"] = datasets["domain"].append(df_domain_, sort=False)
@@ -63,7 +60,9 @@ def update_fixed_data(df_domain_, df_innovation_, df_questions_):
 
     # Finally, write the updated dataframes to disk and declare victory
     data_dir = current_app.config["DATA_DIR"]
-    write_fixed_data(datasets["domain"], datasets["innovation"], datasets["questions"], data_dir)
+    write_fixed_data(
+        datasets["domain"], datasets["innovation"], datasets["questions"], data_dir
+    )
 
 
 def store_feature_weights(new_feature_weights):
@@ -102,57 +101,46 @@ def write_default_feature_weights_id(new_default_id):
     return new_default_id
 
 
+def write_book_default_feature_weights_id(vuid, new_default_id):
+    # Allows removing duplicate sets in feature weights
+    # Sees if the incoming set matches with fw set
+
+    datasets = current_app.datasets
+    domain_vocab_df = datasets["domain"][datasets["domain"]["vuid"] == vuid]
+    if domain_vocab_df.empty:
+        raise InvalidUsage("Incomplete or incorrect book vuid", status_code=400)
+    else:
+        if new_default_id == domain_vocab_df.iloc[0]["feature_weights_id"]:
+            return new_default_id
+
+        else:
+            datasets["domain"].loc[
+                datasets["domain"].vuid == vuid, "feature_weights_id"
+            ] = new_default_id
+            data_dir = current_app.config["DATA_DIR"]
+            write_fixed_data(datasets["domain"], None, None, data_dir)
+
+    return new_default_id
+
+
 @bp.route("/import", methods=["POST"])
 @cross_origin(supports_credentials=True)
 def import_ecosystem():
 
-    # Extract arguments for the ecosystem to import
-    # Either be a file location, YAML-as-string, or book_id and list of question uids
+    # Extract arguments for the ecosystem to import from an ecosystem YAML
 
-    yaml_string = request.files["file"].read()
-    if "file" in request.files:
-        (
-            df_domain_,
-            df_innovation_,
-            df_questions_,
-        ) = ecosystem_importer.parse_yaml_string(yaml_string)
+    if "yaml" in request.mimetype:
+        yaml_string = request.data.decode(request.charset)
 
-    elif request.json is not None:
-        yaml_filename = request.json.get("filename", None)
-        yaml_string = request.json.get("yaml_string", None)
-        book_id = request.json.get("book_id", None)
-        exercise_list = request.json.get("question_list", None)
+    elif "file" in request.files:
+        yaml_string = request.files["file"].read()
 
-        if yaml_filename:
-            (
-                df_domain_,
-                df_innovation_,
-                df_questions_,
-            ) = ecosystem_importer.parse_yaml_file(yaml_filename)
-        elif yaml_string:
-            (
-                df_domain_,
-                df_innovation_,
-                df_questions_,
-            ) = ecosystem_importer.parse_yaml_string(yaml_string)
-        elif book_id and exercise_list:
-            (
-                df_domain_,
-                df_innovation_,
-                df_questions_,
-            ) = ecosystem_importer.parse_content(book_id, exercise_list)
+    else:
+        raise InvalidUsage("Provide an ecosystem YAML", status_code=400)
 
-        else:
-            return jsonify(
-                {
-                    "msg": (
-                        "Could not process input. Provide either"
-                        " a location of a YAML file,"
-                        " a string of YAML content,"
-                        " or a book_id and question_list"
-                    )
-                }
-            )
+    (df_domain_, df_innovation_, df_questions_,) = ecosystem_importer.parse_yaml_string(
+        yaml_string
+    )
 
     update_fixed_data(df_domain_, df_innovation_, df_questions_)
 
@@ -198,6 +186,31 @@ def set_default_feature_weights_id():
     return jsonify(
         {
             "msg": "Successfully set default feature weight id.",
+            "feature_weight_set_id": default_id,
+        }
+    )
+
+
+@bp.route("/datasets/books/<vuid>/feature_weights_id", methods=["PUT"])
+@cross_origin(supports_credentials=True)
+def set_book_default_feature_weights_id(vuid):
+    datasets = current_app.datasets
+    if not request.is_json:
+        raise InvalidUsage(
+            "Unable to load new default id as json file.", status_code=404
+        )
+    else:
+        if vuid not in datasets["domain"]["vuid"].tolist():
+            raise InvalidUsage("Invalid book vuid.", status_code=400)
+        else:
+            new_default_id = request.json
+            if new_default_id not in datasets["feature_weights"].keys():
+                raise InvalidUsage("Feature weight id not found.", status_code=400)
+    default_id = write_book_default_feature_weights_id(vuid, new_default_id)
+
+    return jsonify(
+        {
+            "msg": "Successfully set the book's default feature weight id.",
             "feature_weight_set_id": default_id,
         }
     )

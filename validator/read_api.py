@@ -44,9 +44,9 @@ def datasets_index():
 
 
 def _books_json(include_vocabs=True):
-    data = current_app.datasets["domain"][["book_name", "vuid"]].rename(
-        {"book_name": "name"}, axis=1
-    )
+    data = current_app.datasets["domain"][
+        ["book_name", "vuid", "feature_weights_id"]
+    ].rename({"book_name": "name"}, axis=1)
     if include_vocabs:
         data["vocabularies"] = [["domain", "innovation", "questions"]] * len(data)
     return data.to_dict(orient="records")
@@ -85,9 +85,9 @@ def books_index():
 @bp.route("/datasets/books/<vuid>")
 def fetch_book(vuid):
     df = current_app.datasets
-    data = df["domain"][df["domain"]["vuid"] == vuid][["book_name", "vuid"]].rename(
-        {"book_name": "name"}, axis=1
-    )
+    data = df["domain"][df["domain"]["vuid"] == vuid][
+        ["book_name", "vuid", "feature_weights_id"]
+    ].rename({"book_name": "name"}, axis=1)
     if data.empty:
         _validate_vuid(vuid)
         raise InvalidUsage("No such book", status_code=404)
@@ -237,6 +237,17 @@ def fetch_page_questions(vuid, pvuid):
         data[["exercise_uid", "option_words", "stem_words"]].to_json(orient="records")
     )
     return jsonify(json_data)
+
+
+@bp.route("/datasets/books/<vuid>/feature_weights_id")
+def fetch_feature_weights_id(vuid):
+    df = current_app.datasets
+    book = df["domain"][df["domain"]["vuid"] == vuid]
+    if book.empty:
+        _validate_vuid(vuid)
+        raise InvalidUsage("No such book", status_code=404)
+    data = book.iloc[0]["feature_weights_id"]
+    return jsonify(data)
 
 
 @bp.route("/datasets/questions")

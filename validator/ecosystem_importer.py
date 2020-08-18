@@ -94,7 +94,7 @@ class EcosystemImporter(object):
 
         return df_domain, df_innovation
 
-    def get_question_content(self, question_uid_list, book_id, module_id_set):
+    def get_question_content(self, question_uid_list, module_id_set):
         # Each uid may consist of multiple "questions"
         # For each question, grab the stem_html
         # Also, concatenate all the content_html in "answers"
@@ -175,6 +175,7 @@ class EcosystemImporter(object):
 
         df_domain, df_innovation = self.get_book_content(archive_url, book_id)
         df_domain["book_name"] = book_title
+
         df_innovation["book_name"] = book_title
 
         module_id_set = (
@@ -185,7 +186,7 @@ class EcosystemImporter(object):
             {"vers_module_id": module_id_set, "module_id": unversioned_module_id_set}
         )
         df_questions = self.get_question_content(
-            question_uid_list, book_id, set(unversioned_module_id_set)
+            question_uid_list, set(unversioned_module_id_set)
         )
         df_questions = df_questions.merge(module_id_df)
         df_questions["cvuid"] = df_questions.apply(
