@@ -175,6 +175,7 @@ class EcosystemImporter(object):
 
         df_domain, df_innovation = self.get_book_content(archive_url, book_id)
         df_domain["book_name"] = book_title
+        df_domain["feature_weights_id"] = ""
 
         df_innovation["book_name"] = book_title
 
