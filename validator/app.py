@@ -4,7 +4,9 @@
 # accuracy/complexity tradeoffs
 import os
 import sys
+import sentry_sdk
 
+from sentry_sdk.integrations.flask import FlaskIntegration
 from flask import Flask
 
 from .utils import get_fixed_data
@@ -59,6 +61,11 @@ def create_app(**kwargs):
     app.register_blueprint(write_api.bp)
     app.register_blueprint(validate_api.bp)
     app.register_blueprint(training_api.bp)
+
+    sentry_sdk.init(
+      dsn="https://d587530fe7824275a726f6748c0c56c3@sentry.cnx.org/21",
+      integrations=[FlaskIntegration()]
+    )
 
     return app
 
