@@ -17,6 +17,7 @@ from . import read_api, write_api, validate_api, training_api
 def create_app(**kwargs):
     app = Flask(__name__.split(".")[0])
     app.url_map.strict_slashes = False
+    app.config.from_pyfile("validator.cfg")
     app.config.from_object("validator.default_settings")
     app.config.from_envvar("VALIDATOR_SETTINGS", silent=True)
     app.config.from_envvar("VALIDATOR_CONFIG", silent=True)
@@ -63,7 +64,7 @@ def create_app(**kwargs):
     app.register_blueprint(training_api.bp)
 
     sentry_sdk.init(
-      dsn="https://d587530fe7824275a726f6748c0c56c3@sentry.cnx.org/21",
+      dsn=current_app.config["SENTRY_DSN"],
       integrations=[FlaskIntegration()]
     )
 
