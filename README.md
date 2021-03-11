@@ -26,7 +26,7 @@ pip install -e .
 Note that this step will download several NLTK corpora, silently, and add them to the deployed tree.
 
 Alternatively you can install requirements.txt,
-which contains the last known working dependency versions:
+which contains the last known working dependency versions for Python 3.7+:
 
 ```bash
 pip install -r requirements.txt
