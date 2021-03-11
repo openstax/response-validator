@@ -23,8 +23,6 @@ After cloning the repository, you can install the repo in editable mode, as so:
 pip install -e .
 ```
 
-Note that this step will download several NLTK corpora, silently, and add them to the deployed tree.
-
 Alternatively you can install requirements.txt,
 which contains the last known working dependency versions for Python 3.7+:
 
@@ -33,11 +31,15 @@ pip install -r requirements.txt
 ```
 
 Additional functionality for running algorithm tests, etc.
-can be enabled by installing additional libraries:
+can be enabled by installing additional libraries and running setup.py install:
 
 ```bash
 pip install -e .[test]
+python setup.py install
 ```
+
+Note that this last step will download several NLTK corpora, silently,
+and add them to the deployed tree (gitignored).
 
 ## Usage
 

@@ -23,9 +23,10 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - name: Install test packages and requirements
+      - name: Install test packages, download nltk corpora and install requirements.txt versions
         run: |
           pip install -e .[test]
+          python setup.py install
           pip install -r requirements.txt
       - run: coverage run -m pytest
       - uses: codecov/codecov-action@v1
