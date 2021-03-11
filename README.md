@@ -13,6 +13,7 @@ pip install response-validator
 ```
 
 ## Development
+
 After cloning the repository, you can install the repo in editable mode, as so:
 
 ```bash
@@ -21,7 +22,15 @@ pip install -e .
 
 Note that this step will download several NLTK corpora, silently, and add them to the deployed tree.
 
-Additional functionality for running algorithm tests, etc. can be enabled by installing additional libraries:
+Alternatively you can install requirements.txt,
+which contains the last known working dependency versions:
+
+```bash
+pip install -r requirements.txt
+```
+
+Additional functionality for running algorithm tests, etc.
+can be enabled by installing additional libraries:
 
 ```bash
 pip install -e .[test]
