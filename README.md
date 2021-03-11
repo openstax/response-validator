@@ -1,5 +1,8 @@
 # response_validation_app
 
+[![Lint](https://github.com/openstax/response-validator/workflows/Lint/badge.svg)](https://github.com/openstax/response-validator/actions?query=workflow:Lint)
+[![Tests](https://github.com/openstax/response-validator/workflows/Tests/badge.svg)](https://github.com/openstax/response-validator/actions?query=workflow:Tests)
+
 Implements a simple unsupervised method for classifying student short to medium sized responses to questions.
 
 ## Installation
