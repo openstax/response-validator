@@ -23,5 +23,8 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - run: pip install -r requirements.txt
+      - name: Install test packages and requirements
+        run: |
+          pip install -e .[test]
+          pip install -r requirements.txt
       - run: flake8 validator
