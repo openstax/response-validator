@@ -4,7 +4,7 @@ Implements a simple unsupervised method for classifying student short to medium 
 
 ## Installation
 
-This was developed in Python 3.6. 
+This was developed in Python 3.6.
 
 It may be installed as a package from the pypi repository, using [pip](https://pip.pypa.io/en/stable/):
 
@@ -18,12 +18,13 @@ After cloning the repository, you can install the repo in editable mode, as so:
 ```bash
 pip install -e .
 ```
+
 Note that this step will download several NLTK corpora, silently, and add them to the deployed tree.
 
 Additional functionality for running algorithm tests, etc. can be enabled by installing additional libraries:
 
 ```bash
-pip install -r requirements.txt
+pip install -e .[test]
 ```
 
 ## Usage
@@ -77,7 +78,7 @@ server, such as gunicorn:
 
 ```bash
 pip install gunicorn gevent
-gunicorn -k gevent -b 5000 "validator.app:create_app(DATA_DIR='/var/lib/validator/data')" 
+gunicorn -k gevent -b 5000 "validator.app:create_app(DATA_DIR='/var/lib/validator/data')"
 ```
 
 Ideally, use a socket, and place nginx or other webserver in front of flask, for https termination, if nothing else.
@@ -91,7 +92,7 @@ gunicorn -k gevent --bind /run/gunicorn.sock "validator.app:create_app(DATA_DIR=
 The main route for the app is /validate, which accepts a plaintext response (`response`) that will be checked.  It can also accept a number of optional arguments:
 
 - `uid` (e.g., '1000@1', default None): This is the uid for the question pertaining to the response. The uid is used to compute domain-specific and module-specific vocabulary to aid in the classification process.
-Iff the version of the question specified is not available, any version of the same qid (question id without the version, e.g. 1000) will be used. 
+Iff the version of the question specified is not available, any version of the same qid (question id without the version, e.g. 1000) will be used.
 
 - `remove_stopwords` (True or False, default True): Whether or not stopwords (e.g., 'the', 'and', etc) will be removed from the response.  This is generally advised since these words carry little predictive value.
 

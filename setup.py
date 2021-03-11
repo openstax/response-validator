@@ -43,10 +43,12 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
+        'blinker',
         'flask>=1.0.2',
         'flask-cors',
         'pandas',
         'nltk',
+        'sentry-sdk',
         'symspellpy',
         'sklearn',
         'PyYAML',
@@ -54,6 +56,7 @@ setup(
     ],
     extras_require={
         'test': [
+            'flake8',
             'pytest',
             'coverage',
             'vcrpy',

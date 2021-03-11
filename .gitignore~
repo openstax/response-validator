@@ -1,6 +1,0 @@
-venv
-.ipynb_checkpoints
-*.pyc
-.DS_Store
-.env
-/tests/**/*.csv
