@@ -17,8 +17,8 @@ from . import read_api, write_api, validate_api, training_api
 def create_app(**kwargs):
     app = Flask(__name__.split(".")[0])
     app.url_map.strict_slashes = False
-    app.config.from_pyfile("validator.cfg", silent=True)
     app.config.from_object("validator.default_settings")
+    app.config.from_pyfile("validator.cfg", silent=True)
     app.config.from_envvar("VALIDATOR_SETTINGS", silent=True)
     app.config.from_envvar("VALIDATOR_CONFIG", silent=True)
 
