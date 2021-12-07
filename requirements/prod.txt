@@ -8,6 +8,7 @@ gevent==21.8.0
 greenlet==1.1.2
 gunicorn==20.1.0
 jmespath==0.10.0
+python_dotenv==0.19.2
 s3transfer==0.5.0
 zope.event==4.5.0
 zope.interface==5.4.0

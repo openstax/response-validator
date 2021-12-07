@@ -57,6 +57,7 @@ setup(
     extras_require={
         'prod': [
             'boto3',
+            'python-dotenv'
             'gevent',
             'gunicorn',
         ],
