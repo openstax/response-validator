@@ -1,13 +1,18 @@
 from collections import OrderedDict
 from dotenv import load_dotenv
-from os import getenv
+from os import environ, getenv
 
 load_dotenv()
 
 def getenvbool(key, default):
     return str(getenv(key, default)).lower() == "true"
 
-DATA_DIR = getenv("DATA_DIR", "validator/ml/data")
+if ["DATA_DIR"] in environ:
+    DATA_DIR = getenv("DATA_DIR")
+elif ["DATA_BUCKET_NAME"] in environ:
+    DATA_DIR = f's3://{getenv("DATA_BUCKET_NAME")}/{getenv("ENVIRONMENT_NAME", "development")}'
+else:
+    DATA_DIR = "validator/ml/data"
 
 PARSER_DEFAULTS = {
     "remove_stopwords": getenvbool("PARSER_DEFAULTS_REMOVE_STOPWORDS", True),
