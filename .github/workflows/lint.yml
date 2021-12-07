@@ -20,8 +20,8 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-lint-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-requirements-${{ hashFiles('requirements/*.txt') }}
           restore-keys: |
-            ${{ runner.os }}-lint-
-      - run: pip install -e .[test]
+            ${{ runner.os }}-requirements-
+      - run: pip install -r requirements/test.txt
       - run: flake8 validator

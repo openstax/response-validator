@@ -1,0 +1,13 @@
+# Common requirements
+-r common.txt
+
+# Requirements exclusive to the production environment
+boto3==1.20.21
+botocore==1.23.21
+gevent==21.8.0
+greenlet==1.1.2
+gunicorn==20.1.0
+jmespath==0.10.0
+s3transfer==0.5.0
+zope.event==4.5.0
+zope.interface==5.4.0
