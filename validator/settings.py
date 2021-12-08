@@ -10,7 +10,7 @@ def getenvbool(key, default):
 if "DATA_DIR" in environ:
     DATA_DIR = getenv("DATA_DIR")
 elif "DATA_BUCKET_NAME" in environ:
-    DATA_DIR = f's3://{getenv("DATA_BUCKET_NAME")}/{getenv("ENVIRONMENT_NAME", "development")}'
+    DATA_DIR = f's3://{getenv("DATA_BUCKET_NAME")}/{getenv("ENVIRONMENT_NAME", "development")}/'
 else:
     DATA_DIR = "validator/ml/data"
 
