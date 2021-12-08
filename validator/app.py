@@ -63,10 +63,6 @@ def create_app(**kwargs):
     app.register_blueprint(validate_api.bp)
     app.register_blueprint(training_api.bp)
 
-    @app.route("/ping")
-    def ping():
-        return '', 204
-
     return app
 
 
