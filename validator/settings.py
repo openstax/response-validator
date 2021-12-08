@@ -4,8 +4,10 @@ from os import environ, getenv
 
 load_dotenv()
 
+
 def getenvbool(key, default):
     return str(getenv(key, default)).lower() == "true"
+
 
 if "DATA_DIR" in environ:
     DATA_DIR = getenv("DATA_DIR")

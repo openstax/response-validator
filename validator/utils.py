@@ -97,7 +97,7 @@ def get_fixed_data(data_dir):
             bucket_and_prefix = f'{bucket_and_prefix}/'
         bucket, prefix = bucket_and_prefix.split('/', 1)
         data_bucket = resource('s3').Bucket(bucket)
-        data_files = data_bucket.objects.filter(Prefix = prefix)
+        data_files = data_bucket.objects.filter(Prefix=prefix)
     else:
         data_files = os.listdir(data_dir)
 
