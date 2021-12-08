@@ -70,7 +70,8 @@ pip install -r requirements.txt
 gunicorn wsgi
 ```
 
-Ideally, use a socket, and place nginx or other webserver in front of flask.
+Ideally, use a socket, and place nginx or other webserver in front of flask,
+for https termination, if nothing else.
 
 ```bash
 DATA_DIR=/var/lib/validator/data GUNICORN_BIND=/run/gunicorn.sock gunicorn wsgi
