@@ -22,6 +22,9 @@ def create_app(**kwargs):
     if kwargs:
         app.config.from_mapping(kwargs)
 
+    if "SENTRY_DSN" in app.config:
+        sentry_sdk.init(dsn=app.config["SENTRY_DSN"], integrations=[FlaskIntegration()])
+
     # Get the global data for the app:
     #    innovation words by page,
     #    domain words by subject/book,
@@ -60,8 +63,9 @@ def create_app(**kwargs):
     app.register_blueprint(validate_api.bp)
     app.register_blueprint(training_api.bp)
 
-    if "SENTRY_DSN" in app.config:
-        sentry_sdk.init(dsn=app.config["SENTRY_DSN"], integrations=[FlaskIntegration()])
+    @app.route("/ping")
+    def ping():
+        return '', 204
 
     return app
 
