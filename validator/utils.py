@@ -173,7 +173,7 @@ def get_fixed_data(data_dir):
     try:
         with smart_open(os.path.join(data_dir, "feature_weights.json")) as features_in:
             feature_weights = json.load(features_in, object_pairs_hook=OrderedDict)
-    except FileNotFoundError:
+    except OSError:
         print("No feature weights loaded, using defaults")
         feature_weights = OrderedDict()
 
