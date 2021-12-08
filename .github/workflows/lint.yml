@@ -23,5 +23,9 @@ jobs:
           key: ${{ runner.os }}-requirements-${{ hashFiles('requirements/*.txt') }}
           restore-keys: |
             ${{ runner.os }}-requirements-
-      - run: pip install -r requirements/test.txt
+      - name: Install requirements.txt versions and test packages and download nltk corpora
+        run: |
+          pip install pip-tools
+          pip-sync
+          pip install .[test]
       - run: flake8 validator
