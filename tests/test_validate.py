@@ -5,9 +5,7 @@ from urllib.parse import urlencode
 from validator import app
 
 
-os.environ["VALIDATOR_SETTINGS"] = "../tests/testing.cfg"
-
-myapp = app.create_app()
+myapp = app.create_app(DATA_DIR="tests/data/")
 PARSER_DEFAULTS = myapp.config["PARSER_DEFAULTS"]
 
 # A set of weights to use when testing things other than stem/option counts
