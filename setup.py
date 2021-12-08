@@ -56,6 +56,7 @@ setup(
         'requests',
         'sentry-sdk',
         'sklearn',
+        'smart_open',
         'symspellpy',
     ],
     extras_require={

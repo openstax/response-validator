@@ -89,6 +89,8 @@ six==1.16.0
     #   python-dateutil
 sklearn==0.0
     # via response-validator (setup.py)
+smart-open==5.2.1
+    # via response-validator (setup.py)
 symspellpy==6.7.5
     # via response-validator (setup.py)
 threadpoolctl==3.0.0
