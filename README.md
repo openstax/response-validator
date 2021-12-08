@@ -24,7 +24,7 @@ pip install -e .
 ```
 
 Alternatively you can install requirements.txt,
-which contains the last known working dependency versions for Python 3.7+:
+which contains the last known working dependency versions for Python 3.7+ for production:
 
 ```bash
 pip install -r requirements.txt

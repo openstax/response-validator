@@ -44,10 +44,14 @@ setup(
     zip_safe=False,
     install_requires=[
         'blinker',
+        'boto3',
         'flask',
         'flask-cors',
+        'gevent',
+        'gunicorn',
         'nltk',
         'pandas',
+        'python-dotenv',
         'PyYAML',
         'requests',
         'sentry-sdk',
@@ -55,12 +59,6 @@ setup(
         'symspellpy',
     ],
     extras_require={
-        'prod': [
-            'boto3',
-            'python-dotenv'
-            'gevent',
-            'gunicorn',
-        ],
         'test': [
             'coverage',
             'flake8',
