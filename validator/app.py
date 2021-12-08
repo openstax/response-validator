@@ -31,10 +31,11 @@ def create_app(**kwargs):
     #    and table linking question uid to page-in-book id
     data_dir = app.config.get("DATA_DIR", "")
 
-    try:
-        os.listdir(data_dir)
-    except FileNotFoundError:
-        raise FileNotFoundError("Bad or no DATA_DIR defined")
+    if not data_dir.startswith('s3://'):
+        try:
+            os.listdir(data_dir)
+        except FileNotFoundError:
+            raise FileNotFoundError("Bad or no DATA_DIR defined")
 
     df_innovation_, df_domain_, df_questions_, feature_weights = get_fixed_data(
         data_dir
