@@ -96,8 +96,9 @@ def get_fixed_data(data_dir):
         if not bucket_and_prefix.endswith('/'):
             bucket_and_prefix = f'{bucket_and_prefix}/'
         bucket, prefix = bucket_and_prefix.split('/', 1)
-        data_bucket = resource('s3').Bucket(bucket)
-        data_files = data_bucket.objects.filter(Prefix=prefix)
+        data_objects = resource('s3').Bucket(bucket).objects.filter(Prefix=prefix)
+        prefix_length = len(prefix)
+        data_files = [file.key[prefix_length:] for file in data_objects]
     else:
         data_files = os.listdir(data_dir)
 
