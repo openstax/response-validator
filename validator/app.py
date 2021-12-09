@@ -15,15 +15,15 @@ from . import read_api, write_api, validate_api, training_api
 
 
 def create_app(**kwargs):
+    if "SENTRY_DSN" in os.environ:
+        sentry_sdk.init(integrations=[FlaskIntegration()])
+
     app = Flask(__name__.split(".")[0])
     app.url_map.strict_slashes = False
     app.config.from_object("validator.settings")
 
     if kwargs:
         app.config.from_mapping(kwargs)
-
-    if "SENTRY_DSN" in app.config:
-        sentry_sdk.init(dsn=app.config["SENTRY_DSN"], integrations=[FlaskIntegration()])
 
     # Get the global data for the app:
     #    innovation words by page,
