@@ -52,7 +52,7 @@ joblib==1.1.0
     #   scikit-learn
 markupsafe==2.0.1
     # via jinja2
-nltk==3.6.5
+nltk==3.6.6
     # via response-validator (setup.py)
 numpy==1.21.4
     # via
