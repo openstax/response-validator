@@ -15,12 +15,12 @@ from . import read_api, write_api, validate_api, training_api
 
 
 def create_app(**kwargs):
+    if "SENTRY_DSN" in os.environ:
+        sentry_sdk.init(integrations=[FlaskIntegration()])
+
     app = Flask(__name__.split(".")[0])
     app.url_map.strict_slashes = False
-    app.config.from_pyfile("validator.cfg", silent=True)
-    app.config.from_object("validator.default_settings")
-    app.config.from_envvar("VALIDATOR_SETTINGS", silent=True)
-    app.config.from_envvar("VALIDATOR_CONFIG", silent=True)
+    app.config.from_object("validator.settings")
 
     if kwargs:
         app.config.from_mapping(kwargs)
@@ -31,10 +31,11 @@ def create_app(**kwargs):
     #    and table linking question uid to page-in-book id
     data_dir = app.config.get("DATA_DIR", "")
 
-    try:
-        os.listdir(data_dir)
-    except FileNotFoundError:
-        raise FileNotFoundError("Bad or no DATA_DIR defined")
+    if not data_dir.startswith('s3://'):
+        try:
+            os.listdir(data_dir)
+        except FileNotFoundError:
+            raise FileNotFoundError("Bad or no DATA_DIR defined")
 
     df_innovation_, df_domain_, df_questions_, feature_weights = get_fixed_data(
         data_dir
@@ -62,9 +63,6 @@ def create_app(**kwargs):
     app.register_blueprint(write_api.bp)
     app.register_blueprint(validate_api.bp)
     app.register_blueprint(training_api.bp)
-
-    if "SENTRY_DSN" in app.config:
-        sentry_sdk.init(dsn=app.config["SENTRY_DSN"], integrations=[FlaskIntegration()])
 
     return app
 

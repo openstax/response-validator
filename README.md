@@ -24,7 +24,7 @@ pip install -e .
 ```
 
 Alternatively you can install requirements.txt,
-which contains the last known working dependency versions for Python 3.7+:
+which contains the last known working dependency versions for Python 3.7+ for production:
 
 ```bash
 pip install -r requirements.txt
@@ -47,58 +47,34 @@ and add them to the deployed tree (gitignored).
 
 In order to persist the book vocabulary data between invocations, the Flask
 server needs the `DATA_DIR` setting to contain a path pointing to an existing
-directory.  This can be set in several ways.
+directory.  This can be set in several ways, in order of precedence:
 
 1. Pass a key-value command line argument:
 
-
 `python -m validator.app DATA_DIR=data`
 
+2. Pass an environment variable directly:
 
-2. set the `VALIDATOR_SETTINGS` environment variable to the path of a file
-that contains the `DATA_DIR` setting:
+`DATA_DIR=data python -m validator.app`
 
-`VALIDATOR_SETTINGS=data/dev.cfg python -m validator.app`
+3. Create a .env file that exports DATA_DIR:
 
-Where the contents of dev.cfg is:
-
-```
-DATA_DIR=data
-```
-and the directory `data` exists.
-
-3. use gunicorn, provide arguments to app factory:
-
-
-`gunicorn 'validator.app:create_app(DATA_DIR="data")'`
-
-
-4. Use gunicorn, with an environment variable pointing to a config file:
-
-
-`VALIDATOR_SETTINGS=../data/dev.cfg gunicorn "validator.app:create_app()"`
-
-Note that this one can get confusing with relative paths, since flask  uses the
-directory the app is imported from (in this case, `validator`) as the config
-path when interpreting environment variables, while paths inside such files
-will be based on the python current working directory. When in doubt, use full
-paths:
-
-`VALIDATOR_SETTINGS="$PWD/data/dev.cfg" gunicorn "validator.app:create_app()"`
+`export DATA_DIR=data`
 
 ### Production
 The recommended production method for deployment is to use a WSGI compliant
 server, such as gunicorn:
 
 ```bash
-pip install gunicorn gevent
-gunicorn -k gevent -b 5000 "validator.app:create_app(DATA_DIR='/var/lib/validator/data')"
+pip install -r requirements.txt
+gunicorn wsgi
 ```
 
-Ideally, use a socket, and place nginx or other webserver in front of flask, for https termination, if nothing else.
+Ideally, use a socket, and place nginx or other webserver in front of flask,
+for https termination, if nothing else.
 
 ```bash
-gunicorn -k gevent --bind /run/gunicorn.sock "validator.app:create_app(DATA_DIR='/var/lib/validator/data')"
+DATA_DIR=/var/lib/validator/data GUNICORN_BIND=/run/gunicorn.sock gunicorn wsgi
 ```
 ## API
 

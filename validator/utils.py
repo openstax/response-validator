@@ -11,6 +11,8 @@ import string
 
 import pandas as pd
 from collections import OrderedDict
+from smart_open import open as smart_open
+from boto3 import resource
 
 
 def make_tristate(var, default=True):
@@ -67,28 +69,39 @@ def split_to_words(df, text_column):
 
 def write_fixed_data(df_domain, df_innovation, df_questions, data_dir):
     print(f"Writing data to: {data_dir}")
+
     if df_domain is not None:
-        df_domain.replace(set(), "").to_csv(
-            os.path.join(data_dir, "df_domain.csv"), index=None
-        )
+        with smart_open(os.path.join(data_dir, "df_domain.csv"), 'w') as domain_out:
+            df_domain.replace(set(), "").to_csv(domain_out, index=None)
+
     if df_innovation is not None:
-        df_innovation.replace(set(), "").to_csv(
-            os.path.join(data_dir, "df_innovation.csv"), index=None
-        )
+        with smart_open(os.path.join(data_dir, "df_innovation.csv"), 'w') as innovation_out:
+            df_innovation.replace(set(), "").to_csv(innovation_out, index=None)
+
     if df_questions is not None:
-        df_questions.replace(set(), "").to_csv(
-            os.path.join(data_dir, "df_questions.csv"), index=None
-        )
+        with smart_open(os.path.join(data_dir, "df_questions.csv"), 'w') as questions_out:
+            df_questions.replace(set(), "").to_csv(questions_out, index=None)
 
 
 def write_feature_weights(feature_weights, data_dir):
     print(f"Writing data to: {data_dir}")
-    with open(os.path.join(data_dir, "feature_weights.json"), "w") as f:
-        json.dump(feature_weights, f, indent=2)
+
+    with smart_open(os.path.join(data_dir, "feature_weights.json"), "w") as features_out:
+        json.dump(feature_weights, features_out, indent=2)
 
 
 def get_fixed_data(data_dir):
-    data_files = os.listdir(data_dir)
+    if data_dir.startswith('s3://'):
+        bucket_and_prefix = data_dir[5:]
+        if not bucket_and_prefix.endswith('/'):
+            bucket_and_prefix = f'{bucket_and_prefix}/'
+        bucket, prefix = bucket_and_prefix.split('/', 1)
+        data_objects = resource('s3').Bucket(bucket).objects.filter(Prefix=prefix)
+        prefix_length = len(prefix)
+        data_files = [file.key[prefix_length:] for file in data_objects]
+    else:
+        data_files = os.listdir(data_dir)
+
     files_to_find = [
         "df_innovation.csv",
         "df_domain.csv",
@@ -98,9 +111,15 @@ def get_fixed_data(data_dir):
     num_missing_files = len(missing_files)
     if num_missing_files == 0:
         print(f"Loading existing data from {data_dir}...")
-        df_innovation = pd.read_csv(os.path.join(data_dir, files_to_find[0]))
-        df_domain = pd.read_csv(os.path.join(data_dir, files_to_find[1]))
-        df_questions = pd.read_csv(os.path.join(data_dir, files_to_find[2]))
+
+        with smart_open(os.path.join(data_dir, "df_innovation.csv")) as innovation_in:
+            df_innovation = pd.read_csv(innovation_in)
+
+        with smart_open(os.path.join(data_dir, "df_domain.csv")) as domain_in:
+            df_domain = pd.read_csv(domain_in)
+
+        with smart_open(os.path.join(data_dir, "df_questions.csv")) as questions_in:
+            df_questions = pd.read_csv(questions_in)
 
         # Convert domain and innovation words from comma-separated strings to set
         # This works in memory just fine but won't persist in file
@@ -153,9 +172,9 @@ def get_fixed_data(data_dir):
 
     # Now load the feature_weights and default feature_weight_id, if found.
     try:
-        with open(os.path.join(data_dir, "feature_weights.json")) as f:
-            feature_weights = json.load(f, object_pairs_hook=OrderedDict)
-    except FileNotFoundError:
+        with smart_open(os.path.join(data_dir, "feature_weights.json")) as features_in:
+            feature_weights = json.load(features_in, object_pairs_hook=OrderedDict)
+    except OSError:
         print("No feature weights loaded, using defaults")
         feature_weights = OrderedDict()
 
