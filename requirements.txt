@@ -54,7 +54,7 @@ markupsafe==2.0.1
     # via jinja2
 nltk==3.6.6
     # via response-validator (setup.py)
-numpy==1.21.4
+numpy==1.22.0
     # via
     #   pandas
     #   scikit-learn
